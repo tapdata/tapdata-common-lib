@@ -13,6 +13,7 @@
 <!--        <module>file-storages</module>-->
 <!--        <module>manager</module>-->
 <!--        <module>iengine</module>-->
+        <module>task-resource-supervisor-module</module>
         <module>tapdata-cli</module>
 <!--        <module>connectors-common</module>-->
 <!--        <module>connectors</module>-->
