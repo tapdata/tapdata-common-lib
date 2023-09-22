@@ -1,0 +1,6 @@
+io/tapdata/storage/sequence/SequenceIterator.class
+io/tapdata/storage/sequence/TapSequenceStorageImpl.class
+io/tapdata/storage/factory/TapStorageFactoryImpl.class
+io/tapdata/storage/TapStorageImpl.class
+io/tapdata/storage/kv/TapKVStorageImpl.class
+io/tapdata/storage/errors/StorageErrors.class
