@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>task-resource-supervisor-module</artifactId>
+    <groupId>com.tapdata</groupId>
     <version>0.5.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
