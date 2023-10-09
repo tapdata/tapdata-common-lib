@@ -13,10 +13,7 @@ import io.tapdata.entity.utils.io.DataOutputStreamEx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import static io.tapdata.entity.simplify.TapSimplify.map;
 
@@ -49,6 +46,8 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 		dataOutputStreamEx.writeBytes(objectSerializable.fromObject(before));
 	}
 	*/
+	private List<String> removedFields;
+
 	public TapUpdateRecordEvent() {
 		super(TYPE);
 	}
@@ -65,6 +64,19 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 	public TapUpdateRecordEvent table(String table) {
 		this.tableId = table;
 		return this;
+	}
+
+	public TapUpdateRecordEvent removedFields(List<String> removedFields) {
+		this.removedFields = removedFields;
+		return this;
+	}
+
+	public List<String> getRemovedFields() {
+		return removedFields;
+	}
+
+	public void setRemovedFields(List<String> removedFields) {
+		this.removedFields = removedFields;
 	}
 
 	public TapUpdateRecordEvent init() {
