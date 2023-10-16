@@ -48,6 +48,8 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 	*/
 	private List<String> removedFields;
 
+	private Boolean isReplaceEvent = false;
+
 	public TapUpdateRecordEvent() {
 		super(TYPE);
 	}
@@ -77,6 +79,14 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 
 	public void setRemovedFields(List<String> removedFields) {
 		this.removedFields = removedFields;
+	}
+
+	public Boolean getIsReplaceEvent() {
+		return isReplaceEvent;
+	}
+
+	public void setIsReplaceEvent(Boolean isReplaceEvent) {
+		this.isReplaceEvent = isReplaceEvent;
 	}
 
 	public TapUpdateRecordEvent init() {
