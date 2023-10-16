@@ -1,6 +1,0 @@
-io/tapdata/script/factory/TapdataScriptFactory.class
-io/tapdata/script/factory/script/TapRunScriptEngine.class
-jdk/vm/ci/services/Services.class
-io/tapdata/script/factory/py/PythonUtils.class
-io/tapdata/script/factory/py/TapPythonEngine.class
-io/tapdata/script/factory/script/TapRunScriptEngine$EngineType.class
