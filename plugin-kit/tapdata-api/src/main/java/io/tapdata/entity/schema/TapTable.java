@@ -68,6 +68,8 @@ public class TapTable extends TapItem<TapField> {
 
 	protected String pdkId;
 
+	private Map<String, Object> tableAttr;
+
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;
 		return this;
@@ -377,5 +379,13 @@ public class TapTable extends TapItem<TapField> {
 
 	public void setLogicPrimaries(Collection<String> logicPrimaries) {
 		this.logicPrimaries = logicPrimaries;
+	}
+
+	public Map<String, Object> getTableAttr() {
+		return tableAttr;
+	}
+
+	public void setTableAttr(Map<String, Object> tableAttr) {
+		this.tableAttr = tableAttr;
 	}
 }
