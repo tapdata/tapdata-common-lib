@@ -7,4 +7,6 @@ import java.lang.annotation.*;
 @Documented
 public @interface Bean {
 	String type() default "";
+
+	boolean onTest() default true;
 }
