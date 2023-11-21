@@ -1,23 +1,23 @@
 package io.tapdata.pdk.core.implementation;
 
 import io.tapdata.entity.annotations.Bean;
-import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.annotations.MainMethod;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.reflection.ClassAnnotationHandler;
-import io.tapdata.entity.utils.Container;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.ReflectionUtil;
+import io.tapdata.pdk.core.constants.SystemConstants;
+import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collections;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class BeanAnnotationHandler extends ClassAnnotationHandler {
     private static final String TAG = BeanAnnotationHandler.class.getSimpleName();
@@ -43,9 +43,14 @@ public class BeanAnnotationHandler extends ClassAnnotationHandler {
     public void handle(Set<Class<?>> classes) throws CoreException {
         if(classes != null) {
             TapLogger.debug(TAG, "--------------Implementation Classes Start-------------");
+            boolean isJunitTest = CommonUtils.getPropertyBool(SystemConstants.JUNIT_TEST_PROP_KEY, false);
             for(Class<?> clazz : classes) {
                 Bean bean = clazz.getAnnotation(Bean.class);
                 if(bean != null) {
+                    if (isJunitTest && !bean.onTest()) {
+                        // Run on junit test and bean's annotation onTest is false, will skip this bean
+                        continue;
+                    }
                     MainMethod mainMethod = clazz.getAnnotation(MainMethod.class);
                     if(mainMethod != null) {
                         String mainMethodStr = mainMethod.value();
