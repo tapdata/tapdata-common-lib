@@ -178,6 +178,11 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.tapType = tapType;
         return this;
     }
+    /**
+     * create source type
+     * job_analyze, auto, manual
+     */
+    private String createSource;
 
     public TapField clone() {
         TapField newField = new TapField();
@@ -198,6 +203,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.isPartitionKey = isPartitionKey;
         newField.isPrimaryKey = isPrimaryKey;
         newField.tapType = tapType != null ? tapType.cloneTapType() : null; //XXX need clone? better clone.
+        newField.createSource = createSource;
         return newField;
     }
 
@@ -342,5 +348,13 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setDataType(String dataType) {
         this.dataType = dataType;
+    }
+
+    public String getCreateSource() {
+        return createSource;
+    }
+
+    public void setCreateSource(String createSource) {
+        this.createSource = createSource;
     }
 }
