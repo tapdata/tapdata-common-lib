@@ -464,4 +464,15 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         }
         return compareTo;
     }
+
+    public long toEpochMilli(){
+        if (seconds < 0 && nano > 0) {
+            long millis = Math.multiplyExact(seconds+1, 1000);
+            long adjustment = nano / 1000_000 - 1000;
+            return Math.addExact(millis, adjustment);
+        } else {
+            long millis = Math.multiplyExact(seconds, 1000);
+            return Math.addExact(millis, nano / 1000_000);
+        }
+    }
 }
