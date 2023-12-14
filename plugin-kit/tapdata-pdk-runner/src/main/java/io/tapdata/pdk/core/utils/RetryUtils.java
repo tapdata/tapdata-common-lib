@@ -158,7 +158,6 @@ public class RetryUtils extends CommonUtils {
 				if (doRetry) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
-					invoker.getClearFunctionRetry().run();
 				}
 				break;
 			} catch (Throwable errThrowable) {
@@ -235,8 +234,12 @@ public class RetryUtils extends CommonUtils {
 	}
 	private static RetryOptions callErrorHandleFunctionIfNeed(Throwable errThrowable) {
 		RetryOptions retryOptions = null;
-		if (errThrowable instanceof TapCodeException) {
-			String code = ((TapCodeException) errThrowable).getCode();
+		if (null == retryOptions) {
+			retryOptions = RetryOptions.create();
+		}
+		Throwable throwable = CommonUtils.matchThrowable(errThrowable, TapCodeException.class);
+		if (null != throwable) {
+			String code = ((TapCodeException) throwable).getCode();
 			ErrorCodeEntity errorCode = ErrorCodeConfig.getInstance().getErrorCode(code);
 			if (errorCode.isRecoverable()) {
 				retryOptions.needRetry(true);
