@@ -331,14 +331,14 @@ public class TapCodecsFilterManager {
         List<Object> newList = new ArrayList<>();
         for(Object obj : tapValueArray.getValue()) {
             if(obj instanceof TapMapValue) {
-                transformFromTapValueMap(((TapMapValue) obj).getValue(), sourceNameFieldMap, detectors);
+                transformFromTapValueMap(((TapMapValue) obj).getValue(), nameFieldMap, detectors);
                 newList.add(((TapMapValue) obj).getValue());
 //                mapIteratorFromTapValue.iterate(((TapMapValue) obj).getValue(), entryFilter);
             } else if(obj instanceof TapArrayValue){
-                transformFromTapValueMap(theFieldName, (TapArrayValue) obj, sourceNameFieldMap, detectors);
+                transformFromTapValueMap(theFieldName, (TapArrayValue) obj, nameFieldMap, detectors);
                 newList.add(((TapArrayValue) obj).getValue());
             } else {
-                TapField field = sourceNameFieldMap.get(theFieldName);
+                TapField field = nameFieldMap.get(theFieldName);
                 if (null != skipper && skipper.skip(field)) {
                     newList.add(obj);
                     continue;
