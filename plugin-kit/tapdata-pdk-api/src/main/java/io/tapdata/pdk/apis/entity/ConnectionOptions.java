@@ -77,6 +77,7 @@ public class ConnectionOptions {
      */
     private TimeZone timeZone;
     private String charset;
+    private String dbVersion;
     public ConnectionOptions charset(String charset) {
         this.charset = charset;
         return this;
@@ -176,5 +177,13 @@ public class ConnectionOptions {
 
     public void setNamespaces(List<String> namespaces) {
         this.namespaces = namespaces;
+    }
+
+    public String getDbVersion() {
+        return dbVersion;
+    }
+
+    public void setDbVersion(String dbVersion) {
+        this.dbVersion = dbVersion;
     }
 }
