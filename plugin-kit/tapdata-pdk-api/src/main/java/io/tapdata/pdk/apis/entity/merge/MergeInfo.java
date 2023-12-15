@@ -65,9 +65,12 @@ public class MergeInfo {
 		private Map<String, Object> before;
 		private Map<String, Object> after;
 
-		public UpdateJoinKey(Map<String, Object> before, Map<String, Object> after) {
+		private Map<String, Object> parentBefore;
+
+		public UpdateJoinKey(Map<String, Object> before, Map<String, Object> after, Map<String, Object> parentBefore) {
 			this.before = before;
 			this.after = after;
+			this.parentBefore = parentBefore;
 		}
 
 		public Map<String, Object> getBefore() {
@@ -76,6 +79,10 @@ public class MergeInfo {
 
 		public Map<String, Object> getAfter() {
 			return after;
+		}
+
+		public Map<String, Object> getParentBefore() {
+			return parentBefore;
 		}
 	}
 }
