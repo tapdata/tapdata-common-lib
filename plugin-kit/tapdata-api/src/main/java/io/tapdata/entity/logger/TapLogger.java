@@ -2,6 +2,7 @@ package io.tapdata.entity.logger;
 
 import io.tapdata.entity.utils.FormatUtils;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -29,7 +30,7 @@ public class TapLogger {
         enable = enable1;
     }
 
-    public interface LogListener {
+    public interface LogListener extends Serializable {
         void debug(String log);
 
         void info(String log);
