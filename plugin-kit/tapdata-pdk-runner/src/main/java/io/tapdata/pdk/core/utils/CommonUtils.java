@@ -41,12 +41,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CommonUtils {
-    static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+    static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss,SSS";
     public static String dateString() {
         return dateString(new Date());
     }
     public static String dateString(Date date) {
-        return sdf.format(date);
+        return new SimpleDateFormat(DATE_FORMAT).format(date);
     }
 
     public static int getJavaVersion() {
