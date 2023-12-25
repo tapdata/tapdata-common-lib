@@ -260,41 +260,49 @@ public class CommonUtils {
         return new CoreException(PDKRunnerErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
     }
 
-    public static String getProperty(String key, String defaultValue) {
-        String value = System.getProperty(key);
-        if(value == null)
-            value = System.getenv(key);
-        if(value == null)
-            value = defaultValue;
-        return value;
+    public static String getenv(String key) {
+        return System.getenv(key);
     }
 
     public static String getProperty(String key) {
         String value = System.getProperty(key);
         if(value == null)
-            value = System.getenv(key);
+            value = getenv(key);
+        return value;
+    }
+
+    public static String getProperty(String key, String defaultValue) {
+        String value = getProperty(key);
+        if(value == null)
+            value = defaultValue;
         return value;
     }
 
     public static boolean getPropertyBool(String key, boolean defaultValue) {
-        String value = System.getProperty(key);
-        if(value == null)
-            value = System.getenv(key);
-        Boolean valueBoolean = null;
-        if(value != null) {
-            try {
-                valueBoolean = Boolean.parseBoolean(value);
-            } catch(Throwable ignored) {}
+        String value = getProperty(key);
+        if (value != null) {
+            switch (value.trim().toLowerCase()) {
+                case "y":
+                case "yes":
+                case "t":
+                case "true":
+                case "1":
+                    return Boolean.TRUE;
+                case "n":
+                case "no":
+                case "f":
+                case "false":
+                case "0":
+                    return Boolean.FALSE;
+                default:
+                    break;
+            }
         }
-        if(valueBoolean == null)
-            valueBoolean = defaultValue;
-        return valueBoolean;
+        return defaultValue;
     }
 
     public static int getPropertyInt(String key, int defaultValue) {
-        String value = System.getProperty(key);
-        if(value == null)
-            value = System.getenv(key);
+        String value = getProperty(key);
         Integer valueInt = null;
         if(value != null) {
             try {
@@ -307,9 +315,7 @@ public class CommonUtils {
     }
 
     public static long getPropertyLong(String key, long defaultValue) {
-        String value = System.getProperty(key);
-        if(value == null)
-            value = System.getenv(key);
+        String value = getProperty(key);
         Long valueLong = null;
         if(value != null) {
             try {
