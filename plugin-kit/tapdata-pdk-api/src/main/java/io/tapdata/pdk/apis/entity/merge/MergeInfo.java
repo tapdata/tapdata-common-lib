@@ -1,8 +1,6 @@
 package io.tapdata.pdk.apis.entity.merge;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author samuel
@@ -15,6 +13,7 @@ public class MergeInfo {
 	private List<MergeLookupResult> mergeLookupResults;
 	private Integer level;
 	private Set<String> sharedJoinKeys;
+	private Map<String, UpdateJoinKey> updateJoinKeys = new HashMap<>();
 
 	public MergeTableProperties getCurrentProperty() {
 		return currentProperty;
@@ -52,5 +51,31 @@ public class MergeInfo {
 
 	public void setSharedJoinKeys(Set<String> sharedJoinKeys) {
 		this.sharedJoinKeys = sharedJoinKeys;
+	}
+
+	public Map<String, UpdateJoinKey> getUpdateJoinKeys() {
+		return updateJoinKeys;
+	}
+
+	public void addUpdateJoinKey(String id, UpdateJoinKey updateJoinKey) {
+		this.updateJoinKeys.put(id, updateJoinKey);
+	}
+
+	public static class UpdateJoinKey {
+		private Map<String, Object> before;
+		private Map<String, Object> after;
+
+		public UpdateJoinKey(Map<String, Object> before, Map<String, Object> after) {
+			this.before = before;
+			this.after = after;
+		}
+
+		public Map<String, Object> getBefore() {
+			return before;
+		}
+
+		public Map<String, Object> getAfter() {
+			return after;
+		}
 	}
 }
