@@ -21,6 +21,8 @@ public class ConnectionOptions {
     public static final String CAPABILITY_COUNT_IS_SLOW = "count_is_slow";
     //Connector support source support exactly once to assign exactlyOnceId for every TapBaseEvent, subclasses are TapRecordEvent and TapDDLEvent.
     public static final String CAPABILITY_SOURCE_SUPPORT_EXACTLY_ONCE = "source_support_exactly_once";
+    //Connector support source incremental update event have before
+    public static final String CAPABILITY_SOURCE_INCREMENTAL_UPDATE_EVENT_HAVE_BEFORE = "source_incremental_update_event_have_before";
 
     //DDL events
     public static final String DDL_ALTER_FIELD_NAME_EVENT = FormatUtils.formatTapEvent(TapAlterFieldNameEvent.class);
