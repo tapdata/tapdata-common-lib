@@ -18,6 +18,7 @@ public class MergeTableProperties implements Serializable {
 	private String targetPath;
 	private boolean isArray;
 	private String arrayPath;
+	private String id;
 
 	public String getArrayPath() {
 		return arrayPath;
@@ -73,6 +74,14 @@ public class MergeTableProperties implements Serializable {
 
 	public void setIsArray(boolean array) {
 		isArray = array;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public enum MergeType {
