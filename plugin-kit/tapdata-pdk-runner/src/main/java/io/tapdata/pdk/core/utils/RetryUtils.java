@@ -103,21 +103,74 @@ public class RetryUtils extends CommonUtils {
 				if (retryTimes > 0) {
 					boolean needDefaultRetry = needDefaultRetry(errThrowable);
 					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(method, message, errThrowable, errorHandleFunction, functionAndContext.tapConnectionContext());
-					if (!needDefaultRetry) {
-						throwIfNeed(invoker, retryOptions, message, errThrowable);
-					}
-					String serverErrorCode;
-					if (errThrowable instanceof TapPdkBaseException) {
-						serverErrorCode = ((TapPdkBaseException) errThrowable).getServerErrorCode();
-					} else {
-						serverErrorCode = "null";
-					}
-					Optional.ofNullable(invoker.getLogListener())
-							.ifPresent(log -> log.warn(String.format(LOG_PREFIX + "Method (%s) encountered an error, triggering auto retry.\n - Error code: %s, message: %s\n - Remaining retry %s time(s)\n - Period %s second(s)",
-									method.name().toLowerCase(), serverErrorCode, errThrowable.getMessage(), invoker.getRetryTimes(), retryPeriodSeconds)));
-					invoker.setRetryTimes(retryTimes - 1);
+					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(node, method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
+						break;
+					} else {
+						synchronized (invoker) {
+							try {
+								invoker.wait(retryPeriodSeconds * 1000);
+							} catch (InterruptedException e) {
+								//e.printStackTrace();
+							}
+						}
+					}
+					callBeforeRetryMethodIfNeed(retryOptions, logTag);
+					if (null != invoker.getStartRetry()) {
+						invoker.getStartRetry().run();
+						invoker.getSignFunctionRetry().run();
+					}
+					doRetry = true;
+				} else {
+					wrapAndThrowError(errThrowable);
+				}
+			}
+		}
+	}
+
+	private static void retryFailed(PDKMethod method, PDKMethodInvoker invoker, String message, long retryPeriodSeconds, Throwable errThrowable, long retryTimes, boolean needDefaultRetry, RetryOptions retryOptions) {
+		if (!needDefaultRetry) {
+			throwIfNeed(invoker, retryOptions, message, errThrowable);
+		}
+		String serverErrorCode;
+		if (errThrowable instanceof TapPdkBaseException) {
+			serverErrorCode = ((TapPdkBaseException) errThrowable).getServerErrorCode();
+		} else {
+			serverErrorCode = "null";
+		}
+		Optional.ofNullable(invoker.getLogListener())
+				.ifPresent(log -> log.warn(String.format(LOG_PREFIX + "Method (%s) encountered an error, triggering auto retry.\n - Error code: %s, message: %s\n - Remaining retry %s time(s)\n - Period %s second(s)",
+						method.name().toLowerCase(), serverErrorCode, errThrowable.getMessage(), invoker.getRetryTimes(), retryPeriodSeconds)));
+		invoker.setRetryTimes(retryTimes - 1);
+	}
+
+	public static void autoRetry(PDKMethod method, PDKMethodInvoker invoker) {
+		CommonUtils.AnyError runnable = invoker.getR();
+		String message = invoker.getMessage();
+		String logTag = invoker.getLogTag();
+		boolean async = invoker.isAsync();
+		boolean doRetry = false;
+		long retryPeriodSeconds = invoker.getRetryPeriodSeconds() <= 0 ? DEFAULT_RETRY_PERIOD_SECONDS : invoker.getRetryPeriodSeconds();
+		while (invoker.getRetryTimes() >= 0) {
+			try {
+				runnable.run();
+				if (doRetry) {
+					Optional.ofNullable(invoker.getLogListener())
+							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
+					if (null != invoker.getClearFunctionRetry()){
+						invoker.getClearFunctionRetry().run();
+					}
+				}
+				break;
+			} catch (Throwable errThrowable) {
+				long retryTimes = invoker.getRetryTimes();
+				if (retryTimes > 0) {
+					boolean needDefaultRetry = needDefaultRetry(errThrowable);
+					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(errThrowable);
+					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
+					if (async) {
+						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
 					} else {
 						synchronized (invoker) {
@@ -178,6 +231,21 @@ public class RetryUtils extends CommonUtils {
 				if (!TapPdkRunnerExCode_18.UNKNOWN_ERROR.equals(code)) {
 					retryOptions.needRetry(false);
 				}
+			}
+		}
+		return retryOptions;
+	}
+	public static RetryOptions callErrorHandleFunctionIfNeed(Throwable errThrowable) {
+		RetryOptions retryOptions = null;
+		if (null == retryOptions) {
+			retryOptions = RetryOptions.create();
+		}
+		Throwable throwable = CommonUtils.matchThrowable(errThrowable, TapCodeException.class);
+		if (null != throwable) {
+			String code = ((TapCodeException) throwable).getCode();
+			ErrorCodeEntity errorCode = ErrorCodeConfig.getInstance().getErrorCode(code);
+			if (errorCode.isRecoverable()) {
+				retryOptions.needRetry(true);
 			}
 		}
 		return retryOptions;
