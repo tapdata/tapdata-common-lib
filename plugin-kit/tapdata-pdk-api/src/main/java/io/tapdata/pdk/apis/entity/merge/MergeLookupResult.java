@@ -3,6 +3,7 @@ package io.tapdata.pdk.apis.entity.merge;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author samuel
@@ -14,7 +15,11 @@ public class MergeLookupResult implements Serializable {
 	private MergeTableProperties property;
 	private Map<String, Object> data;
 
+	private boolean dataExists = true;
+
 	private List<MergeLookupResult> mergeLookupResults;
+
+	private Set<String> sharedJoinKeys;
 
 	public MergeTableProperties getProperty() {
 		return property;
@@ -38,5 +43,21 @@ public class MergeLookupResult implements Serializable {
 
 	public void setMergeLookupResults(List<MergeLookupResult> mergeLookupResults) {
 		this.mergeLookupResults = mergeLookupResults;
+	}
+
+	public boolean isDataExists() {
+		return dataExists;
+	}
+
+	public void setDataExists(boolean dataExists) {
+		this.dataExists = dataExists;
+	}
+
+	public Set<String> getSharedJoinKeys() {
+		return sharedJoinKeys;
+	}
+
+	public void setSharedJoinKeys(Set<String> sharedJoinKeys) {
+		this.sharedJoinKeys = sharedJoinKeys;
 	}
 }
