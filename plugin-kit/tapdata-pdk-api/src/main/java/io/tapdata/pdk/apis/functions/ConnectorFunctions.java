@@ -65,6 +65,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected TransactionBeginFunction transactionBeginFunction;
     protected TransactionCommitFunction transactionCommitFunction;
     protected TransactionRollbackFunction transactionRollbackFunction;
+    protected GetCurrentTimestampFunction getCurrentTimestampFunction;
 
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
         transactionBeginFunction = function;
@@ -338,6 +339,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
+    public ConnectorFunctions supportGetCurrentTimestampFunction(GetCurrentTimestampFunction function) {
+        this.getCurrentTimestampFunction = function;
+        return this;
+    }
+
     public WriteRecordFunction getWriteRecordFunction() {
         return writeRecordFunction;
     }
@@ -472,5 +478,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public CountRawCommandFunction getCountRawCommandFunction() {
         return countRawCommandFunction;
+    }
+
+    public GetCurrentTimestampFunction getGetCurrentTimestampFunction() {
+        return getCurrentTimestampFunction;
     }
 }
