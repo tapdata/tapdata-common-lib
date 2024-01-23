@@ -373,18 +373,13 @@ public class CommonUtils {
                 String last = collect.getLast();
                 if (collect.size() != 3) {
                     pdkAPIBuildNumber.set(0);
-                } else if (last.contains("-SNAPSHOT")) {
-                    String temp = StringUtils.replace(last, "-SNAPSHOT", "");
+                } else {
+                    String temp = last.replace("-SNAPSHOT", "").replace("-RELEASE", "").replace(".", "");
                     if (temp.chars().allMatch(Character::isDigit)) {
-                        pdkAPIBuildNumber.set(Integer.parseInt(temp));
+                        pdkAPIBuildNumber.set(Integer.parseInt(temp) - 120);
+                    } else {
+                        pdkAPIBuildNumber.set(0);
                     }
-                } else if (last.contains("-RELEASE")) {
-                    String temp = StringUtils.replace(last, "-RELEASE", "");
-                    if (temp.chars().allMatch(Character::isDigit)) {
-                        pdkAPIBuildNumber.set(Integer.parseInt(temp));
-                    }
-                } else if (last.chars().allMatch(Character::isDigit)) {
-                    pdkAPIBuildNumber.set(Integer.parseInt(last));
                 }
             });
         }, "");
