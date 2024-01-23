@@ -4,6 +4,7 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.type.TapType;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TapTable extends TapItem<TapField> {
 	private static final String TAG = TapTable.class.getSimpleName();
@@ -157,8 +158,7 @@ public class TapTable extends TapItem<TapField> {
 				if (nameFieldMapCopyRef.isEmpty())
 					return Collections.emptyList();
 
-				for (String key : nameFieldMapCopyRef.keySet()) {
-					TapField field = nameFieldMapCopyRef.get(key);
+				for (TapField field : nameFieldMapCopyRef.entrySet().stream().sorted(Comparator.nullsLast(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos()))).filter(Objects::nonNull).map(Map.Entry::getValue).collect(Collectors.toList())) {
 					if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
 							|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
 						this.primaryKeys.add(field.getName());
