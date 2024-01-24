@@ -376,21 +376,15 @@ public class CommonUtils {
         ignoreAnyError(() -> {
             Optional.ofNullable(pdkAPIVersion).ifPresent(version -> {
                 LinkedList<String> collect = Arrays.stream(pdkAPIVersion.split("[.]")).collect(Collectors.toCollection(LinkedList::new));
-                String last = collect.getLast();
                 if (collect.size() != 3) {
                     pdkAPIBuildNumber.set(0);
-                } else if (last.contains("-SNAPSHOT")) {
-                    String temp = StringUtils.replace(last, "-SNAPSHOT", "");
-                    if (temp.chars().allMatch(Character::isDigit)) {
-                        pdkAPIBuildNumber.set(Integer.parseInt(temp));
+                } else {
+                    String temp = version.replace("-SNAPSHOT", "").replace("-RELEASE", "").replace(".", "");
+                    try {
+                        pdkAPIBuildNumber.set(Integer.parseInt(temp) - 120);
+                    } catch (NumberFormatException e) {
+                        pdkAPIBuildNumber.set(0);
                     }
-                } else if (last.contains("-RELEASE")) {
-                    String temp = StringUtils.replace(last, "-RELEASE", "");
-                    if (temp.chars().allMatch(Character::isDigit)) {
-                        pdkAPIBuildNumber.set(Integer.parseInt(temp));
-                    }
-                } else if (last.chars().allMatch(Character::isDigit)) {
-                    pdkAPIBuildNumber.set(Integer.parseInt(last));
                 }
             });
         }, "");
