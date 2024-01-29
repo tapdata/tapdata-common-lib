@@ -64,7 +64,6 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 	private Class<?> documentClass;
 	private Method documentParseMethod;
 	private Constructor objectIdConstructor;
-	private Method documentToJsonMethod;
 	@Bean
 	private JsonParser jsonParser;
 
@@ -101,6 +100,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 		}
 		dos.writeByte(HAS_VALUE);
 		String name = obj.getClass().getName();
+		Method documentToJsonMethod = null;
 		switch (name) {
 			case "org.bson.Document":
 				if(documentToJsonMethod == null) {
