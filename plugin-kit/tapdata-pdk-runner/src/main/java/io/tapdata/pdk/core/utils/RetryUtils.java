@@ -67,7 +67,8 @@ public class RetryUtils extends CommonUtils {
 				if (doRetry) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
-					invoker.getClearFunctionRetry().run();
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
+					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
 				}
 				break;
 			} catch (Throwable errThrowable) {
@@ -104,6 +105,9 @@ public class RetryUtils extends CommonUtils {
 					boolean needDefaultRetry = needDefaultRetry(errThrowable);
 					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(method, message, errThrowable, errorHandleFunction, functionAndContext.tapConnectionContext());
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
+					if (!doRetry) {
+						Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
+					}
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(node, method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
@@ -119,10 +123,10 @@ public class RetryUtils extends CommonUtils {
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
 					if (null != invoker.getStartRetry()) {
 						invoker.getStartRetry().run();
-						invoker.getSignFunctionRetry().run();
 					}
 					doRetry = true;
 				} else {
+                    Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
 			}
@@ -158,9 +162,8 @@ public class RetryUtils extends CommonUtils {
 				if (doRetry) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
-					if (null != invoker.getClearFunctionRetry()){
-						invoker.getClearFunctionRetry().run();
-					}
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
+					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
 				}
 				break;
 			} catch (Throwable errThrowable) {
@@ -169,6 +172,9 @@ public class RetryUtils extends CommonUtils {
 					boolean needDefaultRetry = needDefaultRetry(errThrowable);
 					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(errThrowable);
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
+					if (!doRetry) {
+						Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
+					}
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
@@ -184,10 +190,10 @@ public class RetryUtils extends CommonUtils {
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
 					if (null != invoker.getStartRetry()) {
 						invoker.getStartRetry().run();
-						invoker.getSignFunctionRetry().run();
 					}
 					doRetry = true;
 				} else {
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
 			}
