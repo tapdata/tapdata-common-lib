@@ -6,7 +6,6 @@ import io.tapdata.exception.TapCodeException;
 import io.tapdata.pdk.apis.functions.PDKMethod;
 import io.tapdata.pdk.apis.functions.connection.RetryOptions;
 import io.tapdata.pdk.core.entity.params.PDKMethodInvoker;
-import io.tapdata.pdk.core.error.TapPdkRunnerUnknownException;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.RetryUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -15,13 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
 
 public class RetryUtilsTest {
     @Nested
@@ -88,17 +86,16 @@ public class RetryUtilsTest {
     }
     @Nested
     class FunctionRetryFlagTest {
-        @DisplayName("need retry exception retry succeed")
+        @DisplayName("need retry exception, retry succeed")
         @Test
-        void test1() throws Throwable {
+        void test1() {
             PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
-            AtomicInteger i= new AtomicInteger();
+            AtomicInteger i = new AtomicInteger();
             CommonUtils.AnyError runnable = () -> {
                 if (i.getAndIncrement() == 0) {
                     throw new IOException();
                 }
             };
-//            CommonUtils.AnyError runnable = mock(CommonUtils.AnyError.class);
             Runnable signFunction = mock(Runnable.class);
             Runnable cleanFunction = mock(Runnable.class);
             PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
@@ -106,10 +103,47 @@ public class RetryUtilsTest {
                     .cleanFunctionRetry(cleanFunction)
                     .retryPeriodSeconds(5L)
                     .retryTimes(1L);
-//            doThrow(new IOException()).when(runnable).run();
             RetryUtils.autoRetry(pdkMethod, invoker);
-            verify(signFunction,times(1)).run();
-            verify(cleanFunction,times(1)).run();
+            verify(signFunction, times(1)).run();
+            verify(cleanFunction, times(1)).run();
+        }
+
+        @DisplayName("don't need retry exception,throw exception")
+        @Test
+        void test2() throws Throwable {
+            PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
+            CommonUtils.AnyError runnable = mock(CommonUtils.AnyError.class);
+            Runnable signFunction = mock(Runnable.class);
+            Runnable cleanFunction = mock(Runnable.class);
+            PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
+                    .signFunctionRetry(signFunction)
+                    .cleanFunctionRetry(cleanFunction)
+                    .retryPeriodSeconds(5L)
+                    .retryTimes(1L);
+            doThrow(new Exception()).when(runnable).run();
+            assertThrows(Exception.class, () -> {
+                RetryUtils.autoRetry(pdkMethod, invoker);
+            });
+        }
+
+        @DisplayName("need retry exception, no retry succeed")
+        @Test
+        void test3() throws Throwable {
+            PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
+            CommonUtils.AnyError runnable = mock(CommonUtils.AnyError.class);
+            Runnable signFunction = mock(Runnable.class);
+            Runnable cleanFunction = mock(Runnable.class);
+            PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
+                    .signFunctionRetry(signFunction)
+                    .cleanFunctionRetry(cleanFunction)
+                    .retryPeriodSeconds(5L)
+                    .retryTimes(1L);
+            doThrow(new IOException()).when(runnable).run();
+            assertThrows(Exception.class, () -> {
+                RetryUtils.autoRetry(pdkMethod, invoker);
+            });
+            verify(signFunction, times(1)).run();
+            verify(cleanFunction, times(1)).run();
         }
 
     }
