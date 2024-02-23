@@ -1,7 +1,7 @@
 package io.tapdata.entity.codec.impl.utils;
 
 import io.tapdata.entity.schema.value.DateTime;
-import io.tapdata.entity.simplify.pretty.ClassHandlers;
+import io.tapdata.entity.simplify.pretty.ClassHandlersV2;
 
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 public class AnyTimeToDateTime {
-    private static final ClassHandlers classHandlers = new ClassHandlers();
+    private static final ClassHandlersV2 classHandlers = new ClassHandlersV2();
 
     static {
         classHandlers.register(Date.class, DateTime::new);

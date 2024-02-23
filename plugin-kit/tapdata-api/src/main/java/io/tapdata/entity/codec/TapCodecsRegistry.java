@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TapCodecsRegistry {
-    private final Map<Class<?>, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
+    private final Map<String, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<?>, String> tapTypeDataTypeMap = new ConcurrentHashMap<>();
 
@@ -23,12 +23,12 @@ public class TapCodecsRegistry {
     }
 
     public <T extends TapValue<?, ?>> TapCodecsRegistry registerToTapValue(Class<?> anyClass, ToTapValueCodec<T> toTapValueCodec) {
-        classToTapValueCodecMap.put(anyClass, toTapValueCodec);
+        classToTapValueCodecMap.put(anyClass.getName(), toTapValueCodec);
         return this;
     }
 
     public void unregisterToTapValue(Class<?> anyClass) {
-        classToTapValueCodecMap.remove(anyClass);
+        classToTapValueCodecMap.remove(anyClass.getName());
     }
 
     public <T extends TapValue<?, ?>> boolean isRegisteredFromTapValue(Class<T> tapValueClass) {
@@ -65,7 +65,7 @@ public class TapCodecsRegistry {
 //    }
 
     public ToTapValueCodec<?> getCustomToTapValueCodec(Class<?> clazz) {
-        ToTapValueCodec<?> codec = classToTapValueCodecMap.get(clazz);
+        ToTapValueCodec<?> codec = classToTapValueCodecMap.get(clazz.getName());
         return codec;
     }
 
