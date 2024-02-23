@@ -14,10 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.internal.verification.Times;
-
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
 
 public class RetryUtilsTest {
     @Nested
@@ -81,5 +83,68 @@ public class RetryUtilsTest {
                 assertEquals(false, actual.isNeedRetry());
             }
         }
+    }
+    @Nested
+    class FunctionRetryFlagTest {
+        @DisplayName("need retry exception, retry succeed")
+        @Test
+        void test1() {
+            PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
+            AtomicInteger i = new AtomicInteger();
+            CommonUtils.AnyError runnable = () -> {
+                if (i.getAndIncrement() == 0) {
+                    throw new IOException();
+                }
+            };
+            Runnable signFunction = mock(Runnable.class);
+            Runnable cleanFunction = mock(Runnable.class);
+            PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
+                    .signFunctionRetry(signFunction)
+                    .clearFunctionRetry(cleanFunction)
+                    .retryPeriodSeconds(5L)
+                    .retryTimes(1L);
+            RetryUtils.autoRetry(pdkMethod, invoker);
+            verify(signFunction, times(1)).run();
+            verify(cleanFunction, times(1)).run();
+        }
+
+        @DisplayName("don't need retry exception,throw exception")
+        @Test
+        void test2() throws Throwable {
+            PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
+            CommonUtils.AnyError runnable = mock(CommonUtils.AnyError.class);
+            Runnable signFunction = mock(Runnable.class);
+            Runnable cleanFunction = mock(Runnable.class);
+            PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
+                    .signFunctionRetry(signFunction)
+                    .clearFunctionRetry(cleanFunction)
+                    .retryPeriodSeconds(5L)
+                    .retryTimes(1L);
+            doThrow(new Exception()).when(runnable).run();
+            assertThrows(Exception.class, () -> {
+                RetryUtils.autoRetry(pdkMethod, invoker);
+            });
+        }
+
+        @DisplayName("need retry exception, no retry succeed")
+        @Test
+        void test3() throws Throwable {
+            PDKMethod pdkMethod = PDKMethod.TARGET_WRITE_RECORD;
+            CommonUtils.AnyError runnable = mock(CommonUtils.AnyError.class);
+            Runnable signFunction = mock(Runnable.class);
+            Runnable cleanFunction = mock(Runnable.class);
+            PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
+                    .signFunctionRetry(signFunction)
+                    .clearFunctionRetry(cleanFunction)
+                    .retryPeriodSeconds(5L)
+                    .retryTimes(1L);
+            doThrow(new IOException()).when(runnable).run();
+            assertThrows(Exception.class, () -> {
+                RetryUtils.autoRetry(pdkMethod, invoker);
+            });
+            verify(signFunction, times(1)).run();
+            verify(cleanFunction, times(1)).run();
+        }
+
     }
 }
