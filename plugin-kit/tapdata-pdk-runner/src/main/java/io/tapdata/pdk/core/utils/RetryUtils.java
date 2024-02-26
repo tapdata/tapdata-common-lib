@@ -67,7 +67,7 @@ public class RetryUtils extends CommonUtils {
 				if (doRetry) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
-					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
 				}
 				break;
@@ -126,7 +126,7 @@ public class RetryUtils extends CommonUtils {
 					}
 					doRetry = true;
 				} else {
-                    Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
+                    Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
 			}
@@ -162,7 +162,7 @@ public class RetryUtils extends CommonUtils {
 				if (doRetry) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
-					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
 				}
 				break;
@@ -193,7 +193,7 @@ public class RetryUtils extends CommonUtils {
 					}
 					doRetry = true;
 				} else {
-					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
+					Optional.ofNullable(invoker.getCleanFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
 			}

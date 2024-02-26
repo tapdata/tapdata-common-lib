@@ -34,10 +34,10 @@ public class PDKMethodInvoker {
 	private Runnable resetRetry;
     private boolean enableSkipErrorEvent;
     private Runnable signFunctionRetry;
-    private Runnable clearFunctionRetry;
+    private Runnable cleanFunctionRetry;
 
-    public PDKMethodInvoker clearFunctionRetry(Runnable clearFunctionRetry) {
-        this.clearFunctionRetry = clearFunctionRetry;
+    public PDKMethodInvoker cleanFunctionRetry(Runnable clearFunctionRetry) {
+        this.cleanFunctionRetry = cleanFunctionRetry;
         return this;
     }
 
@@ -207,7 +207,7 @@ public class PDKMethodInvoker {
         return signFunctionRetry;
     }
 
-    public Runnable getClearFunctionRetry() {
-        return clearFunctionRetry;
+    public Runnable getCleanFunctionRetry() {
+        return cleanFunctionRetry;
     }
 }
