@@ -173,6 +173,7 @@ public class RetryUtils extends CommonUtils {
 					if (!doRetry) {
 						Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
 					}
+					Optional.ofNullable(invoker.getStartRetry()).ifPresent(Runnable::run);
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
@@ -186,9 +187,6 @@ public class RetryUtils extends CommonUtils {
 						}
 					}
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
-					if (null != invoker.getStartRetry()) {
-						invoker.getStartRetry().run();
-					}
 					doRetry = true;
 				} else {
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
