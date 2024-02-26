@@ -22,7 +22,7 @@
 		<proxy.file.name>${project.artifactId}-v${project.version}</proxy.file.name>
 		<connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
 		<java.version>8</java.version>
-		<tapdata.pdk.runner.verison>1.6-SNAPSHOT</tapdata.pdk.runner.verison>
+		<tapdata.pdk.runner.verison>1.5-SNAPSHOT</tapdata.pdk.runner.verison>
 		<tapdata.api.verison>1.3.2-SNAPSHOT</tapdata.api.verison>
 		<tapdata.pdk.api.verison>1.3.2-SNAPSHOT</tapdata.pdk.api.verison>
 		<tapdata.pdk.connector.core.version>1.0-SNAPSHOT</tapdata.pdk.connector.core.version>
