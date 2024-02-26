@@ -36,7 +36,7 @@ public class PDKMethodInvoker {
     private Runnable signFunctionRetry;
     private Runnable cleanFunctionRetry;
 
-    public PDKMethodInvoker cleanFunctionRetry(Runnable clearFunctionRetry) {
+    public PDKMethodInvoker cleanFunctionRetry(Runnable cleanFunctionRetry) {
         this.cleanFunctionRetry = cleanFunctionRetry;
         return this;
     }

@@ -100,7 +100,7 @@ public class RetryUtilsTest {
             Runnable cleanFunction = mock(Runnable.class);
             PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
                     .signFunctionRetry(signFunction)
-                    .clearFunctionRetry(cleanFunction)
+                    .cleanFunctionRetry(cleanFunction)
                     .retryPeriodSeconds(5L)
                     .retryTimes(1L);
             RetryUtils.autoRetry(pdkMethod, invoker);
@@ -117,7 +117,7 @@ public class RetryUtilsTest {
             Runnable cleanFunction = mock(Runnable.class);
             PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
                     .signFunctionRetry(signFunction)
-                    .clearFunctionRetry(cleanFunction)
+                    .cleanFunctionRetry(cleanFunction)
                     .retryPeriodSeconds(5L)
                     .retryTimes(1L);
             doThrow(new Exception()).when(runnable).run();
@@ -135,7 +135,7 @@ public class RetryUtilsTest {
             Runnable cleanFunction = mock(Runnable.class);
             PDKMethodInvoker invoker = PDKMethodInvoker.create().runnable(runnable)
                     .signFunctionRetry(signFunction)
-                    .clearFunctionRetry(cleanFunction)
+                    .cleanFunctionRetry(cleanFunction)
                     .retryPeriodSeconds(5L)
                     .retryTimes(1L);
             doThrow(new IOException()).when(runnable).run();
