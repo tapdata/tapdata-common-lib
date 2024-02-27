@@ -50,6 +50,6 @@ public class TapCodeException extends TapRuntimeException {
 
     @Override
     public String toString() {
-        return getMessage();
+        return super.getMessage();
     }
 }
