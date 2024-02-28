@@ -4,8 +4,10 @@ import io.tapdata.entity.codec.filter.EntryFilter;
 import io.tapdata.entity.codec.filter.MapIteratorEx;
 import io.tapdata.entity.codec.filter.StopFilterException;
 
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * {
@@ -87,17 +89,17 @@ public class AllLayerMapIterator implements MapIteratorEx {
         }
         try {
             Set<Map.Entry<String, Object>> entrySet = map.entrySet();
-            for(Map.Entry<String, Object> entry : entrySet) {
+            for (Map.Entry<String, Object> entry : entrySet) {
                 Object value = entry.getValue();
-                if(value instanceof Map) {
+                if (value instanceof Map) {
                     iterateWithPrefix(entry.getKey() + MAP_KEY_SEPARATOR, (Map<String, Object>) value, filter);
-                } else if(value instanceof Collection) {
+                } else if (value instanceof Collection) {
                     Collection<Object> newList = new ArrayList<>();
                     iterateListWithPrefix(entry.getKey() + ARRAY_KEY_SEPARATOR, (Collection<Object>) value, newList, filter);
                     entry.setValue(newList);
                 }
                 Object newValue = filter.filter(entry.getKey(), entry.getValue(), false);
-                if(newValue != null) {
+                if (newValue != null) {
                     entry.setValue(newValue);
                 }
             }
