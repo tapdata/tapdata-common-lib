@@ -70,6 +70,9 @@ public class TapTable extends TapItem<TapField> {
 
 	private Map<String, Object> tableAttr;
 
+	private Collection<String> primaryKeys;
+	private final int[] primaryKeyLock = new int[0];
+
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;
 		return this;
@@ -142,39 +145,45 @@ public class TapTable extends TapItem<TapField> {
 
 	public Collection<String> primaryKeys(boolean isLogic) {
 		if (isLogic) {
-			if (null != logicPrimaries && logicPrimaries.size() > 0) return logicPrimaries;
-		}
-		LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
-		if (nameFieldMapCopyRef == null)
-			return Collections.emptyList();
-
-		Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
-		for (String key : nameFieldMapCopyRef.keySet()) {
-			TapField field = nameFieldMapCopyRef.get(key);
-			if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
-					|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
-				posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
-			}
+			if (null != logicPrimaries && !logicPrimaries.isEmpty()) return logicPrimaries;
 		}
 
-		if (!posPrimaryKeyName.isEmpty())
-			return posPrimaryKeyName.values();
+		synchronized (this.primaryKeyLock) {
+			if (null != primaryKeys) {
+				return primaryKeys;
+			} else {
+				this.primaryKeys = new ArrayList<>();
+				LinkedHashMap<String, TapField> nameFieldMapCopyRef = new LinkedHashMap<>(this.nameFieldMap);
+				if (nameFieldMapCopyRef.isEmpty())
+					return Collections.emptyList();
 
-		if (isLogic) {
-			if (indexList != null) {
-				List<String> primaryKeys = new ArrayList<>();
-				for (TapIndex tapIndex : indexList) {
-					if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
-						for (TapIndexField indexField : tapIndex.getIndexFields()) {
-							primaryKeys.add(indexField.getName());
-						}
-						break;
+				for (String key : nameFieldMapCopyRef.keySet()) {
+					TapField field = nameFieldMapCopyRef.get(key);
+					if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
+							|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
+						this.primaryKeys.add(field.getName());
 					}
 				}
-				if (!primaryKeys.isEmpty())
-					return primaryKeys;
+				if (!this.primaryKeys.isEmpty())
+					return this.primaryKeys;
+
+				if (isLogic) {
+					if (indexList != null) {
+						for (TapIndex tapIndex : indexList) {
+							if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+								for (TapIndexField indexField : tapIndex.getIndexFields()) {
+									this.primaryKeys.add(indexField.getName());
+								}
+								break;
+							}
+						}
+						if (!this.primaryKeys.isEmpty())
+							return primaryKeys;
+					}
+				}
 			}
 		}
+
 		return Collections.emptyList();
 	}
 
