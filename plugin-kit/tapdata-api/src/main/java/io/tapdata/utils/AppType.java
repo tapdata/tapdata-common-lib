@@ -11,6 +11,8 @@ public enum AppType {
 	DRS, DFS, DAAS,
 	;
 
+	private static final String ARGS_NAME = "app_type";
+
 	public boolean isDrs() {
 		return DRS == this;
 	}
@@ -43,21 +45,27 @@ public enum AppType {
 	private static AppType init() {
 		String appTypeStr;
 		if (UnitTestUtils.isTesting()) {
-			appTypeStr = System.getProperty("app_type", AppType.DAAS.name());
+			appTypeStr = System.getenv(ARGS_NAME);
+			if (null == appTypeStr) {
+				appTypeStr = System.getProperty(ARGS_NAME, AppType.DAAS.name());
+			}
 		} else {
-			appTypeStr = System.getProperty("app_type", "");
+			appTypeStr = System.getenv(ARGS_NAME);
+			if (null == appTypeStr) {
+				appTypeStr = System.getProperty(ARGS_NAME, "");
+			}
 		}
 
 		appTypeStr = appTypeStr.trim().toUpperCase();
 		if (appTypeStr.isEmpty()) {
-			throw new RuntimeException("app_type is blank");
+			throw new RuntimeException(ARGS_NAME + " is blank");
 		}
 
 		AppType appType;
 		try {
 			appType = AppType.valueOf(appTypeStr);
 		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("nonsupport app_type: " + appTypeStr);
+			throw new RuntimeException("nonsupport " + ARGS_NAME + ": " + appTypeStr);
 		}
 		return appType;
 	}
