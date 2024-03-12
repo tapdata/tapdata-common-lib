@@ -31,7 +31,7 @@ public class TestItem {
 //    public static final String ITEM_WRITE = "Check Write privilege";
     public static final String ITEM_READ_LOG = "Read log";
 
-    public static final String ITEM_TIME_DIFFERENCE = "Time detection";
+    public static final String ITEM_TIME_DETECTION = "Time detection";
 
     public TestItem(String item, int result, String information) {
         this.item = item;
