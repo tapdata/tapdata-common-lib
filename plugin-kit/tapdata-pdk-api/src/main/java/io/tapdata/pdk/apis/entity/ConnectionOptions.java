@@ -80,6 +80,7 @@ public class ConnectionOptions {
     private TimeZone timeZone;
     private String charset;
     private String dbVersion;
+    private Long timeDifference;
     public ConnectionOptions charset(String charset) {
         this.charset = charset;
         return this;
@@ -187,5 +188,13 @@ public class ConnectionOptions {
 
     public void setDbVersion(String dbVersion) {
         this.dbVersion = dbVersion;
+    }
+
+    public Long getTimeDifference() {
+        return timeDifference;
+    }
+
+    public void setTimeDifference(Long timeDifference) {
+        this.timeDifference = timeDifference;
     }
 }
