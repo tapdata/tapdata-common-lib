@@ -8,5 +8,5 @@ import io.tapdata.pdk.apis.functions.connector.common.vo.TapHashResult;
 import java.util.function.Consumer;
 
 public interface QueryHashByAdvanceFilterFunction {
-    public void query(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<TapHashResult> consumer) throws Throwable;
+    public void query(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<TapHashResult<String>> consumer) throws Throwable;
 }
