@@ -187,6 +187,12 @@ public class TapTable extends TapItem<TapField> {
 		return Collections.emptyList();
 	}
 
+	public void refreshPrimaryKeys() {
+		synchronized (this.primaryKeyLock) {
+			primaryKeys = null;
+		}
+	}
+
 	public TapIndexEx getPartitionIndex() {
 		return partitionIndex();
 	}
