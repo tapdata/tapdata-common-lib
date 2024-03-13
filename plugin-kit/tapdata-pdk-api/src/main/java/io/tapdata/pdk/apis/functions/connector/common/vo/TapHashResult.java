@@ -1,22 +1,22 @@
 package io.tapdata.pdk.apis.functions.connector.common.vo;
 
-public class TapHashResult {
-    protected Long hash;
+public class TapHashResult<T> {
+    protected T hash;
     private TapHashResult() { }
 
-    public static TapHashResult create() {
-        return new TapHashResult();
+    public static TapHashResult<String> create() {
+        return new TapHashResult<>();
     }
 
-    public Long getHash() {
+    public T getHash() {
         return hash;
     }
 
-    public void setHash(Long hash) {
+    public void setHash(T hash) {
         this.hash = hash;
     }
 
-    public TapHashResult withHash(Long hash) {
+    public TapHashResult<T> withHash(T hash) {
         this.hash = hash;
         return this;
     }
