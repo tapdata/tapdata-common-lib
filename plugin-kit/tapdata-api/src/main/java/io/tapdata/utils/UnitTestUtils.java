@@ -1,5 +1,7 @@
 package io.tapdata.utils;
 
+import java.lang.reflect.Field;
+
 /**
  * 单测工具
  *
@@ -34,5 +36,15 @@ public class UnitTestUtils {
 		}
 
 		return isTesting;
+	}
+
+	public static <T> void injectField(Class<T> clz, T ins, String field, Object value) {
+		try {
+			Field declaredField = clz.getDeclaredField(field);
+			declaredField.setAccessible(true);
+			declaredField.set(ins, value);
+		} catch (Exception e) {
+			throw new RuntimeException("Inject value to " + clz.getSimpleName() + "." + field + " failed", e);
+		}
 	}
 }
