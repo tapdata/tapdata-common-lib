@@ -8,6 +8,7 @@ import io.tapdata.pdk.apis.entity.Capability;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.functions.connection.GetTableNamesFunction;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
+import io.tapdata.pdk.apis.functions.connector.common.QueryHashByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
@@ -66,6 +67,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected TransactionCommitFunction transactionCommitFunction;
     protected TransactionRollbackFunction transactionRollbackFunction;
     protected GetCurrentTimestampFunction getCurrentTimestampFunction;
+
+    //hash verification for the time field in the custom query filtering in data verification
+    protected QueryHashByAdvanceFilterFunction queryHashByAdvanceFilterFunction;
 
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
         transactionBeginFunction = function;
@@ -344,6 +348,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
+    public ConnectorFunctions supportQueryHashByAdvanceFilterFunction(QueryHashByAdvanceFilterFunction function) {
+        this.queryHashByAdvanceFilterFunction = function;
+        return this;
+    }
+
     public WriteRecordFunction getWriteRecordFunction() {
         return writeRecordFunction;
     }
@@ -482,5 +491,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public GetCurrentTimestampFunction getGetCurrentTimestampFunction() {
         return getCurrentTimestampFunction;
+    }
+
+    public QueryHashByAdvanceFilterFunction getQueryHashByAdvanceFilterFunction() {
+        return queryHashByAdvanceFilterFunction;
     }
 }
