@@ -135,15 +135,17 @@ public class RetryUtils extends CommonUtils {
 		if (!needDefaultRetry) {
 			throwIfNeed(invoker, retryOptions, message, errThrowable);
 		}
-		String serverErrorCode;
+		String errorCode;
 		if (errThrowable instanceof TapPdkBaseException) {
-			serverErrorCode = ((TapPdkBaseException) errThrowable).getServerErrorCode();
+			errorCode = ((TapPdkBaseException) errThrowable).getServerErrorCode();
+		} else if (errThrowable instanceof TapCodeException) {
+			errorCode = ((TapCodeException) errThrowable).getCode();
 		} else {
-			serverErrorCode = "null";
+			errorCode = "null";
 		}
 		Optional.ofNullable(invoker.getLogListener())
 				.ifPresent(log -> log.warn(String.format(LOG_PREFIX + "Method (%s) encountered an error, triggering auto retry.\n - Error code: %s, message: %s\n - Remaining retry %s time(s)\n - Period %s second(s)",
-						method.name().toLowerCase(), serverErrorCode, errThrowable.getMessage(), invoker.getRetryTimes(), retryPeriodSeconds)));
+						method.name().toLowerCase(), errorCode, errThrowable.getMessage(), invoker.getRetryTimes(), retryPeriodSeconds)));
 		invoker.setRetryTimes(retryTimes - 1);
 	}
 
