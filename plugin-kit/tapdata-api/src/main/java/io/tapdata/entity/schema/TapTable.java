@@ -157,8 +157,8 @@ public class TapTable extends TapItem<TapField> {
 				LinkedHashMap<String, TapField> nameFieldMapCopyRef = new LinkedHashMap<>(this.nameFieldMap);
 				if (nameFieldMapCopyRef.isEmpty())
 					return Collections.emptyList();
-
-				for (TapField field : nameFieldMapCopyRef.entrySet().stream().sorted(Comparator.nullsLast(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos()))).filter(Objects::nonNull).map(Map.Entry::getValue).collect(Collectors.toList())) {
+				for (TapField field : nameFieldMapCopyRef.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos(),Comparator.nullsLast(Integer::compareTo)))
+						.filter(Objects::nonNull).map(Map.Entry::getValue).collect(Collectors.toList())) {
 					if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
 							|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
 						this.primaryKeys.add(field.getName());
