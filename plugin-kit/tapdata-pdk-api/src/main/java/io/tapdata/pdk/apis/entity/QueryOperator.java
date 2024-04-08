@@ -15,6 +15,8 @@ public class QueryOperator implements Serializable {
     private Object value;
     private int operator;
 
+    private Object originalValue;
+
     public QueryOperator() {
 
     }
@@ -67,6 +69,14 @@ public class QueryOperator implements Serializable {
 
     public String toString() {
         return toString("");
+    }
+
+    public Object getOriginalValue() {
+        return originalValue;
+    }
+
+    public void setOriginalValue(Object originalValue) {
+        this.originalValue = originalValue;
     }
 
     public String toString(String quote) {
