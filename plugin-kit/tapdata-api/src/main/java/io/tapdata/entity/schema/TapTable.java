@@ -174,8 +174,8 @@ public class TapTable extends TapItem<TapField> {
 				}
 				if (nameFieldMapCopyRef.isEmpty())
 					return Collections.emptyList();
-				for (TapField field : nameFieldMapCopyRef.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos(),Comparator.nullsLast(Integer::compareTo)))
-						.filter(Objects::nonNull).map(Map.Entry::getValue).collect(Collectors.toList())) {
+				for (TapField field : nameFieldMapCopyRef.entrySet().stream().filter(v -> Objects.nonNull(v.getValue().getPrimaryKeyPos()))
+						.sorted(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos())).map(Map.Entry::getValue).collect(Collectors.toList())) {
 					if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
 							|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
 						this.primaryKeys.add(field.getName());
