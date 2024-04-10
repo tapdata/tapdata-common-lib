@@ -55,4 +55,11 @@ public class ValueChange<T> {
             valueChange.after = after;
         }
     }
+    @Override
+    public String toString() {
+        return "ValueChange{" +
+                "before=" + before +
+                ", after=" + after +
+                '}';
+    }
 }
