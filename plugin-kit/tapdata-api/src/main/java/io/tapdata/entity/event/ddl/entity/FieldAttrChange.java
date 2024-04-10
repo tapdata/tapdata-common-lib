@@ -46,4 +46,10 @@ public class FieldAttrChange<T> extends ValueChange<T> {
         this.name = name;
     }
 
+    @Override
+    public String toString() {
+        return "FieldAttrChange{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }
