@@ -39,6 +39,7 @@ public class ConnectionOptions {
     public static final String DML_INSERT_POLICY = "dml_insert_policy";
     public static final String DML_INSERT_POLICY_UPDATE_ON_EXISTS = "update_on_exists";
     public static final String DML_INSERT_POLICY_IGNORE_ON_EXISTS = "ignore_on_exists";
+    public static final String DML_INSERT_POLICY_JUST_INSERT = "just_insert";
     public static final String DML_UPDATE_POLICY = "dml_update_policy";
     public static final String DML_UPDATE_POLICY_IGNORE_ON_NON_EXISTS = "ignore_on_nonexists";
     public static final String DML_UPDATE_POLICY_INSERT_ON_NON_EXISTS = "insert_on_nonexists";
