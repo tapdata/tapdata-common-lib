@@ -61,8 +61,6 @@ public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
                                                 ).build()
                                         )
                         );
-                SimpleScriptContext scriptContext = new SimpleScriptContext();
-                scriptEngine.setContext(scriptContext);
             } else {
                 scriptEngine = new ScriptEngineManager().getEngineByName(jsEngineEnum.engineName());
             }
