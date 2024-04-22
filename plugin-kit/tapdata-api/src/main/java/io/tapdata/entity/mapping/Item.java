@@ -93,7 +93,7 @@ public class Item {
                     if(stillCleanPrefix) stillCleanPrefix = false;
                     if(!inVariableChars) { // if not in variable, then start
                         inVariableChars = true;
-                        builder.append("(.*)"); // replace with regex
+                        builder.append("([^, ]*)"); // replace with regex
                         optionCounter.incrementAndGet();
                         continue;
                     }
