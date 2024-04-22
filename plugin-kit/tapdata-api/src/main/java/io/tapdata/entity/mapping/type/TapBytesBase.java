@@ -25,14 +25,23 @@ public abstract class TapBytesBase extends TapMapping {
     protected Integer byteRatio;
 
     protected Long getFromTapTypeBytes(Long comingBytes, Integer comingByteRatio) {
-//        if(this.byteRatio == 1)
-//            return bytes;
-//        // 14 / 8 = 2, 14 / 7 = 2
-//        return (bytes / this.byteRatio + ((bytes % this.byteRatio) > 0 ? 1 : 0));
-        if(byteRatio == null && comingByteRatio != null) {
-            return comingBytes * comingByteRatio;
-        }
-        return comingBytes;
+			if (null == comingByteRatio) {
+				// char(comingBytes) --> char(comingBytes)
+				if (null == this.byteRatio) return comingBytes;
+
+				// char(comingBytes) --> byte(comingBytes*this.byteRatio)
+				return comingBytes * this.byteRatio;
+			}
+
+			// byte(comingBytes) --> char(comingBytes)
+			if (null == this.byteRatio) return comingBytes;
+
+			// byte(comingBytes) --> byte(comingBytes*comingByteRatio/this.byteRatio+%pad)
+			long results = comingBytes * comingByteRatio;
+			if (results % this.byteRatio > 0) {
+				return results / this.byteRatio + 1;
+			}
+			return results / this.byteRatio;
     }
 
     protected Long getToTapTypeBytes(Map<String, String> params) {
