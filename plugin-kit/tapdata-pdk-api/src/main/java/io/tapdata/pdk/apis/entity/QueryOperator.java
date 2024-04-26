@@ -17,6 +17,15 @@ public class QueryOperator implements Serializable {
 
     private Object originalValue;
 
+    private Boolean fastQuery = false;
+
+    private Long number;
+
+    private TimeForm form;
+
+    private TimeUnit unit;
+
+
     public QueryOperator() {
 
     }
@@ -77,6 +86,38 @@ public class QueryOperator implements Serializable {
 
     public void setOriginalValue(Object originalValue) {
         this.originalValue = originalValue;
+    }
+
+    public boolean isFastQuery() {
+        return fastQuery;
+    }
+
+    public void setFastQuery(boolean fastQuery) {
+        this.fastQuery = fastQuery;
+    }
+
+    public Long getNumber() {
+        return number;
+    }
+
+    public void setNumber(Long number) {
+        this.number = number;
+    }
+
+    public TimeForm getForm() {
+        return form;
+    }
+
+    public void setForm(TimeForm form) {
+        this.form = form;
+    }
+
+    public TimeUnit getUnit() {
+        return unit;
+    }
+
+    public void setUnit(TimeUnit unit) {
+        this.unit = unit;
     }
 
     public String toString(String quote) {
