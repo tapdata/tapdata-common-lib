@@ -21,9 +21,9 @@ public class QueryOperator implements Serializable {
 
     private Long number;
 
-    private TimeForm form;
+    private TapTimeForm form;
 
-    private TimeUnit unit;
+    private TapTimeUnit unit;
 
 
     public QueryOperator() {
@@ -104,19 +104,19 @@ public class QueryOperator implements Serializable {
         this.number = number;
     }
 
-    public TimeForm getForm() {
+    public TapTimeForm getForm() {
         return form;
     }
 
-    public void setForm(TimeForm form) {
+    public void setForm(TapTimeForm form) {
         this.form = form;
     }
 
-    public TimeUnit getUnit() {
+    public TapTimeUnit getUnit() {
         return unit;
     }
 
-    public void setUnit(TimeUnit unit) {
+    public void setUnit(TapTimeUnit unit) {
         this.unit = unit;
     }
 
