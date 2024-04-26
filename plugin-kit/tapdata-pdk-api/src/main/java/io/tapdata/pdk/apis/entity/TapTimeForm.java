@@ -1,5 +1,5 @@
 package io.tapdata.pdk.apis.entity;
 
-public enum TimeForm {
+public enum TapTimeForm {
     BEFORE,CURRENT
 }
