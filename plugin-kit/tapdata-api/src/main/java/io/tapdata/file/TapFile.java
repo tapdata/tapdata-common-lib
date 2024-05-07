@@ -1,8 +1,9 @@
 package io.tapdata.file;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class TapFile {
+public class TapFile implements Serializable {
     public static final int TYPE_FILE = 1;
     public static final int TYPE_DIRECTORY = 2;
     private Integer type;
