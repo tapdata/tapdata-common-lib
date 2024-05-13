@@ -14,6 +14,7 @@ public class TapPdkWriteLengthEx extends TapPdkBaseException {
 	private String targetFieldName;
 	private String targetFieldType;
 	private Object data;
+	private String dataClassName = "";
 
 	public TapPdkWriteLengthEx(String pdkId, String targetFieldName, String targetFieldType, Object data, Throwable cause) {
 		super(PDKExCode_10.WRITE_LENGTH_INVALID, pdkId, cause);
@@ -47,10 +48,13 @@ public class TapPdkWriteLengthEx extends TapPdkBaseException {
 
 	@Override
 	public String getMessage() {
+		if (data != null){
+			dataClassName = data.getClass().getName();
+		}
 		return String.format(
 				"Target length in %s does not match the incoming data when write record.\n - Target field: %s, type: %s\n - Data to be written: %s\n - Java type: %s",
 				pdkId, targetFieldName, targetFieldType,
-				data, data.getClass().getName()
+				data, dataClassName
 		);
 	}
 }
