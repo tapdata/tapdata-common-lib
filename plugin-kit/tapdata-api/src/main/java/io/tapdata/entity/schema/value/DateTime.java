@@ -60,11 +60,24 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * 时区 GMT+8
      */
     private TimeZone timeZone;
+    private String illegalDate;
+    public String getIllegalDate() {
+        return illegalDate;
+    }
+    public boolean isContainsIllegal() {
+        return containsIllegal;
+    }
+    private boolean containsIllegal = false;
 
     public DateTime() {
         originType = ORIGIN_TYPE_NONE;
     }
 
+    public DateTime(String illegalDate, int dateType) {
+        illegalDate = autofillWithZero(illegalDate, dateType);
+        this.illegalDate = illegalDate;
+        this.containsIllegal = true;
+    }
     public DateTime(ZonedDateTime zonedDateTime) {
         this(zonedDateTime.toInstant());
         timeZone = TimeZone.getTimeZone(zonedDateTime.getZone());
@@ -474,5 +487,35 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             long millis = Math.multiplyExact(seconds, 1000);
             return Math.addExact(millis, nano / 1000_000);
         }
+    }
+    public String autofillWithZero(String str, int dateType){
+        if(str == null) return null;
+        String[] split = str.split("-");
+        if (split.length < dateType) return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        autofill(split[0],4,stringBuilder);
+        stringBuilder.append("-");
+        autofill(split[1],2,stringBuilder);
+        stringBuilder.append("-");
+        autofill(split[2],2,stringBuilder);
+        if (dateType > 2){
+            stringBuilder.append(" ");
+            autofill(split[3],2,stringBuilder);
+            stringBuilder.append(":");
+            autofill(split[4],2,stringBuilder);
+            stringBuilder.append(":");
+            autofill(split[5],2,stringBuilder);
+        }
+        return stringBuilder.toString();
+    }
+    private StringBuilder autofill(String str, int i, StringBuilder stringBuilder){
+        if (str == null) return stringBuilder;
+        int length = str.length();
+        if (length == i){
+            stringBuilder.append(str);
+        }else {
+            stringBuilder.append(String.format("%0"+i+"d",Integer.parseInt(str)));
+        }
+        return stringBuilder;
     }
 }
