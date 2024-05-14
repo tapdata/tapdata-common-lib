@@ -3,6 +3,8 @@ package io.tapdata.entity.schema.value;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Date;
+
 public class DateTimeTest {
     @Test
     void autofillWithZeroTest(){
@@ -22,5 +24,12 @@ public class DateTimeTest {
         String actualYear = dateTime.autofillWithZero(year, DateTime.YEAR_TYPE);
         String exceptYear = "0001";
         Assertions.assertEquals(exceptYear,actualYear);
+    }
+    @Test
+    void testContainsIllegal(){
+        DateTime illegalDateTime = new DateTime("24-0-1", DateTime.DATE_TYPE);
+        Assertions.assertEquals(true,illegalDateTime.isContainsIllegal());
+        DateTime dateTime = new DateTime(new Date());
+        Assertions.assertEquals(false,dateTime.isContainsIllegal());
     }
 }
