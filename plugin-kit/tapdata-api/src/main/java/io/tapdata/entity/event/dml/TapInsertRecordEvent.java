@@ -13,9 +13,7 @@ import io.tapdata.entity.utils.io.DataOutputStreamEx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 import static io.tapdata.entity.simplify.TapSimplify.map;
 
@@ -26,6 +24,16 @@ public class TapInsertRecordEvent extends TapRecordEvent {
 	 * Value format should follow TapType formats
 	 */
 	private Map<String, Object> after;
+
+	public List<String> getAfterIllegalDateFieldName() {
+		return afterIllegalDateFieldName;
+	}
+
+	public void setAfterIllegalDateFieldName(List<String> afterIllegalDateFieldName) {
+		this.afterIllegalDateFieldName = afterIllegalDateFieldName;
+	}
+
+	private List<String> afterIllegalDateFieldName;
 
 	//Only for cache, should not be serialized
 	private Map<String, Object> filter;

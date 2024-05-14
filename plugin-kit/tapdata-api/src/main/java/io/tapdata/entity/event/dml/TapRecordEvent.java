@@ -25,16 +25,6 @@ public abstract class TapRecordEvent extends TapBaseEvent {
     protected String connectorVersion;
     protected boolean containsIllegalDate = false;
 
-    public List<String> getIllegalDateFiledName() {
-        return illegalDateFiledName;
-    }
-
-    public void setIllegalDateFiledName(List<String> illegalDateFiledName) {
-        this.illegalDateFiledName = illegalDateFiledName;
-    }
-
-    private List<String> illegalDateFiledName = new ArrayList<>();
-
     public TapRecordEvent(int type) {
         super(type);
     }
