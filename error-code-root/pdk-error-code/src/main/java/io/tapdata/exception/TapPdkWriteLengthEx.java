@@ -14,7 +14,6 @@ public class TapPdkWriteLengthEx extends TapPdkBaseException {
 	private String targetFieldName;
 	private String targetFieldType;
 	private Object data;
-	private String dataClassName = "";
 
 	public TapPdkWriteLengthEx(String pdkId, String targetFieldName, String targetFieldType, Object data, Throwable cause) {
 		super(PDKExCode_10.WRITE_LENGTH_INVALID, pdkId, cause);
@@ -48,6 +47,7 @@ public class TapPdkWriteLengthEx extends TapPdkBaseException {
 
 	@Override
 	public String getMessage() {
+		String dataClassName = "";
 		if (data != null){
 			dataClassName = data.getClass().getName();
 		}

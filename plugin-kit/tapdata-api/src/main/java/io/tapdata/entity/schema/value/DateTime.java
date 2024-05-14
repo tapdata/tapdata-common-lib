@@ -27,6 +27,10 @@ import java.util.TimeZone;
 
 public class DateTime implements Serializable, JavaCustomSerializer, Comparable<DateTime> {
     public static final int ORIGIN_TYPE_NONE = 1;
+    public static final String DATETIME_TYPE = "datetime";
+    public static final String DATE_TYPE = "date";
+    public static final String TIME_TYPE = "time";
+    public static final String YEAR_TYPE = "year";
     private static final int ORIGIN_TYPE_ZONED_DATE_TIME = 10;
     private static final int ORIGIN_TYPE_INSTANT = 20;
     private static final int ORIGIN_TYPE_DATE = 30;
@@ -73,7 +77,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         originType = ORIGIN_TYPE_NONE;
     }
 
-    public DateTime(String illegalDate, int dateType) {
+    public DateTime(String illegalDate, String dateType) {
         illegalDate = autofillWithZero(illegalDate, dateType);
         this.illegalDate = illegalDate;
         this.containsIllegal = true;
@@ -488,9 +492,33 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             return Math.addExact(millis, nano / 1000_000);
         }
     }
-    public String autofillWithZero(String str, int dateType){
+    public String autofillWithZero(String str, String dateType){
         if(str == null) return null;
+        StringBuilder stringBuilder = new StringBuilder();
         String[] split = str.split("-");
+        switch (dateType){
+            case DATETIME_TYPE:
+                stringBuilder.append(fill(split, 6));
+                break;
+            case DATE_TYPE:
+                stringBuilder.append(fill(split, 2));
+                break;
+            case TIME_TYPE:
+                if (split.length < 2) return null;
+                for (int i=0;i< split.length;i++){
+                    autofill(split[0],2, stringBuilder);
+                    if (i < split.length - 1){
+                        stringBuilder.append(":");
+                    }
+                }
+                break;
+            case YEAR_TYPE:
+                autofill(str,4, stringBuilder);
+                break;
+        }
+        return stringBuilder.toString();
+    }
+    public String fill(String[] split, int dateType){
         if (split.length < dateType) return null;
         StringBuilder stringBuilder = new StringBuilder();
         autofill(split[0],4,stringBuilder);
@@ -508,6 +536,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         }
         return stringBuilder.toString();
     }
+
     private StringBuilder autofill(String str, int i, StringBuilder stringBuilder){
         if (str == null) return stringBuilder;
         int length = str.length();

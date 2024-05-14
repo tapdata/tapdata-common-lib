@@ -8,11 +8,19 @@ public class DateTimeTest {
     void autofillWithZeroTest(){
         DateTime dateTime = new DateTime();
         String str = "24-0-1-0-0-0-0";
-        String actual = dateTime.autofillWithZero(str, 6);
+        String actual = dateTime.autofillWithZero(str, DateTime.DATETIME_TYPE);
         String except = "0024-00-01 00:00:00";
         Assertions.assertEquals(except,actual);
-        String actual1 = dateTime.autofillWithZero(str, 2);
-        String except1 = "0024-00-01";
-        Assertions.assertEquals(except1,actual1);
+        String actualDate = dateTime.autofillWithZero(str, DateTime.DATE_TYPE);
+        String exceptDate = "0024-00-01";
+        Assertions.assertEquals(exceptDate,actualDate);
+        String time = "0-0-0";
+        String actualTime = dateTime.autofillWithZero(time, DateTime.TIME_TYPE);
+        String exceptTime = "00:00:00";
+        Assertions.assertEquals(exceptTime,actualTime);
+        String year = "1";
+        String actualYear = dateTime.autofillWithZero(year, DateTime.YEAR_TYPE);
+        String exceptYear = "0001";
+        Assertions.assertEquals(exceptYear,actualYear);
     }
 }
