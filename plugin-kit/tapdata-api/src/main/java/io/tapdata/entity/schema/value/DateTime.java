@@ -492,7 +492,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             return Math.addExact(millis, nano / 1000_000);
         }
     }
-    public String autofillWithZero(String str, String dateType){
+    private String autofillWithZero(String str, String dateType){
         if(str == null) return null;
         StringBuilder stringBuilder = new StringBuilder();
         String[] split = str.split("-");
@@ -518,7 +518,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         }
         return stringBuilder.toString();
     }
-    public String fill(String[] split, int dateType){
+    private String fill(String[] split, int dateType){
         if (split.length < dateType) return null;
         StringBuilder stringBuilder = new StringBuilder();
         autofill(split[0],4,stringBuilder);
