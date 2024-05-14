@@ -44,6 +44,7 @@ public class ConnectionOptions {
     public static final String DML_UPDATE_POLICY_IGNORE_ON_NON_EXISTS = "ignore_on_nonexists";
     public static final String DML_UPDATE_POLICY_INSERT_ON_NON_EXISTS = "insert_on_nonexists";
     public static final String DML_UPDATE_POLICY_IGNORE_LOG_ON_NON_EXISTS = "log_on_nonexists";
+    public static final String DML_ILLEGAL_DATE_ACCEPTABLE = "illegal_date_acceptable";
 
     /**
      * Instance unique id to identify the same instance among multiple connections.
