@@ -49,6 +49,23 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 	private List<String> removedFields;
 
 	private Boolean isReplaceEvent = false;
+	private List<String> beforeIllegalDateFieldName;
+	private List<String> afterIllegalDateFieldName;
+	public List<String> getBeforeIllegalDateFieldName() {
+		return beforeIllegalDateFieldName;
+	}
+
+	public void setBeforeIllegalDateFieldName(List<String> beforeIllegalDateFieldName) {
+		this.beforeIllegalDateFieldName = beforeIllegalDateFieldName;
+	}
+
+	public List<String> getAfterIllegalDateFieldName() {
+		return afterIllegalDateFieldName;
+	}
+
+	public void setAfterIllegalDateFieldName(List<String> afterIllegalDateFieldName) {
+		this.afterIllegalDateFieldName = afterIllegalDateFieldName;
+	}
 
 	public TapUpdateRecordEvent() {
 		super(TYPE);
