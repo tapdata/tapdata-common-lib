@@ -28,8 +28,8 @@ public class DateTimeTest {
     @Test
     void testContainsIllegal(){
         DateTime illegalDateTime = new DateTime("24-0-1", DateTime.DATE_TYPE);
-        Assertions.assertEquals(true,illegalDateTime.isContainsIllegal());
+        Assertions.assertTrue(illegalDateTime.isContainsIllegal());
         DateTime dateTime = new DateTime(new Date());
-        Assertions.assertEquals(false,dateTime.isContainsIllegal());
+        Assertions.assertFalse(dateTime.isContainsIllegal());
     }
 }
