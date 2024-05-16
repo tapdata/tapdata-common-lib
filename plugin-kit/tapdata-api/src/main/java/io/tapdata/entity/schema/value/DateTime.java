@@ -448,6 +448,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         fraction = dataInputStream.original().readInt();
         seconds = dataInputStream.readLong();
         nano = dataInputStream.readInt();
+        containsIllegal = dataInputStream.readBoolean();
+        illegalDate = dataInputStream.readUTF();
         int hasValue = dataInputStream.original().read();
         if(hasValue == DataOutputStreamEx.HASVALUE) {
             String zoneId = dataInputStream.original().readUTF();
@@ -462,6 +464,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         dataOutputStreamEx.original().writeInt(fraction);
         dataOutputStreamEx.writeLong(seconds);
         dataOutputStreamEx.writeInt(nano);
+        dataOutputStreamEx.writeBoolean(containsIllegal);
+        dataOutputStreamEx.writeUTF(illegalDate);
         if(timeZone != null) {
             dataOutputStreamEx.original().write(DataOutputStreamEx.HASVALUE);
             dataOutputStreamEx.original().writeUTF(timeZone.getID());
