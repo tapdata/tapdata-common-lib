@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 
 /**
@@ -59,12 +60,13 @@ public class RetryUtils extends CommonUtils {
 		String message = invoker.getMessage();
 		String logTag = invoker.getLogTag();
 		boolean async = invoker.isAsync();
-		boolean doRetry = false;
+		AtomicBoolean doRetry = new AtomicBoolean(false);
+		invoker.setDoRetry(doRetry);
 		long retryPeriodSeconds = invoker.getRetryPeriodSeconds() <= 0 ? DEFAULT_RETRY_PERIOD_SECONDS : invoker.getRetryPeriodSeconds();
 		while (invoker.getRetryTimes() >= 0) {
 			try {
 				runnable.run();
-				if (doRetry) {
+				if (doRetry.get()) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
@@ -105,9 +107,7 @@ public class RetryUtils extends CommonUtils {
 					boolean needDefaultRetry = needDefaultRetry(errThrowable);
 					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(method, message, errThrowable, errorHandleFunction, functionAndContext.tapConnectionContext());
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
-					if (!doRetry) {
-						Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
-					}
+					Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getStartRetry()).ifPresent(Runnable::run);
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(node, method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
@@ -122,7 +122,7 @@ public class RetryUtils extends CommonUtils {
 						}
 					}
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
-					doRetry = true;
+					doRetry.compareAndSet(false,true);
 				} else {
                     Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
@@ -154,12 +154,13 @@ public class RetryUtils extends CommonUtils {
 		String message = invoker.getMessage();
 		String logTag = invoker.getLogTag();
 		boolean async = invoker.isAsync();
-		boolean doRetry = false;
+		AtomicBoolean doRetry = new AtomicBoolean(false);
+		invoker.setDoRetry(doRetry);
 		long retryPeriodSeconds = invoker.getRetryPeriodSeconds() <= 0 ? DEFAULT_RETRY_PERIOD_SECONDS : invoker.getRetryPeriodSeconds();
 		while (invoker.getRetryTimes() >= 0) {
 			try {
 				runnable.run();
-				if (doRetry) {
+				if (doRetry.get()) {
 					Optional.ofNullable(invoker.getLogListener())
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
@@ -172,9 +173,7 @@ public class RetryUtils extends CommonUtils {
 					boolean needDefaultRetry = needDefaultRetry(errThrowable);
 					RetryOptions retryOptions = callErrorHandleFunctionIfNeed(errThrowable);
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
-					if (!doRetry) {
-						Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
-					}
+					Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getStartRetry()).ifPresent(Runnable::run);
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
@@ -189,7 +188,7 @@ public class RetryUtils extends CommonUtils {
 						}
 					}
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
-					doRetry = true;
+					doRetry.compareAndSet(false,true);
 				} else {
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
