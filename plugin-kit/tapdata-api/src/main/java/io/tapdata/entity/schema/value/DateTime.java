@@ -17,12 +17,11 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TimeZone;
 
 public class DateTime implements Serializable, JavaCustomSerializer, Comparable<DateTime> {
@@ -400,6 +399,22 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
 
     public String toFormatString(String format) {
         return new SimpleDateFormat(format).format(new Date(toTimestamp().getTime() + (timeZone == null ? 0 : timeZone.getRawOffset())));
+    }
+
+    public String toFormatStringV2(String format) {
+        return DateTimeFormatter.ofPattern(format).format(toLocalDateTime());
+    }
+
+    public LocalDateTime toLocalDateTime() {
+        return LocalDateTime.ofEpochSecond(seconds, nano, zoneOffset());
+    }
+
+    public ZoneOffset zoneOffset() {
+        ZoneOffset zoneOffset = ZoneOffset.UTC;
+        if (null != timeZone) {
+            zoneOffset = ZoneOffset.ofTotalSeconds(timeZone.getOffset(seconds) / 1000);
+        }
+        return zoneOffset;
     }
 
     @Override
