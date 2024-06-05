@@ -2,8 +2,8 @@ package io.tapdata.entity.codec;
 
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +40,7 @@ public class TapCodecsRegistry {
     }
     public <T extends TapValue<?, ?>> TapCodecsRegistry registerFromTapValue(Class<T> tapValueClass, String dataType, FromTapValueCodec<T> fromTapValueCodec) {
         if(dataType != null) {
-            Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
+            Type[] types = ((ParameterizedType) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
             if(types != null && types.length == 2 && types[1] instanceof Class) {
                 Class<?> theTapTypeClass = (Class<?>) types[1];
                 tapTypeDataTypeMap.put(theTapTypeClass, dataType);
