@@ -4,8 +4,6 @@ import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.memory.MemoryFetcher;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.ObjectSerializable;
 import io.tapdata.exception.TapCodeException;
 import io.tapdata.pdk.apis.functions.PDKMethod;
 import io.tapdata.pdk.core.api.Node;
@@ -18,12 +16,13 @@ import io.tapdata.pdk.core.utils.RetryUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-
+import static io.tapdata.pdk.core.utils.RetryUtils.LOG_PREFIX;
 /**
  * TODO start monitor thread for checking slow invocation
  */
@@ -271,6 +270,14 @@ public class PDKInvocationMonitor implements MemoryFetcher {
     public static final Long DEFAULT_RETRY_PERIOD_SECONDS = 5L;
     public static void invokerRetrySetter(PDKMethodInvoker invoker){
         if (null == invoker) return;
+        //clean streamRead retry flag
+        if (Boolean.TRUE.equals(invoker.getDoRetry().get())) {
+            invoker.getDoRetry().compareAndSet(true, false);
+            Optional.ofNullable(invoker.getLogListener())
+                    .ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", PDKMethod.SOURCE_STREAM_READ.name().toLowerCase())));
+            Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
+            Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
+        }
         try {
             long maxRetryTimeMinute = invoker.getMaxRetryTimeMinute();
             long retryPeriodSeconds = invoker.getRetryPeriodSeconds();

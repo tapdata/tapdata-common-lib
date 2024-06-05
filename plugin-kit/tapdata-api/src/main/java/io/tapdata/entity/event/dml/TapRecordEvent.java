@@ -9,7 +9,9 @@ import io.tapdata.entity.utils.io.DataOutputStreamEx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public abstract class TapRecordEvent extends TapBaseEvent {
@@ -21,6 +23,7 @@ public abstract class TapRecordEvent extends TapBaseEvent {
      * 数据源的版本
      */
     protected String connectorVersion;
+    protected boolean containsIllegalDate = false;
 
     public TapRecordEvent(int type) {
         super(type);
@@ -47,6 +50,13 @@ public abstract class TapRecordEvent extends TapBaseEvent {
             recordEvent.connector = connector;
             recordEvent.connectorVersion = connectorVersion;
         }
+    }
+    public boolean getContainsIllegalDate() {
+        return containsIllegalDate;
+    }
+
+    public void setContainsIllegalDate(boolean containsIllegalDate) {
+        this.containsIllegalDate = containsIllegalDate;
     }
 
     public String getConnector() {

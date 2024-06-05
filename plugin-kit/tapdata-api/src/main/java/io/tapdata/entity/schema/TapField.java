@@ -113,6 +113,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
         return this;
     }
     /**
+     * Virtual column
+     */
+    private Boolean isVirtual = false;
+    public TapField isVirtual(Boolean isVirtual) {
+        this.isVirtual = isVirtual;
+        return this;
+    }
+    /**
      * Field default value.
      */
     private Object defaultValue;
@@ -205,6 +213,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.tapType = tapType != null ? tapType.cloneTapType() : null; //XXX need clone? better clone.
         newField.createSource = createSource;
         return newField;
+    }
+
+    public Boolean getVirtual() {
+        return isVirtual;
+    }
+
+    public void setVirtual(Boolean isVirtual) {
+        this.isVirtual = isVirtual;
     }
 
     public Object getDefaultValue() {

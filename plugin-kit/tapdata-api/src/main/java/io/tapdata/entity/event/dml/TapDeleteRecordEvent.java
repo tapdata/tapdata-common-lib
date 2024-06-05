@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static io.tapdata.entity.simplify.TapSimplify.map;
@@ -23,6 +24,16 @@ public class TapDeleteRecordEvent extends TapRecordEvent {
 	public static final int TYPE = 301;
 	private Map<String, Object> filter;
 	private Map<String, Object> before;
+	private List<String> beforeIllegalDateFieldName;
+
+	public List<String> getBeforeIllegalDateFieldName() {
+		return beforeIllegalDateFieldName;
+	}
+
+	public void setBeforeIllegalDateFieldName(List<String> beforeIllegalDateFieldName) {
+		this.beforeIllegalDateFieldName = beforeIllegalDateFieldName;
+	}
+
 	/*
 	public void from(InputStream inputStream) throws IOException {
 		super.from(inputStream);

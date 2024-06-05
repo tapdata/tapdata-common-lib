@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.entity.params;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class PDKMethodInvoker {
@@ -26,6 +27,17 @@ public class PDKMethodInvoker {
     private Consumer<RuntimeException> errorConsumer;
     private boolean async;
     private ClassLoader contextClassLoader;
+
+    private AtomicBoolean doRetry = new AtomicBoolean(false);
+
+    public AtomicBoolean getDoRetry() {
+        return doRetry;
+    }
+
+    public void setDoRetry(AtomicBoolean doRetry) {
+        this.doRetry = doRetry;
+    }
+
     private long retryTimes;
     private long retryPeriodSeconds;
     private long maxRetryTimeMinute; //util:seconds
