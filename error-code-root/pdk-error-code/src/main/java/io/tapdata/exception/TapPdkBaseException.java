@@ -12,6 +12,13 @@ public abstract class TapPdkBaseException extends TapCodeException {
 
 	protected String pdkId;
 	protected String serverErrorCode;
+	protected String tableName;
+	public String getTableName(){
+		return tableName;
+	}
+	public void setTableName(String tableName){
+		this.tableName = tableName;
+	}
 
 	protected TapPdkBaseException(String code, String pdkId, Throwable cause) {
 		super(code, cause);

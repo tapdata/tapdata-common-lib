@@ -52,8 +52,8 @@ public class TapPdkWriteTypeEx extends TapPdkBaseException {
 			dataClassName = data.getClass().getName();
 		}
 		return String.format(
-				"Target type in %s does not match the incoming data when write record.\n - Target field: %s, type: %s\n - Data to be written: %s\n - Java type: %s",
-				pdkId, targetFieldName, targetFieldType,
+				"Target type in %s does not match the incoming data when write record.\n - Table name: %s\n - Target field: %s, type: %s\n - Data to be written: %s\n - Java type: %s",
+				pdkId, tableName, targetFieldName, targetFieldType,
 				data, dataClassName
 		);
 	}

@@ -33,6 +33,6 @@ public class TapPdkViolateNullableEx extends TapPdkBaseException {
 
 	@Override
 	public String getMessage() {
-		return String.format("Unable to write data to %s due to violation of nullable constraint.\n - Target field: %s", pdkId, targetFieldName);
+		return String.format("Unable to write data to %s due to violation of nullable constraint.\n - Table name: %s\n - Target field: %s", pdkId, tableName, targetFieldName);
 	}
 }
