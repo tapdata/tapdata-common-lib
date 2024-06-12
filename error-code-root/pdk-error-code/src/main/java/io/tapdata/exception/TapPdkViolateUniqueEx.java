@@ -48,8 +48,8 @@ public class TapPdkViolateUniqueEx extends TapPdkBaseException {
 	@Override
 	public String getMessage() {
 		return String.format(
-				"Unable to write data to %s due to violation of unique constraint.\n - Target field: %s\n - Data to be written(%s): %s\n - Unique constraint: %s",
-				pdkId, targetFieldName, data == null ? null : data.getClass().getSimpleName(), data, constraint
+				"Unable to write data to %s due to violation of unique constraint.\n - Table name: %s\n - Target field: %s\n - Data to be written(%s): %s\n - Unique constraint: %s",
+				pdkId, tableName, targetFieldName, data == null ? null : data.getClass().getSimpleName(), data, constraint
 		);
 	}
 }

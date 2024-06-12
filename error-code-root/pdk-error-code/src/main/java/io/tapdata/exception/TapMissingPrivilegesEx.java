@@ -42,9 +42,9 @@ public abstract class TapMissingPrivilegesEx extends TapPdkBaseException {
 
 	@Override
 	public String getMessage() {
-		String message = "Missing privileges when %s on %s. \n - Executing operation: %s\n - Missing privileges: [%s]";
+		String message = "Missing privileges when %s on %s. \n - Executing operation: %s\n - Table name: [%s]\n - Missing privileges: [%s]";
 		String type = StringUtils.isNotBlank(getType()) ? getType() : "do some operation";
-		message = String.format(message, type, pdkId, operation, String.join(", ", privileges));
+		message = String.format(message, type, pdkId, operation, tableName, String.join(", ", privileges));
 		if (StringUtils.isNotBlank(preferCommand)) {
 			message += "\n - Prefer command: " + preferCommand;
 		}
