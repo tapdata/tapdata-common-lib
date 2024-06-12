@@ -9,7 +9,7 @@ import io.tapdata.exception.TapCodeException;
  **/
 public class TapPdkRunnerUnknownException extends TapCodeException {
 	private static final long serialVersionUID = 4820551931387403402L;
-	private String tableName;
+	private String tableName = "unknown";
 	public TapPdkRunnerUnknownException(Throwable cause) {
 		super(TapPdkRunnerExCode_18.UNKNOWN_ERROR, cause);
 	}

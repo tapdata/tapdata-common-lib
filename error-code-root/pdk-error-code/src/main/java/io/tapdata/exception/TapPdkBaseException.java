@@ -12,7 +12,7 @@ public abstract class TapPdkBaseException extends TapCodeException {
 
 	protected String pdkId;
 	protected String serverErrorCode;
-	protected String tableName;
+	protected String tableName = "unknown";
 	public String getTableName(){
 		return tableName;
 	}
