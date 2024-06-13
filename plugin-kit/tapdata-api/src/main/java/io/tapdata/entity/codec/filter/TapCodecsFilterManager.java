@@ -115,6 +115,8 @@ public class TapCodecsFilterManager {
                                 valueCodec = null;
                                 newField = true;
                             }
+                        } else {
+                            newField = true;
                         }
                     } else {
                         newField = true;
