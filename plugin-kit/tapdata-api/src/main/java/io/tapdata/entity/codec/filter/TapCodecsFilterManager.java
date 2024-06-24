@@ -22,6 +22,7 @@ import io.tapdata.entity.utils.JavaTypesToTapTypes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import static io.tapdata.entity.simplify.TapSimplify.field;
 
@@ -67,7 +68,7 @@ public class TapCodecsFilterManager {
         AtomicReference<TapSkipper> skipperRef = new AtomicReference<>(skipper);
         mapIteratorToTapValue.iterate(value, (name, entry, recursive) -> {
             Object theValue = entry;
-            String fieldName = name;
+            String fieldName = fieldName(name);
             TapValue<?, ?> originTapValue = null;
             if(theValue != null && fieldName != null) {
                 if((theValue instanceof TapValue)) {
@@ -379,5 +380,21 @@ public class TapCodecsFilterManager {
 
     public TapCodecsRegistry getCodecsRegistry() {
         return codecsRegistry;
+    }
+
+    public static String fieldName(String key) {
+        if(null == key) return null;
+        if (key.contains(AllLayerMapIterator.ARRAY_KEY_SEPARATOR)) {
+            String[] split = key.split("\\.");
+            List<String> list = new ArrayList<>();
+			for (String s : split) {
+				Pattern pattern = Pattern.compile("^#\\d*$");
+				if (!pattern.matcher(s).find()) {
+					list.add(s);
+				}
+			}
+            return String.join(".", list);
+        }
+        return key;
     }
 }
