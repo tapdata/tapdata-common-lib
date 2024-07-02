@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TapCodecsRegistry {
     private final Map<String, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
-    private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
+    private final Map<String, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<?>, String> tapTypeDataTypeMap = new ConcurrentHashMap<>();
 
 //    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
@@ -47,12 +47,12 @@ public class TapCodecsRegistry {
             }
         }
         if(fromTapValueCodec != null)
-            classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
+            classFromTapValueCodecMap.put(tapValueClass.getName(), fromTapValueCodec);
         return this;
     }
 
     public void unregisterFromTapValue(Class<? extends TapValue<?, ?>> tapTypeClass) {
-        classFromTapValueCodecMap.remove(tapTypeClass);
+        classFromTapValueCodecMap.remove(tapTypeClass.getName());
     }
 
 //    public <T extends TapValue<?, ?>> TapCodecRegistry registerFieldToTapValue(String fieldName, ToTapValueCodec<T> toTapValueCodec) {
@@ -77,7 +77,7 @@ public class TapCodecsRegistry {
     }
 
     public <T extends TapValue<?, ?>> FromTapValueCodec<T> getFromTapValueCodec(Class<T> clazz) {
-        FromTapValueCodec<T> codec = (FromTapValueCodec<T>) classFromTapValueCodecMap.get(clazz);
+        FromTapValueCodec<T> codec = (FromTapValueCodec<T>) classFromTapValueCodecMap.get(clazz.getName());
         if(codec == null) {
             codec = (FromTapValueCodec<T>) TapDefaultCodecs.instance.getFromTapValueCodec(clazz);
         }
@@ -85,7 +85,7 @@ public class TapCodecsRegistry {
     }
 
     public <T extends TapValue<?, ?>> FromTapValueCodec<T> getCustomFromTapValueCodec(Class<T> clazz) {
-        FromTapValueCodec<T> codec = (FromTapValueCodec<T>) classFromTapValueCodecMap.get(clazz);
+        FromTapValueCodec<T> codec = (FromTapValueCodec<T>) classFromTapValueCodecMap.get(clazz.getName());
         return codec;
     }
 
