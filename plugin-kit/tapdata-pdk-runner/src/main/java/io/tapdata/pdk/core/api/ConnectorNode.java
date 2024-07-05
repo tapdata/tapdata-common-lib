@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.api;
 
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManagerForBatchRead;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -19,6 +20,7 @@ public class ConnectorNode extends Node {
     TapCodecsFilterManager codecsFilterManager;
     String table;
     List<String> tables;
+    TapCodecsFilterManager codecsFilterManagerForBatchRead;
 
 //    Queue<TapEvent> externalEvents;
 
@@ -27,7 +29,8 @@ public class ConnectorNode extends Node {
         connector = tapNode;
         this.codecsRegistry = codecsRegistry;
         this.connectorFunctions = connectorFunctions;
-        codecsFilterManager = new TapCodecsFilterManager(this.codecsRegistry);
+        this.codecsFilterManager = new TapCodecsFilterManager(this.codecsRegistry);
+        this.codecsFilterManagerForBatchRead = new TapCodecsFilterManagerForBatchRead(this.codecsRegistry);
 //        externalEvents = new ConcurrentLinkedQueue<>();
     }
 
@@ -126,5 +129,9 @@ public class ConnectorNode extends Node {
 
     public List<String> getTables() {
         return tables;
+    }
+
+    public TapCodecsFilterManager getCodecsFilterManagerForBatchRead() {
+        return codecsFilterManagerForBatchRead;
     }
 }
