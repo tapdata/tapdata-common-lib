@@ -2,6 +2,7 @@ package io.tapdata.entity.codec.filter;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
@@ -9,6 +10,7 @@ import io.tapdata.entity.codec.detector.TapDetector;
 import io.tapdata.entity.codec.detector.TapSkipper;
 import io.tapdata.entity.codec.filter.entity.TransformToTapValueFieldWrapper;
 import io.tapdata.entity.codec.filter.exception.TapCodecsFilterManagerException;
+import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
@@ -17,13 +19,13 @@ import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JavaTypesToTapTypes;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static io.tapdata.entity.simplify.TapSimplify.field;
 
 /**
  * @author samuel
@@ -42,14 +44,14 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 				.expireAfterAccess(10L, TimeUnit.SECONDS)
 				.build();
 	}
-	public void transformToTapValueMap(Map<String, Object> data, TapTable tapTable, TapDetector... detectors) {
-		transformToTapValueMap(data, tapTable, null, detectors);
+	public Set<String> transformToTapValueMap(Map<String, Object> data, TapTable tapTable, TapDetector... detectors) {
+		return transformToTapValueMap(data, tapTable, null, detectors);
 	}
 
-
-	public void transformToTapValueMap(Map<String, Object> data, TapTable tapTable, Map<String, TapValue<?, ?>> originValueMap, TapDetector... detectors) {
+	public Set<String> transformToTapValueMap(Map<String, Object> data, TapTable tapTable, Map<String, TapValue<?, ?>> originValueMap, TapDetector... detectors) {
 		if (data == null)
-			return;
+			return new HashSet<>();
+		Set<String> transformedToTapValueFieldNames = new HashSet<>();
 		AtomicReference<ToTapValueCheck> toTapValueCheckRef = new AtomicReference<>();
 		AtomicReference<TapSkipper> skipperRef = new AtomicReference<>();
 		if (detectors != null) {
@@ -169,10 +171,12 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 							}
 						}
 					}
-					if (toTapValueCheckRef.get() == null)
+					if (toTapValueCheckRef.get() == null) {
+						transformedToTapValueFieldNames.add(fieldName);
 						return tapValue;
-					else if (!toTapValueCheckRef.get().check(fieldName, tapValue.getValue()))
+					} else if (!toTapValueCheckRef.get().check(fieldName, tapValue.getValue())) {
 						throw new StopFilterException();
+					}
 					return null;
 				}
 			}
@@ -190,6 +194,7 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 
 			return null;
 		});
+		return transformedToTapValueFieldNames;
 	}
 
 	private TransformToTapValueFieldWrapper getOrInitTransformToTapValueFieldWrapper(Map<String, Object> value, TapTable tapTable) throws ExecutionException {
@@ -207,5 +212,37 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 			});
 			return result;
 		});
+	}
+
+	public void transformFromTapValueMap(
+			Map<String, Object> tapValueMap,
+			Map<String, TapField> sourceNameFieldMap,
+			Set<String> transformedToTapValueFieldNames
+	) {
+		if (null == transformedToTapValueFieldNames || transformedToTapValueFieldNames.isEmpty()) {
+			return;
+		}
+		for (String transformedToTapValueFieldName : transformedToTapValueFieldNames) {
+			Object object = tapValueMap.get(transformedToTapValueFieldName);
+			if(object instanceof TapValue) {
+				String fieldName = transformedToTapValueFieldName;
+				TapValue<?, ?> theValue = (TapValue<?, ?>) object;
+				if(transformedToTapValueFieldName != null) {
+					FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
+					if(fromTapValueCodec == null) {
+						fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
+					}
+					if(fromTapValueCodec == null)
+						throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
+
+					if(sourceNameFieldMap != null && !sourceNameFieldMap.containsKey(fieldName)) {
+						//Handle inserted new field
+						sourceNameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
+					}
+					Object value = fromTapValueCodec.fromTapValue(theValue);
+					tapValueMap.put(fieldName, value);
+				}
+			}
+		}
 	}
 }
