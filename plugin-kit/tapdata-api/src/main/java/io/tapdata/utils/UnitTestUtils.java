@@ -15,16 +15,31 @@ public class UnitTestUtils {
 	private static synchronized void initIsTesting() {
 		if (null != isTesting) return;
 
+		String property = System.getProperty("java.version","");
+		boolean flagForJdk11 = checkForJdk11(property);
 		String execCommand = System.getProperty("sun.java.command", "");
 		if (
 			execCommand.startsWith("com.intellij.rt.junit.JUnitStarter")
-			|| execCommand.startsWith("org.apache.maven.surefire.booter.ForkedBooter")
+			|| execCommand.startsWith("org.apache.maven.surefire.booter.ForkedBooter") || flagForJdk11
 		) {
 			isTesting = true;
 			return;
 		}
 
 		isTesting = false;
+	}
+	private static boolean checkForJdk11(String property){
+		if (property.startsWith("11.")) {
+			StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+			for (StackTraceElement stackTraceElement : stackTrace) {
+				String methodName = stackTraceElement.getClassName();
+				if (null != methodName && (methodName.contains("com.intellij.junit5.JUnit5IdeaTestRunner")
+						|| methodName.contains("org.apache.maven.surefire.junitplatform.JUnitPlatformProvider"))) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private UnitTestUtils() {
