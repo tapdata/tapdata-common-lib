@@ -5,6 +5,7 @@ import io.tapdata.ErrorCodeEntity;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.exception.TapCodeException;
 import io.tapdata.exception.TapPdkBaseException;
+import io.tapdata.exception.TapRuntimeException;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.functions.PDKMethod;
 import io.tapdata.pdk.apis.functions.connection.ErrorHandleFunction;
@@ -145,7 +146,7 @@ public class RetryUtils extends CommonUtils {
 			errorMsg = ((TapCodeException) errThrowable).simpleStack();
 		} else {
 			errorCode = "null";
-			errorMsg = getLastCause(errThrowable).getMessage();
+			errorMsg = new TapRuntimeException(errThrowable){}.simpleStack();
 		}
 		Optional.ofNullable(invoker.getLogListener())
 				.ifPresent(log -> log.warn(String.format(LOG_PREFIX + "Method (%s) encountered an error, triggering auto retry.\n - Error code: %s, message: %s\n - Remaining retry %s time(s)\n - Period %s second(s)",
