@@ -28,7 +28,8 @@ public class UnitTestUtils {
 
 		isTesting = false;
 	}
-	private static boolean checkForJdk11(String property){
+
+	private static boolean checkForJdk11(String property) {
 		if (property.startsWith("11.")) {
 			StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
 			for (StackTraceElement stackTraceElement : stackTrace) {
