@@ -12,7 +12,6 @@ import io.tapdata.entity.codec.filter.impl.AllLayerMapIteratorFromTapValue;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;

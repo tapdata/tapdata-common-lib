@@ -18,6 +18,7 @@ import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JavaTypesToTapTypes;
+import io.tapdata.entity.utils.PropertyUtils;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -30,18 +31,20 @@ import static io.tapdata.entity.simplify.TapSimplify.field;
 /**
  * @author samuel
  * @Description
- * @create 2024-07-05 15:35
+ * @create 2024-07-11 15:24
  **/
-public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
-	private static final String TAG = TapCodecsFilterManagerForBatchRead.class.getSimpleName();
+public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager {
+	private static final String TAG = TapCodecsFilterManagerSchemaEnforced.class.getSimpleName();
+	public static final String TAPDATA_TRANSFORM_TABLE_FIELD_CACHE_MAXSIZE_PROP_KEY = "TAPDATA_TRANSFORM_TABLE_FIELD_CACHE_MAXSIZE";
 
-	private final Cache<String, TransformToTapValueFieldWrapper> transformToTapValueFieldWrapperCache;
+	private final Cache<String, TransformToTapValueFieldWrapper> transformToTapValueInsertFieldWrapperCache;
 
-	public TapCodecsFilterManagerForBatchRead(TapCodecsRegistry codecsRegistry) {
+	public TapCodecsFilterManagerSchemaEnforced(TapCodecsRegistry codecsRegistry) {
 		super(codecsRegistry);
-		transformToTapValueFieldWrapperCache = CacheBuilder.newBuilder()
-				.maximumSize(5)
-				.expireAfterAccess(10L, TimeUnit.SECONDS)
+		int tableFieldCacheMaxSize = PropertyUtils.getPropertyInt(TAPDATA_TRANSFORM_TABLE_FIELD_CACHE_MAXSIZE_PROP_KEY, 5);
+		this.transformToTapValueInsertFieldWrapperCache = CacheBuilder.newBuilder()
+				.maximumSize(tableFieldCacheMaxSize)
+				.expireAfterAccess(5L, TimeUnit.MINUTES)
 				.build();
 	}
 	public Set<String> transformToTapValueMap(Map<String, Object> data, TapTable tapTable, TapDetector... detectors) {
@@ -198,7 +201,7 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 	}
 
 	private TransformToTapValueFieldWrapper getOrInitTransformToTapValueFieldWrapper(Map<String, Object> value, TapTable tapTable) throws ExecutionException {
-		return transformToTapValueFieldWrapperCache.get(tapTable.getId(), () -> {
+		return transformToTapValueInsertFieldWrapperCache.get(tapTable.getId(), () -> {
 			LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
 			TransformToTapValueFieldWrapper result = TransformToTapValueFieldWrapper.create(tapTable.getId());
 			mapIteratorToTapValue.iterate(value, (key, value1, recursive) -> {
