@@ -224,24 +224,22 @@ public class TapCodecsFilterManagerForBatchRead extends TapCodecsFilterManager {
 		}
 		for (String transformedToTapValueFieldName : transformedToTapValueFieldNames) {
 			Object object = tapValueMap.get(transformedToTapValueFieldName);
-			if(object instanceof TapValue) {
-				String fieldName = transformedToTapValueFieldName;
-				TapValue<?, ?> theValue = (TapValue<?, ?>) object;
-				if(transformedToTapValueFieldName != null) {
-					FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
-					if(fromTapValueCodec == null) {
-						fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
-					}
-					if(fromTapValueCodec == null)
-						throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
-
-					if(sourceNameFieldMap != null && !sourceNameFieldMap.containsKey(fieldName)) {
-						//Handle inserted new field
-						sourceNameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
-					}
-					Object value = fromTapValueCodec.fromTapValue(theValue);
-					tapValueMap.put(fieldName, value);
+			String fieldName = transformedToTapValueFieldName;
+			TapValue<?, ?> theValue = (TapValue<?, ?>) object;
+			if (transformedToTapValueFieldName != null) {
+				FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
+				if (fromTapValueCodec == null) {
+					fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
 				}
+				if (fromTapValueCodec == null)
+					throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
+
+				if (sourceNameFieldMap != null && !sourceNameFieldMap.containsKey(fieldName)) {
+					//Handle inserted new field
+					sourceNameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
+				}
+				Object value = fromTapValueCodec.fromTapValue(theValue);
+				tapValueMap.put(fieldName, value);
 			}
 		}
 	}
