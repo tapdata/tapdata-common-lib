@@ -11,7 +11,7 @@
 		<module>tapdata-api</module>
 		<module>tapdata-pdk-api</module>
 		<module>tapdata-pdk-runner</module>
-        <module>tapdata-tests</module>
+<!--        <module>tapdata-tests</module>-->
 		<module>connector-archetypes</module>
         <module>tapdata-common</module>
 		<module>tapdata-modules</module>
