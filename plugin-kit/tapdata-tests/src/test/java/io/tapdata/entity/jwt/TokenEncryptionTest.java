@@ -49,6 +49,7 @@ public class TokenEncryptionTest {
 		subscribeToken.setService("engine");
 		subscribeToken.setSubscribeId("source#632e6df6664f9328b8bb633c");
 		subscribeToken.setExpireAt((long) Integer.MAX_VALUE);
+		subscribeToken.setSupplierKey("supplier_key");
 
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		subscribeToken.to(byteArrayOutputStream);
