@@ -229,7 +229,7 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 			Object object = tapValueMap.get(transformedToTapValueFieldName);
 			String fieldName = transformedToTapValueFieldName;
 			TapValue<?, ?> theValue = (TapValue<?, ?>) object;
-			if (transformedToTapValueFieldName != null) {
+			if (transformedToTapValueFieldName != null && null != theValue) {
 				FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
 				if (fromTapValueCodec == null) {
 					fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
