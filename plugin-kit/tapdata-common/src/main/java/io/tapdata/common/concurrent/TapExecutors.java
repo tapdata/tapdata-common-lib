@@ -8,7 +8,7 @@ package io.tapdata.common.concurrent;
 public class TapExecutors {
 	public static final String TAG = TapExecutors.class.getSimpleName();
 
-	public static <T, R> SingleConcurrentProcessor<T, R> createSingle(int thread, int queueSize, String tag) {
-		return new SingleConcurrentProcessor<>(thread, queueSize, tag);
+	public static <T, R> SimpleConcurrentProcessorImpl<T, R> createSimple(int thread, int queueSize, String tag) {
+		return new SimpleConcurrentProcessorImpl<>(thread, queueSize, tag);
 	}
 }

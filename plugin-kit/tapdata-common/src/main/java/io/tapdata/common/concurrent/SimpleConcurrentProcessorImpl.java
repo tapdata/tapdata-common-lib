@@ -8,10 +8,10 @@ import java.util.function.Function;
  * @Description
  * @create 2024-07-19 22:22
  **/
-public class SingleConcurrentProcessor<T, R> extends BaseConcurrentProcessor<T, R> {
-	public static final String TAG = SingleConcurrentProcessor.class.getSimpleName();
+public class SimpleConcurrentProcessorImpl<T, R> extends BaseConcurrentProcessor<T, R> {
+	public static final String TAG = SimpleConcurrentProcessorImpl.class.getSimpleName();
 
-	public SingleConcurrentProcessor(int thread, int queueSize, String tag) {
+	public SimpleConcurrentProcessorImpl(int thread, int queueSize, String tag) {
 		super(thread, queueSize, tag);
 	}
 
