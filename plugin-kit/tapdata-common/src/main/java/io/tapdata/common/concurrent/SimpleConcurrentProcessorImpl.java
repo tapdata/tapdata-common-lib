@@ -29,9 +29,4 @@ public class SimpleConcurrentProcessorImpl<T, R> extends BaseConcurrentProcessor
 	public boolean runAsync(T input, Function<T, R> function, long timeout, TimeUnit timeUnit) {
 		return super.produce(input, function, timeout, timeUnit);
 	}
-
-	@Override
-	public void close() {
-
-	}
 }

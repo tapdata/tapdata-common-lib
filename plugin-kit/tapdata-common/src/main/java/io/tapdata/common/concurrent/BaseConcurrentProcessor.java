@@ -61,7 +61,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 					}
 			);
 			for (int i = 0; i < thread; i++) {
-				CompletableFuture.completedFuture(i).thenAcceptAsync(index -> {
+				consumerFutures[i] = CompletableFuture.completedFuture(i).thenAcceptAsync(index -> {
 					try {
 						while (running.get()) {
 							ThreadTask<T, R> threadTask = producerQueue[index].poll(1, TimeUnit.SECONDS);
@@ -186,11 +186,11 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	@Override
 	public void close() {
 		this.running.set(false);
-		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
 		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
 			for (CompletableFuture<Void> future : futures) {
 				future.cancel(true);
 			}
 		});
+		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
 	}
 }
