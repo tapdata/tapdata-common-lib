@@ -64,18 +64,11 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 				consumerFutures[i] = CompletableFuture.completedFuture(i).thenAcceptAsync(index -> {
 					try {
 						while (running.get()) {
-							ThreadTask<T, R> threadTask = producerQueue[index].poll(1, TimeUnit.SECONDS);
-							if (threadTask != null) {
-								T input = threadTask.getInput();
-								Function<T, R> processor = threadTask.getProcessor();
-								R apply = processor.apply(input);
-								while (running.get()) {
-									boolean offered = consumerQueue[index].offer(apply, 1, TimeUnit.SECONDS);
-									if (offered) {
-										break;
-									}
-								}
-							}
+							ThreadTask<T, R> threadTask = producerQueue[index].take();
+							T input = threadTask.getInput();
+							Function<T, R> processor = threadTask.getProcessor();
+							R apply = processor.apply(input);
+							consumerQueue[index].put(apply);
 						}
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
@@ -94,13 +87,8 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		try {
 			synchronized (this.produceLock) {
 				ThreadTask<T, R> threadTask = new ThreadTask<>(function, t);
-				while (running.get()) {
-					boolean offered = producerQueue.offer(threadTask, 10L, TimeUnit.MILLISECONDS);
-					if (offered) {
-						producerIndex = (producerIndex + 1) % thread;
-						break;
-					}
-				}
+				producerQueue.put(threadTask);
+				producerIndex = (producerIndex + 1) % thread;
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -135,13 +123,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	public R get() {
 		synchronized (this.consumeLock) {
 			try {
-				while (running.get()) {
-					R poll = consumerQueue[consumerIndex].poll(10L, TimeUnit.MILLISECONDS);
-					if (null != poll) {
-						consumerIndex = (consumerIndex + 1) % thread;
-						return poll;
-					}
-				}
+				R take = consumerQueue[consumerIndex].take();
+				consumerIndex = (consumerIndex + 1) % thread;
+				return take;
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
