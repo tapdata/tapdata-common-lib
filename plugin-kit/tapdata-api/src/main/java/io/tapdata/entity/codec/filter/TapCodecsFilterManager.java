@@ -28,9 +28,9 @@ import static io.tapdata.entity.simplify.TapSimplify.field;
 
 public class TapCodecsFilterManager {
     private static final String TAG = TapCodecsFilterManager.class.getSimpleName();
-    private MapIteratorEx mapIteratorToTapValue;
-    private MapIteratorEx mapIteratorFromTapValue;
-    private final TapCodecsRegistry codecsRegistry;
+    protected MapIteratorEx mapIteratorToTapValue;
+    protected MapIteratorEx mapIteratorFromTapValue;
+    protected final TapCodecsRegistry codecsRegistry;
 
     public TapCodecsFilterManager(TapCodecsRegistry codecsRegistry) {
         this.codecsRegistry = codecsRegistry;
@@ -203,11 +203,11 @@ public class TapCodecsFilterManager {
         });
     }
 
-    private ToTapValueCodec<?> getTapValueCodec(Object theValue) {
+    protected ToTapValueCodec<?> getTapValueCodec(Object theValue) {
         return this.codecsRegistry.getToTapValueCodec(theValue.getClass());
     }
 
-    private ToTapValueCodec<?> getValueCodec(TapType typeFromSchema) {
+    protected ToTapValueCodec<?> getValueCodec(TapType typeFromSchema) {
         switch (typeFromSchema.getType()) {
             case TapType.TYPE_DATE:
             case TapType.TYPE_DATETIME:

@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -565,5 +566,29 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             stringBuilder.append(String.format("%0"+i+"d",Integer.parseInt(str)));
         }
         return stringBuilder;
+    }
+
+    public void plus(long amountToAdd, TemporalUnit unit) {
+        if (containsIllegal) {
+            return;
+        }
+        if (seconds != null) {
+            Instant instant = Instant.ofEpochSecond(seconds, nano);
+            Instant plus = instant.plus(amountToAdd, unit);
+            seconds = plus.getEpochSecond();
+            nano = plus.getNano();
+        }
+    }
+
+    public void minus(long amountToAdd, TemporalUnit unit) {
+        if (containsIllegal) {
+            return;
+        }
+        if (seconds != null) {
+            Instant instant = Instant.ofEpochSecond(seconds, nano);
+            Instant minus = instant.minus(amountToAdd, unit);
+            seconds = minus.getEpochSecond();
+            nano = minus.getNano();
+        }
     }
 }
