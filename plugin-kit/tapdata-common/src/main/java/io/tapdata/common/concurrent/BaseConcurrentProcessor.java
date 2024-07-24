@@ -68,6 +68,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 							T input = threadTask.getInput();
 							Function<T, R> processor = threadTask.getProcessor();
 							R apply = processor.apply(input);
+							if (null == apply) {
+								continue;
+							}
 							consumerQueue[index].put(apply);
 						}
 					} catch (InterruptedException e) {
@@ -167,14 +170,14 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		}
 	}
 
-	@Override
-	public void close() {
-		this.running.set(false);
-		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
-			for (CompletableFuture<Void> future : futures) {
-				future.cancel(true);
-			}
-		});
-		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
-	}
+    @Override
+    public void close() {
+        this.running.set(false);
+        Optional.ofNullable(consumerFutures).ifPresent(futures -> {
+            for (CompletableFuture<Void> future : futures) {
+                Optional.ofNullable(future).ifPresent(f -> f.cancel(true));
+            }
+        });
+        Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
+    }
 }
