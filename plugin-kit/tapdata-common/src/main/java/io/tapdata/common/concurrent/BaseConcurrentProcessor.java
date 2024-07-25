@@ -65,13 +65,29 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 					try {
 						while (running.get()) {
 							ThreadTask<T, R> threadTask = producerQueue[index].take();
-							T input = threadTask.getInput();
-							Function<T, R> processor = threadTask.getProcessor();
-							R apply = processor.apply(input);
-							if (null == apply) {
-								continue;
+							if (threadTask instanceof ThreadProcessorTask) {
+								ThreadProcessorTask<T, R> processorTask = (ThreadProcessorTask<T, R>) threadTask;
+								T input = processorTask.getInput();
+								Function<T, R> processor = processorTask.getProcessor();
+								R apply = processor.apply(input);
+								if (null == apply) {
+									continue;
+								}
+								consumerQueue[index].put(apply);
+							} else if (threadTask instanceof ThreadBarrierTask) {
+								ThreadBarrierTask<T, R> threadBarrierTask = (ThreadBarrierTask<T, R>) threadTask;
+								CyclicBarrier cyclicBarrier = threadBarrierTask.getCyclicBarrier();
+								if (null == cyclicBarrier) {
+									continue;
+								}
+								try {
+									cyclicBarrier.await();
+								} catch (BrokenBarrierException e) {
+									Thread.currentThread().interrupt();
+									break;
+								}
 							}
-							consumerQueue[index].put(apply);
+
 						}
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
@@ -82,15 +98,17 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	}
 
 	protected void produce(T t, Function<T, R> function) {
-		if (null == t || null == function) {
+		if (null == t) {
 			return;
 		}
+		if (null == function) {
+			throw new IllegalArgumentException("Process function is null");
+		}
 		start();
-		BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
 		try {
 			synchronized (this.produceLock) {
-				ThreadTask<T, R> threadTask = new ThreadTask<>(function, t);
-				producerQueue.put(threadTask);
+				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
+				this.producerQueue[producerIndex].put(threadTask);
 				producerIndex = (producerIndex + 1) % thread;
 			}
 		} catch (InterruptedException e) {
@@ -99,15 +117,18 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	}
 
 	protected boolean produce(T t, Function<T, R> function, long timeout, TimeUnit timeUnit) {
-		if (null == t || null == function) {
+		if (null == t) {
 			return true;
 		}
+		if (null == function) {
+			throw new IllegalArgumentException("Process function is null");
+		}
 		start();
-		BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
 		boolean offered = false;
 		synchronized (this.produceLock) {
+			BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
 			try {
-				ThreadTask<T, R> threadTask = new ThreadTask<>(function, t);
+				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
 				offered = producerQueue.offer(threadTask, timeout, timeUnit);
 				if (offered) {
 					producerIndex = (producerIndex + 1) % thread;
@@ -152,32 +173,28 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		return null;
 	}
 
-	protected static class ThreadTask<T, R> {
-		private final Function<T, R> processor;
-		private final T input;
-
-		public ThreadTask(Function<T, R> processor, T input) {
-			this.processor = processor;
-			this.input = input;
-		}
-
-		public Function<T, R> getProcessor() {
-			return processor;
-		}
-
-		public T getInput() {
-			return input;
-		}
+	@Override
+	public void close() {
+		this.running.set(false);
+		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
+			for (CompletableFuture<Void> future : futures) {
+				Optional.ofNullable(future).ifPresent(f -> f.cancel(true));
+			}
+		});
+		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
 	}
 
-    @Override
-    public void close() {
-        this.running.set(false);
-        Optional.ofNullable(consumerFutures).ifPresent(futures -> {
-            for (CompletableFuture<Void> future : futures) {
-                Optional.ofNullable(future).ifPresent(f -> f.cancel(true));
-            }
-        });
-        Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
-    }
+	protected void putBarrierInAllProducerQueue() {
+		try {
+			synchronized (this.produceLock) {
+				CyclicBarrier cyclicBarrier = new CyclicBarrier(thread);
+				for (BlockingQueue<ThreadTask<T, R>> queue : this.producerQueue) {
+					ThreadTask<T, R> threadTask = new ThreadBarrierTask<>(cyclicBarrier);
+					queue.put(threadTask);
+				}
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
 }

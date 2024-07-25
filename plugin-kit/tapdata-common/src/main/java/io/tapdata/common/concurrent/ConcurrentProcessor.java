@@ -38,6 +38,10 @@ public interface ConcurrentProcessor<T, R> {
 
 	boolean runAsync(T input, Function<T, R> function, long timeout, TimeUnit timeUnit);
 
+	void runAsyncWithBlocking(T input, Function<T, R> function);
+
+	boolean runAsyncWithBlocking(T input, Function<T, R> function, long timeout, TimeUnit timeUnit);
+
 	R get();
 
 	R get(long timeout, TimeUnit timeUnit);
