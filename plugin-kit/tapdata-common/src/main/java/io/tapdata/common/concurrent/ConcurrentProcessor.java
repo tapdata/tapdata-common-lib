@@ -46,5 +46,9 @@ public interface ConcurrentProcessor<T, R> {
 
 	R get(long timeout, TimeUnit timeUnit);
 
+	void pause();
+
+	void resume();
+
 	void close();
 }
