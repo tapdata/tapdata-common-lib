@@ -219,10 +219,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public void resume() {
-		if (Boolean.TRUE.equals(pause.get())) {
+		if (pause.compareAndSet(true, false)) {
 			synchronized (this.pause) {
 				this.pause.notify();
-				this.pause.set(false);
 			}
 		}
 	}
