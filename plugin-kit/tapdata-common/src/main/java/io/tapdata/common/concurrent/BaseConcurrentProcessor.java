@@ -187,6 +187,11 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 			}
 		});
 		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
+		if (Boolean.TRUE.equals(pause.get())) {
+			synchronized (this.pause) {
+				this.pause.notify();
+			}
+		}
 	}
 
 	protected void putBarrierInAllProducerQueue() {
