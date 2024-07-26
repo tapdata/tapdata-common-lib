@@ -180,6 +180,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public void close() {
+		resume();
 		this.running.set(false);
 		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
 			for (CompletableFuture<Void> future : futures) {
@@ -187,11 +188,6 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 			}
 		});
 		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
-		if (Boolean.TRUE.equals(pause.get())) {
-			synchronized (this.pause) {
-				this.pause.notify();
-			}
-		}
 	}
 
 	protected void putBarrierInAllProducerQueue() {
@@ -223,9 +219,10 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public void resume() {
-		synchronized (this.pause) {
-			this.pause.notify();
-			this.pause.set(false);
+		if (Boolean.TRUE.equals(pause.get())) {
+			synchronized (this.pause) {
+				this.pause.notify();
+			}
 		}
 	}
 }
