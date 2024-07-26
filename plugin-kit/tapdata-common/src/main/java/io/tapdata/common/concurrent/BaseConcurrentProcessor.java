@@ -222,6 +222,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		if (Boolean.TRUE.equals(pause.get())) {
 			synchronized (this.pause) {
 				this.pause.notify();
+				this.pause.set(false);
 			}
 		}
 	}
