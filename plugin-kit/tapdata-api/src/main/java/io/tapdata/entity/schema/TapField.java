@@ -52,6 +52,12 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.scale = scale;
         return this;
     }
+
+    private Integer precision;
+    public TapField precision(Integer precision) {
+        this.precision = precision;
+        return this;
+    }
     /**
      * Field value can be null
      */
@@ -216,6 +222,9 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.name = name;
         newField.dataType = dataType;
         newField.pureDataType = pureDataType;
+        newField.length = length;
+        newField.scale = scale;
+        newField.precision = precision;
         newField.partitionKeyPos = partitionKeyPos;
         newField.pos = pos;
         newField.primaryKeyPos = primaryKeyPos;
@@ -407,6 +416,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setScale(Integer scale) {
         this.scale = scale;
+    }
+
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
     }
 
     public String getCreateSource() {
