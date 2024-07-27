@@ -34,6 +34,24 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.dataType = dataType != null ? dataType.trim() : null;
         return this;
     }
+
+    private String pureDataType;
+    public TapField pureDataType(String pureDataType) {
+        this.pureDataType = pureDataType != null ? pureDataType.trim() : null;
+        return this;
+    }
+
+    private Integer length;
+    public TapField length(Integer length) {
+        this.length = length;
+        return this;
+    }
+
+    private Integer scale;
+    public TapField scale(Integer scale) {
+        this.scale = scale;
+        return this;
+    }
     /**
      * Field value can be null
      */
@@ -197,6 +215,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.nullable = nullable;
         newField.name = name;
         newField.dataType = dataType;
+        newField.pureDataType = pureDataType;
         newField.partitionKeyPos = partitionKeyPos;
         newField.pos = pos;
         newField.primaryKeyPos = primaryKeyPos;
@@ -364,6 +383,30 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setDataType(String dataType) {
         this.dataType = dataType;
+    }
+
+    public String getPureDataType() {
+        return pureDataType;
+    }
+
+    public void setPureDataType(String pureDataType) {
+        this.pureDataType = pureDataType;
+    }
+
+    public Integer getLength() {
+        return length;
+    }
+
+    public void setLength(Integer length) {
+        this.length = length;
+    }
+
+    public Integer getScale() {
+        return scale;
+    }
+
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 
     public String getCreateSource() {
