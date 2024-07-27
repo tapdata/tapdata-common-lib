@@ -19,6 +19,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	protected final BlockingQueue<ThreadTask<T, R>>[] producerQueue;
 	protected final BlockingQueue<R>[] consumerQueue;
 	protected final AtomicBoolean running;
+	protected final AtomicBoolean pause;
 	protected int producerIndex;
 	protected int consumerIndex;
 	protected final int[] produceLock;
@@ -37,6 +38,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 			this.consumerQueue[i] = new LinkedBlockingQueue<>(queueSize);
 		});
 		this.running = new AtomicBoolean(false);
+		this.pause = new AtomicBoolean(false);
 		this.produceLock = new int[0];
 		this.consumeLock = new int[0];
 		this.consumerFutures = new CompletableFuture[thread];
@@ -106,6 +108,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		}
 		start();
 		try {
+			pauseWaitIfNeed();
 			synchronized (this.produceLock) {
 				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
 				this.producerQueue[producerIndex].put(threadTask);
@@ -125,18 +128,20 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		}
 		start();
 		boolean offered = false;
-		synchronized (this.produceLock) {
-			BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
-			try {
+		try {
+			pauseWaitIfNeed();
+			synchronized (this.produceLock) {
+				BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
+
 				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
 				offered = producerQueue.offer(threadTask, timeout, timeUnit);
 				if (offered) {
 					producerIndex = (producerIndex + 1) % thread;
-					return true;
 				}
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+
 			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 		}
 		return offered;
 	}
@@ -159,22 +164,23 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public R get(long timeout, TimeUnit timeUnit) {
+		R result = null;
 		synchronized (this.consumeLock) {
 			try {
-				R poll = consumerQueue[consumerIndex].poll(timeout, timeUnit);
-				if (null != poll) {
+				result = consumerQueue[consumerIndex].poll(timeout, timeUnit);
+				if (null != result) {
 					consumerIndex = (consumerIndex + 1) % thread;
-					return poll;
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		}
-		return null;
+		return result;
 	}
 
 	@Override
 	public void close() {
+		resume();
 		this.running.set(false);
 		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
 			for (CompletableFuture<Void> future : futures) {
@@ -195,6 +201,28 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	private void pauseWaitIfNeed() throws InterruptedException {
+		if (Boolean.TRUE.equals(pause.get())) {
+			synchronized (this.pause) {
+				this.pause.wait();
+			}
+		}
+	}
+
+	@Override
+	public synchronized void pause() {
+		this.pause.set(true);
+	}
+
+	@Override
+	public void resume() {
+		if (pause.compareAndSet(true, false)) {
+			synchronized (this.pause) {
+				this.pause.notify();
+			}
 		}
 	}
 }
