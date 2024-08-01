@@ -79,6 +79,7 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				fieldName = fieldName(key);
 			}
 			TapValue<?, ?> originTapValue = null;
+			TapField field = transformToTapValueFieldWrapper.getField(index.getAndIncrement());
 			if (value != null && fieldName != null) {
 				if ((value instanceof TapValue)) {
 					TapLogger.debug(TAG, "Value {} for field {} already in TapValue format, no need do ToTapValue conversion. ", value, fieldName);
@@ -94,7 +95,6 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				originTapValue = originValueMap != null ? originValueMap.get(fieldName) : null;
 
 				if (transformToTapValueFieldWrapper.getTapFieldList() != null) {
-					TapField field = transformToTapValueFieldWrapper.getField(index.getAndIncrement());
 					if (null != skipperRef.get() && skipperRef.get().skip(field)) {
 						return null;
 					}
