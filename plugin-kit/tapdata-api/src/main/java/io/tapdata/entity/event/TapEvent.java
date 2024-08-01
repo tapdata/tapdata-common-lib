@@ -31,6 +31,7 @@ public abstract class TapEvent implements Serializable/*, JavaCustomSerializer*/
     protected String pdkId;
     protected String pdkGroup;
     protected String pdkVersion;
+    protected Long memorySize;
     /*public void from(InputStream inputStream) throws IOException {
         DataInputStreamEx dataInputStreamEx = dataInputStream(inputStream);
         type = dataInputStreamEx.original().readInt();
@@ -152,6 +153,14 @@ public abstract class TapEvent implements Serializable/*, JavaCustomSerializer*/
             tapEvent.info = new ConcurrentHashMap<>(info);
         if(traceMap != null)
             tapEvent.traceMap = new ConcurrentHashMap<>(traceMap);
+    }
+
+    public Long getMemorySize() {
+        return memorySize;
+    }
+
+    public void setMemorySize(Long memorySize) {
+        this.memorySize = memorySize;
     }
 
     @Override
