@@ -64,6 +64,11 @@ public class TapDeleteRecordEvent extends TapRecordEvent {
 			TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) tapEvent;
 			if (before != null)
 				deleteRecordEvent.before = InstanceFactory.instance(TapUtils.class).cloneMap(before);
+			deleteRecordEvent.beforeIllegalDateFieldName = this.beforeIllegalDateFieldName;
+		} else if (tapEvent instanceof TapUpdateRecordEvent) {
+			throw new UnsupportedOperationException("Delete event cannot convert to update event");
+		} else if (tapEvent instanceof TapInsertRecordEvent) {
+			throw new UnsupportedOperationException("Delete event cannot convert to insert event");
 		}
 	}
 

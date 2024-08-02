@@ -138,6 +138,25 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 				updateRecordEvent.before = InstanceFactory.instance(TapUtils.class).cloneMap(before);
 			if (after != null)
 				updateRecordEvent.after = InstanceFactory.instance(TapUtils.class).cloneMap(after);
+			updateRecordEvent.removedFields = this.removedFields;
+			updateRecordEvent.isReplaceEvent = this.isReplaceEvent;
+			updateRecordEvent.beforeIllegalDateFieldName = this.beforeIllegalDateFieldName;
+			updateRecordEvent.afterIllegalDateFieldName = this.afterIllegalDateFieldName;
+		} else if (tapEvent instanceof TapInsertRecordEvent) {
+			TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) tapEvent;
+			if (after != null) {
+				insertRecordEvent.setAfter(InstanceFactory.instance(TapUtils.class).cloneMap(this.after));
+			}
+			insertRecordEvent.setRemovedFields(this.removedFields);
+			insertRecordEvent.setAfterIllegalDateFieldName(this.afterIllegalDateFieldName);
+		} else if (tapEvent instanceof TapDeleteRecordEvent) {
+			TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) tapEvent;
+			if (before != null) {
+				deleteRecordEvent.setBefore(InstanceFactory.instance(TapUtils.class).cloneMap(this.before));
+			} else if (after != null) {
+				deleteRecordEvent.setBefore(InstanceFactory.instance(TapUtils.class).cloneMap(this.after));
+			}
+			deleteRecordEvent.setBeforeIllegalDateFieldName(this.beforeIllegalDateFieldName);
 		}
 	}
 
