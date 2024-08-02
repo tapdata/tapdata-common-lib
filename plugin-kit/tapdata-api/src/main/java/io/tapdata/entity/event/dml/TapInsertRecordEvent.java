@@ -37,6 +37,7 @@ public class TapInsertRecordEvent extends TapRecordEvent {
 
 	//Only for cache, should not be serialized
 	private Map<String, Object> filter;
+	private List<String> removedFields;
 	/*
 	public void from(InputStream inputStream) throws IOException {
 		super.from(inputStream);
@@ -68,6 +69,20 @@ public class TapInsertRecordEvent extends TapRecordEvent {
 			TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) tapEvent;
 			if (after != null)
 				insertRecordEvent.after = InstanceFactory.instance(TapUtils.class).cloneMap(after);
+			insertRecordEvent.afterIllegalDateFieldName = this.afterIllegalDateFieldName;
+			insertRecordEvent.removedFields = this.removedFields;
+		} else if (tapEvent instanceof TapUpdateRecordEvent) {
+			TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) tapEvent;
+			if (after != null)
+				updateRecordEvent.setAfter(InstanceFactory.instance(TapUtils.class).cloneMap(this.after));
+			updateRecordEvent.setAfterIllegalDateFieldName(this.afterIllegalDateFieldName);
+			updateRecordEvent.setRemovedFields(this.removedFields);
+		} else if (tapEvent instanceof TapDeleteRecordEvent) {
+			TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) tapEvent;
+			if (after != null) {
+				deleteRecordEvent.setBefore(InstanceFactory.instance(TapUtils.class).cloneMap(this.after));
+			}
+			deleteRecordEvent.setBeforeIllegalDateFieldName(this.afterIllegalDateFieldName);
 		}
 	}
 
@@ -115,6 +130,19 @@ public class TapInsertRecordEvent extends TapRecordEvent {
 			}
 		}
 		return filter;
+	}
+
+	public TapInsertRecordEvent removedFields(List<String> removedFields) {
+		this.removedFields = removedFields;
+		return this;
+	}
+
+	public List<String> getRemovedFields() {
+		return removedFields;
+	}
+
+	public void setRemovedFields(List<String> removedFields) {
+		this.removedFields = removedFields;
 	}
 
 //	@Override
