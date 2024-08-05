@@ -146,6 +146,8 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
 			TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) tapEvent;
 			if (after != null) {
 				insertRecordEvent.setAfter(InstanceFactory.instance(TapUtils.class).cloneMap(this.after));
+			} else if (before != null) {
+				insertRecordEvent.setAfter(InstanceFactory.instance(TapUtils.class).cloneMap(this.before));
 			}
 			insertRecordEvent.setRemovedFields(this.removedFields);
 			insertRecordEvent.setAfterIllegalDateFieldName(this.afterIllegalDateFieldName);
