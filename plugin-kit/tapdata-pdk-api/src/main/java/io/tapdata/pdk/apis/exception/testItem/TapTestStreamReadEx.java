@@ -8,14 +8,9 @@ public class TapTestStreamReadEx extends TapTestItemException {
     public static final String STREAM_READ_REASON = "stream.read.reason";
 
     public TapTestStreamReadEx(Throwable cause) {
-        super(cause);
+        super(cause, STREAM_READ_FAIL, STREAM_READ_REASON, STREAM_READ_SOLUTION);
     }
     public TapTestStreamReadEx(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public void buildMessage() {
-        buildMessage(STREAM_READ_FAIL, STREAM_READ_REASON, STREAM_READ_SOLUTION);
-    }
-
 }

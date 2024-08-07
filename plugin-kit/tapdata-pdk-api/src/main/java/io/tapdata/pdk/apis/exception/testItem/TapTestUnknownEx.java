@@ -10,15 +10,9 @@ public class TapTestUnknownEx extends TapTestItemException {
     public static final String PDK_UNKNOWN_REASON = "pdk.unknown.reason";
 
     public TapTestUnknownEx(Throwable cause) {
-        super(cause);
-        buildMessage();
+        super(cause, PDK_UNKNOWN_FAIL, PDK_UNKNOWN_REASON, PDK_UNKNOWN_SOLUTION);
     }
     public TapTestUnknownEx(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public void buildMessage() {
-        buildMessage(PDK_UNKNOWN_FAIL, PDK_UNKNOWN_REASON, PDK_UNKNOWN_SOLUTION);
-    }
-
 }

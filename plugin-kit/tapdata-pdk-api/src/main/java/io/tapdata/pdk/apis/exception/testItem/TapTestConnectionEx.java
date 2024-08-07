@@ -9,15 +9,10 @@ public class TapTestConnectionEx extends TapTestItemException {
 
 
     public TapTestConnectionEx(Throwable cause) {
-        super(cause);
-        buildMessage();
+        super(cause, PDK_CONNECTION_FAIL, PDK_CONNECTION_REASON, PDK_CONNECTION_SOLUTION);
     }
 
     public TapTestConnectionEx(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public void buildMessage() {
-        buildMessage(PDK_CONNECTION_FAIL, PDK_CONNECTION_REASON, PDK_CONNECTION_SOLUTION);
     }
 }

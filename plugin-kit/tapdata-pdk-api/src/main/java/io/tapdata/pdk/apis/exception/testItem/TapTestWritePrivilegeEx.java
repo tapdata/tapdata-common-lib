@@ -8,15 +8,10 @@ public class TapTestWritePrivilegeEx extends TapTestItemException {
     public static final String WRITE_PRIVILEGE_REASON = "write.privilege.reason";
 
     public TapTestWritePrivilegeEx(Throwable cause) {
-        super(cause);
-        buildMessage();
+        super(cause, WRITE_PRIVILEGE_FAIL, WRITE_PRIVILEGE_REASON, WRITE_PRIVILEGE_SOLUTION);
     }
 
     public TapTestWritePrivilegeEx(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public void buildMessage() {
-        buildMessage(WRITE_PRIVILEGE_FAIL, WRITE_PRIVILEGE_REASON, WRITE_PRIVILEGE_SOLUTION);
     }
 }

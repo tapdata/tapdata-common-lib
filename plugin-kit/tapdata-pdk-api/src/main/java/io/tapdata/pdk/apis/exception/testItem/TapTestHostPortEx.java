@@ -10,10 +10,9 @@ public class TapTestHostPortEx extends TapTestItemException {
     public static final String CHECK_HOST_PORT_REASON = "check.host.port.reason";
 
     public TapTestHostPortEx(Throwable cause, String host, String port) {
-        super(cause);
+        super(cause, CHECK_HOST_PORT_FAIL, CHECK_HOST_PORT_REASON, CHECK_HOST_PORT_SOLUTION);
         this.host = host;
         this.port = port;
-        buildMessage();
     }
 
     public TapTestHostPortEx(String message, Throwable cause, String host, String port) {
@@ -28,9 +27,5 @@ public class TapTestHostPortEx extends TapTestItemException {
 
     public String getPort() {
         return port;
-    }
-
-    public void buildMessage() {
-        buildMessage(CHECK_HOST_PORT_FAIL, CHECK_HOST_PORT_REASON, CHECK_HOST_PORT_SOLUTION);
     }
 }

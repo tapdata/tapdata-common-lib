@@ -8,15 +8,10 @@ public class TapTestReadPrivilegeEx extends TapTestItemException {
     public static final String READ_PRIVILEGE_REASON = "read.privilege.reason";
 
     public TapTestReadPrivilegeEx(Throwable cause) {
-        super(cause);
-        buildMessage();
+        super(cause, READ_PRIVILEGE_FAIL, READ_PRIVILEGE_REASON, READ_PRIVILEGE_SOLUTION);
     }
 
     public TapTestReadPrivilegeEx(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public void buildMessage() {
-        buildMessage(READ_PRIVILEGE_FAIL, READ_PRIVILEGE_REASON, READ_PRIVILEGE_SOLUTION);
     }
 }

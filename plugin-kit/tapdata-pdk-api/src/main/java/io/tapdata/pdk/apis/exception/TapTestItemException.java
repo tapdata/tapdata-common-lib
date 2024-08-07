@@ -1,17 +1,12 @@
 package io.tapdata.pdk.apis.exception;
 
-import io.tapdata.ErrorCodeConfig;
-import io.tapdata.ErrorCodeEntity;
 import io.tapdata.entity.simplify.TapSimplify;
-import io.tapdata.exception.TapCodeException;
 import io.tapdata.exception.TapRuntimeException;
-import io.tapdata.pdk.apis.exception.testItem.TapTestUnknownEx;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 
 public class TapTestItemException extends TapRuntimeException implements Serializable {
-    public static final String PDK_UNKNOWN_FAIL = "pdk.unknown.fail";
     /**
      * Test item exception
      */
@@ -26,6 +21,10 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
     protected TapTestItemException(Throwable cause) {
         this.stack = TapSimplify.getStackTrace(cause);
     }
+    protected TapTestItemException(Throwable cause,String message, String reason, String solution) {
+        this.stack = TapSimplify.getStackTrace(cause);
+        buildMessage(message, reason, solution);
+    }
     protected TapTestItemException(String message, Throwable cause) {
         this.message = message;
     }
@@ -39,29 +38,6 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
         if (StringUtils.isBlank(getSolution())) {
             setSolution(solution);
         }
-    }
-    protected void handleEx(Throwable cause) {
-        if (null != TapSimplify.matchThrowable(cause, TapTestItemException.class)) {
-            this.stack = TapSimplify.getStackTrace(cause);
-        } else if (null != TapSimplify.matchThrowable(cause, TapCodeException.class)) {
-            TapCodeException ex = (TapCodeException) TapSimplify.matchThrowable(cause, TapCodeException.class);
-            String code = ex.getCode();
-            message = ex.getMessage();
-            reason = getKeyFromErrorCode(code);
-            stack = TapSimplify.getStackTrace(ex);
-            solution = getKeyFromErrorCode(code);
-        } else {
-            new TapTestUnknownEx(cause);
-        }
-    }
-    public String getKeyFromErrorCode(String code) {
-        ErrorCodeEntity errorCode = ErrorCodeConfig.getInstance().getErrorCode(code);
-        if (null == errorCode) {
-            return PDK_UNKNOWN_FAIL;
-        }
-        String solution = errorCode.getSolution();
-
-        return solution;
     }
 
     @Override

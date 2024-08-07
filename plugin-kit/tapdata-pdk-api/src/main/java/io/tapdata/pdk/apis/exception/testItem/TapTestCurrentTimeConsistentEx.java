@@ -8,15 +8,10 @@ public class TapTestCurrentTimeConsistentEx extends TapTestItemException {
     public static final String TIME_CONSISTENT_REASON = "time.consistent.reason";
 
     public TapTestCurrentTimeConsistentEx(Throwable cause) {
-        super(cause);
-        buildMessage();
+        super(cause, TIME_CONSISTENT_FAIL, TIME_CONSISTENT_REASON, TIME_CONSISTENT_SOLUTION);
     }
 
     public TapTestCurrentTimeConsistentEx(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public void buildMessage() {
-        buildMessage(TIME_CONSISTENT_FAIL, TIME_CONSISTENT_REASON, TIME_CONSISTENT_SOLUTION);
     }
 }
