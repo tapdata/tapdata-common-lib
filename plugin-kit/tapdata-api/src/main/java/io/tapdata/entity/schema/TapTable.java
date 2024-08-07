@@ -83,8 +83,8 @@ public class TapTable extends TapItem<TapField> {
 
 	private Map<String, Object> tableAttr;
 
-	protected Collection<String> primaryKeys;
-	protected final int[] primaryKeyLock = new int[0];
+	private Collection<String> primaryKeys;
+	private final int[] primaryKeyLock = new int[0];
 
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;

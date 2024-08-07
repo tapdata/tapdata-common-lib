@@ -73,7 +73,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     protected QueryPartitionTablesByParentName queryPartitionTablesByParentName;
     protected CreatePartitionSubTableFunction createPartitionSubTableFunction;
-    protected CreatPartitionTableFunction creatPartitionTableFunction;
+    protected CreatePartitionTableFunction createPartitionTableFunction;
     protected DropPartitionTableFunction dropPartitionTableFunction;
 
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
@@ -367,8 +367,8 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         this.createPartitionSubTableFunction = function;
         return this;
     }
-    public ConnectorFunctions supportCreatPartitionTableFunction(CreatPartitionTableFunction function) {
-        this.creatPartitionTableFunction = function;
+    public ConnectorFunctions supportCreatPartitionTableFunction(CreatePartitionTableFunction function) {
+        this.createPartitionTableFunction = function;
         return this;
     }
     public ConnectorFunctions supportDropPartitionTableFunction(DropPartitionTableFunction function) {
@@ -519,7 +519,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     public QueryHashByAdvanceFilterFunction getQueryHashByAdvanceFilterFunction() {
         return queryHashByAdvanceFilterFunction;
     }
-    
+
     public QueryPartitionTablesByParentName getQueryPartitionTablesByParentName() {
         return queryPartitionTablesByParentName;
     }
@@ -528,8 +528,8 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return createPartitionSubTableFunction;
     }
 
-    public CreatPartitionTableFunction getCreatPartitionTableFunction() {
-        return creatPartitionTableFunction;
+    public CreatePartitionTableFunction getCreatePartitionTableFunction() {
+        return createPartitionTableFunction;
     }
 
     public DropPartitionTableFunction getDropPartitionTableFunction() {
