@@ -1,7 +1,5 @@
 package io.tapdata.pdk.apis.functions;
 
-import java.util.concurrent.TimeUnit;
-
 public enum PDKMethod {
     REGISTER_CAPABILITIES,
 
@@ -63,6 +61,10 @@ public enum PDKMethod {
     GET_CURRENT_TIMESTAMP,
     QUERY_HASH_BY_ADVANCE_FILTER,
     IENGINE_SHARE_CDC_LISTEN,
+    QUERY_PARTITION_TABLES_BY_PARENT_NAME,
+    CREAT_PARTITION_TABLE_FUNCTION,
+    CREAT_PARTITION_SUB_TABLE_FUNCTION,
+    DROP_PARTITION_TABLE_FUNCTION
     ;
     PDKMethod() {
 

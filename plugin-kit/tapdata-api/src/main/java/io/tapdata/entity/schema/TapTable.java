@@ -1,9 +1,19 @@
 package io.tapdata.entity.schema;
 
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.schema.partition.TapPartition;
 import io.tapdata.entity.schema.type.TapType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
@@ -73,8 +83,8 @@ public class TapTable extends TapItem<TapField> {
 
 	private Map<String, Object> tableAttr;
 
-	private Collection<String> primaryKeys;
-	private final int[] primaryKeyLock = new int[0];
+	protected Collection<String> primaryKeys;
+	protected final int[] primaryKeyLock = new int[0];
 
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;
@@ -95,9 +105,22 @@ public class TapTable extends TapItem<TapField> {
 		return this;
 	}
 
-	private Collection<String> logicPrimaries;
+	protected Collection<String> logicPrimaries;
 
 	private TapIndexEx partitionIndex;
+
+	private String partitionMasterTableId;
+	private TapPartition partitionInfo;
+
+	public TapTable partitionInfo(TapPartition partitionInfo) {
+		this.partitionInfo = partitionInfo;
+		return this;
+	}
+
+	public TapTable partitionMasterTableId(String partitionMasterTableId) {
+		this.partitionMasterTableId = partitionMasterTableId;
+		return this;
+	}
 
 	public String toString() {
 		return "TapTable id " + id +
@@ -419,5 +442,21 @@ public class TapTable extends TapItem<TapField> {
 
 	public void setTableAttr(Map<String, Object> tableAttr) {
 		this.tableAttr = tableAttr;
+	}
+
+	public String getPartitionMasterTableId() {
+		return partitionMasterTableId;
+	}
+
+	public void setPartitionMasterTableId(String partitionMasterTableId) {
+		this.partitionMasterTableId = partitionMasterTableId;
+	}
+
+	public TapPartition getPartitionInfo() {
+		return partitionInfo;
+	}
+
+	public void setPartitionInfo(TapPartition partitionInfo) {
+		this.partitionInfo = partitionInfo;
 	}
 }

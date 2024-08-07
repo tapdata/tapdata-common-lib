@@ -71,6 +71,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     //hash verification for the time field in the custom query filtering in data verification
     protected QueryHashByAdvanceFilterFunction queryHashByAdvanceFilterFunction;
 
+    protected QueryPartitionTablesByParentName queryPartitionTablesByParentName;
+    protected CreatePartitionSubTableFunction createPartitionSubTableFunction;
+    protected CreatPartitionTableFunction creatPartitionTableFunction;
+    protected DropPartitionTableFunction dropPartitionTableFunction;
+
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
         transactionBeginFunction = function;
         return this;
@@ -353,6 +358,24 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
+    public ConnectorFunctions supportQueryPartitionTablesByParentName(QueryPartitionTablesByParentName function) {
+        this.queryPartitionTablesByParentName = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportCreatePartitionTableFunction(CreatePartitionSubTableFunction function) {
+        this.createPartitionSubTableFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportCreatPartitionTableFunction(CreatPartitionTableFunction function) {
+        this.creatPartitionTableFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportDropPartitionTableFunction(DropPartitionTableFunction function) {
+        this.dropPartitionTableFunction = function;
+        return this;
+    }
+
     public WriteRecordFunction getWriteRecordFunction() {
         return writeRecordFunction;
     }
@@ -495,5 +518,21 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public QueryHashByAdvanceFilterFunction getQueryHashByAdvanceFilterFunction() {
         return queryHashByAdvanceFilterFunction;
+    }
+    
+    public QueryPartitionTablesByParentName getQueryPartitionTablesByParentName() {
+        return queryPartitionTablesByParentName;
+    }
+
+    public CreatePartitionSubTableFunction getCreatePartitionSubTableFunction() {
+        return createPartitionSubTableFunction;
+    }
+
+    public CreatPartitionTableFunction getCreatPartitionTableFunction() {
+        return creatPartitionTableFunction;
+    }
+
+    public DropPartitionTableFunction getDropPartitionTableFunction() {
+        return dropPartitionTableFunction;
     }
 }

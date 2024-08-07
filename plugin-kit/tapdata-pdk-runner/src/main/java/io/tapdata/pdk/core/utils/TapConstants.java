@@ -1,12 +1,22 @@
 package io.tapdata.pdk.core.utils;
 
 import com.alibaba.fastjson.parser.ParserConfig;
-import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
-import io.tapdata.entity.schema.type.*;
+import io.tapdata.entity.schema.partition.type.TapPartitionType;
+import io.tapdata.entity.schema.type.TapArray;
+import io.tapdata.entity.schema.type.TapBinary;
+import io.tapdata.entity.schema.type.TapBoolean;
+import io.tapdata.entity.schema.type.TapDate;
+import io.tapdata.entity.schema.type.TapDateTime;
+import io.tapdata.entity.schema.type.TapMap;
+import io.tapdata.entity.schema.type.TapNumber;
+import io.tapdata.entity.schema.type.TapRaw;
+import io.tapdata.entity.schema.type.TapString;
+import io.tapdata.entity.schema.type.TapTime;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.type.TapYear;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.core.api.impl.AbstractResultDeserializer;
 
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,6 +46,11 @@ public class TapConstants {
     }*/;
     static {
         tapdataParserConfig.putDeserializer(TapType.class, new AbstractResultDeserializer(abstractClassDetectors));
+        tapdataParserConfig.putDeserializer(TapPartitionType.class, new TapDeserializerBase<TapPartitionType>(TapPartitionType.KEY_NAME) {
+            @Override
+            public Class<? extends TapPartitionType> getByType(String typeObj) {
+                return TapPartitionType.getTapPartitionTypeClass(typeObj);
+            }
+        });
     }
-
 }
