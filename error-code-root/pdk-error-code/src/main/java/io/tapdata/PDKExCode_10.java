@@ -18,8 +18,10 @@ public interface PDKExCode_10 {
 			describeCN = "客户端连接被服务端关闭。\n\n" +
 					"原因\n1. 服务端手动关闭了连接；\n" +
 					"2. 服务端连接数过多，自动关闭或者拒绝了后续连接。",
-			solution = "",
-			solutionCN = "",
+			solution = "1. Ensure database server is available;\n" +
+					"2. Check if the amount of sever connection has exceed limitation",
+			solutionCN = "1. 确保数据库服务可用；\n" +
+					"2. 检查服务端连接数是否超出限制",
 			recoverable = true,
 			seeAlso = {"https://docs.tapdata.io/enterprise/user-guide/connect-database/"}
 	)
@@ -64,8 +66,10 @@ public interface PDKExCode_10 {
 					"Reason\n1. The user in the data connection used does not have the corresponding read permission;\n" +
 					"2. For some databases, more permissions are required for incremental reading. Please refer to the instructions on the right side of creating a data source. Confirm that the permissions are set correctly.",
 			describeCN = "读取数据时，缺失了相应权限。\n\n原因\n1. 使用的数据连接中的用户，没有相应的读取权限；\n2. 部分数据库，增量读取所需的权限较多，请查看创建数据源右侧的说明，确认权限是否设置正确。",
-			solution = "",
-			solutionCN = "",
+			solution = "1. Check whether the username in the currently used data connection lacks read permissions;\n" +
+					"2. Check the instructions on the right side of creating a data source to confirm whether the permissions are set correctly.",
+			solutionCN = "1. 检查当前使用的数据连接中用户名是否缺失了读取权限；\n" +
+					"2. 查看创建数据源右侧的说明，确认权限是否设置正确。",
 			seeAlso = {"https://docs.tapdata.io/enterprise/user-guide/connect-database/"}
 	)
 	String READ_MISSING_PRIVILEGES = "10004";
