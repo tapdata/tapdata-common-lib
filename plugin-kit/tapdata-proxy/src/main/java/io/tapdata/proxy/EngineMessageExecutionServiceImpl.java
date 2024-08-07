@@ -212,7 +212,7 @@ public class EngineMessageExecutionServiceImpl implements EngineMessageExecution
 		if(error != null) {
 			biConsumer.accept(null, error);
 		} else {
-			biConsumer.accept(null, new CoreException(NetErrors.NO_AVAILABLE_ENGINE, "No available engine from list {}", list));
+			biConsumer.accept(null, new CoreException(NetErrors.NO_AVAILABLE_ENGINE, "No available engine"));
 		}
 	}
 

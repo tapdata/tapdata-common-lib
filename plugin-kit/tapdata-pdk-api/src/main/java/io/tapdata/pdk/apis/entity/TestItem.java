@@ -1,5 +1,7 @@
 package io.tapdata.pdk.apis.entity;
 
+import io.tapdata.pdk.apis.exception.TapTestItemException;
+
 public class TestItem {
     /**
      * Check whether the connector support the version.
@@ -33,10 +35,19 @@ public class TestItem {
 
     public static final String ITEM_TIME_DETECTION = "Time detection";
 
+    public TestItem(String item, int result) {
+        this.item = item;
+        this.result = result;
+    }
     public TestItem(String item, int result, String information) {
         this.item = item;
         this.result = result;
         this.information = information;
+    }
+    public TestItem(String item, int result, TapTestItemException tapTestItemException) {
+        this.item = item;
+        this.result = result;
+        this.tapTestItemException = tapTestItemException;
     }
 
     /**
@@ -54,7 +65,10 @@ public class TestItem {
      * Information about why it failed
      */
     private String information;
-
+    /**
+     * Exception detail, stack and solution
+     */
+    private TapTestItemException tapTestItemException;
     public String getItem() {
         return item;
     }
@@ -87,6 +101,15 @@ public class TestItem {
     public String toString() {
         return TestItem.class.getSimpleName() + " item " + item +
                 " result " + result +
-                " information " + information;
+                " information " + information +
+                " tapTestItemException" + tapTestItemException;
+    }
+
+    public TapTestItemException getTapTestItemException() {
+        return tapTestItemException;
+    }
+
+    public void setTapTestItemException(TapTestItemException tapTestItemException) {
+        this.tapTestItemException = tapTestItemException;
     }
 }

@@ -338,4 +338,57 @@ public class TapSimplify {
 			throw new RuntimeException("Parse date time " + dateTime + " pattern " + pattern + ", failed, " + e.getMessage(), e);
 		}
 	}
+	public static Throwable matchThrowable(Throwable throwable, Class<? extends Throwable> match) {
+		if (null == throwable) {
+			return null;
+		}
+		if (compareClass(match, throwable.getClass())) {
+			return throwable;
+		}
+		List<Throwable> throwables = new ArrayList<>();
+		throwables.add(throwable);
+		Throwable matched = null;
+		while (!Thread.currentThread().isInterrupted()) {
+			Throwable cause = throwables.get(throwables.size() - 1).getCause();
+			if (null == cause) {
+				break;
+			}
+			if (throwables.contains(cause)) {
+				break;
+			}
+			if (compareClass(match, cause.getClass())) {
+				matched = cause;
+				break;
+			}
+			throwables.add(cause);
+		}
+		return matched;
+	}
+
+	public static boolean compareClass(Class<?> rootClazz, Class<?> compareClazz) {
+		if (rootClazz == null && compareClazz == null) {
+			return true;
+		}
+		if (rootClazz == null || compareClazz == null) {
+			return false;
+		}
+		if (rootClazz.getName().equals(compareClazz.getName())) {
+			return true;
+		}
+		List<Class<?>> classList = new ArrayList<>();
+		classList.add(compareClazz);
+		boolean res = false;
+		while (!Thread.currentThread().isInterrupted()) {
+			Class<?> superclass = classList.get(classList.size() - 1).getSuperclass();
+			if (null == superclass) {
+				break;
+			}
+			if (superclass.getName().equals(rootClazz.getName())) {
+				res = true;
+				break;
+			}
+			classList.add(superclass);
+		}
+		return res;
+	}
 }
