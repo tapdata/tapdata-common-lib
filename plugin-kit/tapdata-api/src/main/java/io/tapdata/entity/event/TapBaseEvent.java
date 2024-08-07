@@ -1,11 +1,5 @@
 package io.tapdata.entity.event;
 
-import io.tapdata.entity.utils.io.DataInputStreamEx;
-import io.tapdata.entity.utils.io.DataOutputStreamEx;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +8,7 @@ public abstract class TapBaseEvent extends TapEvent {
     protected String tableId;
     protected String exactlyOnceId;
     protected List<String> namespaces;
+    protected String partitionMasterTableId;
     /**
      * The reference time read from source, maybe some difference as sources are different
      * Used for CDC in most cases.
@@ -57,7 +52,13 @@ public abstract class TapBaseEvent extends TapEvent {
             baseEvent.tableId = tableId;
             baseEvent.namespaces = namespaces != null ? new ArrayList<>(namespaces) : null;
             baseEvent.associateId = associateId;
+            baseEvent.partitionMasterTableId = partitionMasterTableId;
         }
+    }
+
+    public TapBaseEvent partitionMasterTableId(String partitionMasterTableId) {
+        this.partitionMasterTableId = partitionMasterTableId;
+        return this;
     }
 
     public Long getReferenceTime() {
@@ -126,6 +127,14 @@ public abstract class TapBaseEvent extends TapEvent {
 
     public void setExactlyOnceId(String exactlyOnceId) {
         this.exactlyOnceId = exactlyOnceId;
+    }
+
+    public String getPartitionMasterTableId() {
+        return partitionMasterTableId;
+    }
+
+    public void setPartitionMasterTableId(String partitionMasterTableId) {
+        this.partitionMasterTableId = partitionMasterTableId;
     }
 
     //    @Override
