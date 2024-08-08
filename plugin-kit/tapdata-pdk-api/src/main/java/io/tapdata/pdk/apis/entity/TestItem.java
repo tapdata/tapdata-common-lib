@@ -39,21 +39,16 @@ public class TestItem {
         this.item = item;
         this.result = result;
     }
-    /**
-     *
-     * @param item
-     * @param result
-     * @param information optional: - String for test failed information
-     *                              - TapTestItemException for test failed exception
-     */
-    public TestItem(String item, int result, Object information) {
+
+    public TestItem(String item, int result, String information) {
         this.item = item;
         this.result = result;
-        if (information instanceof String) {
-            this.information = (String) information;
-        } else if (information instanceof TapTestItemException) {
-            this.tapTestItemException = (TapTestItemException) information;
-        }
+        this.information = information;
+    }
+    public TestItem(String item, TapTestItemException tapTestItemException, int result) {
+        this.item = item;
+        this.result = result;
+        this.tapTestItemException = tapTestItemException;
     }
 
     /**
