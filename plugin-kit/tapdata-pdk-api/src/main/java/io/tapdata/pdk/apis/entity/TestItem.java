@@ -35,19 +35,21 @@ public class TestItem {
 
     public static final String ITEM_TIME_DETECTION = "Time detection";
 
-    public TestItem(String item, int result) {
+    /**
+     *
+     * @param item
+     * @param result
+     * @param information optional: - String for test failed information
+     *                              - TapTestItemException for test failed exception
+     */
+    public TestItem(String item, int result, Object information) {
         this.item = item;
         this.result = result;
-    }
-    public TestItem(String item, int result, String information) {
-        this.item = item;
-        this.result = result;
-        this.information = information;
-    }
-    public TestItem(String item, int result, TapTestItemException tapTestItemException) {
-        this.item = item;
-        this.result = result;
-        this.tapTestItemException = tapTestItemException;
+        if (information instanceof String) {
+            this.information = (String) information;
+        } else if (information instanceof TapTestItemException) {
+            this.tapTestItemException = (TapTestItemException) information;
+        }
     }
 
     /**
