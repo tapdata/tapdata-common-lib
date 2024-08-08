@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -124,5 +125,83 @@ class DateTimeTest {
 			String format = dateTime.toFormatStringV2("yyyyMMdd");
 			assertEquals("20240524", format);
 		}
+	}
+	@Nested
+	class DateTimeTransformation{
+        @Test
+		void test_Time_before_1970(){
+			DateTime dateTime1 = new DateTime(new Date(-662673535171L));
+			DateTime dateTime2 = new DateTime(new java.sql.Date(-662673535171L));
+			DateTime dateTime3 = new DateTime(new java.sql.Time(-662673535171L));
+			DateTime dateTime4 = new DateTime(new Timestamp(-662673535171L));
+			DateTime dateTime5 = new DateTime(-662673535171L);
+			DateTime dateTime6 = new DateTime(Instant.ofEpochMilli(-662673535171L));
+			Assertions.assertEquals(-662673536, dateTime1.getSeconds());
+			Assertions.assertEquals(-662673536, dateTime2.getSeconds());
+			Assertions.assertEquals(-662673536, dateTime3.getSeconds());
+			Assertions.assertEquals(-662673536, dateTime4.getSeconds());
+			Assertions.assertEquals(-662673536, dateTime5.getSeconds());
+			Assertions.assertEquals(-662673536, dateTime6.getSeconds());
+
+			Assertions.assertEquals(829000000, dateTime1.getNano());
+			Assertions.assertEquals(829000000, dateTime2.getNano());
+			Assertions.assertEquals(829000000, dateTime3.getNano());
+			Assertions.assertEquals(829000000, dateTime4.getNano());
+			Assertions.assertEquals(829000000, dateTime5.getNano());
+			Assertions.assertEquals(829000000, dateTime6.getNano());
+
+			Assertions.assertTrue(dateTime1.toTimestamp().equals(new Timestamp(-662673535171L)));
+			Assertions.assertTrue(dateTime2.toTimestamp().equals(new Timestamp(-662673535171L)));
+			Assertions.assertTrue(dateTime3.toTimestamp().equals(new Timestamp(-662673535171L)));
+			Assertions.assertTrue(dateTime4.toTimestamp().equals(new Timestamp(-662673535171L)));
+			Assertions.assertTrue(dateTime5.toTimestamp().equals(new Timestamp(-662673535171L)));
+			Assertions.assertTrue(dateTime6.toTimestamp().equals(new Timestamp(-662673535171L)));
+
+
+			Assertions.assertEquals(dateTime1.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+			Assertions.assertEquals(dateTime2.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+			Assertions.assertEquals(dateTime3.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+			Assertions.assertEquals(dateTime4.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+			Assertions.assertEquals(dateTime5.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+			Assertions.assertEquals(dateTime6.toLocalDateTime(), LocalDateTime.of(1949, 1, 1, 4, 1, 4, 829000000));
+		}
+
+		@Test
+		void test_now(){
+			DateTime dateTime1 = new DateTime(new Date(1723086539829L));
+			DateTime dateTime2 = new DateTime(new java.sql.Date(1723086539829L));
+			DateTime dateTime3 = new DateTime(new java.sql.Time(1723086539829L));
+			DateTime dateTime4 = new DateTime(new Timestamp(1723086539829L));
+			DateTime dateTime5 = new DateTime(1723086539829L);
+			DateTime dateTime6 = new DateTime(Instant.ofEpochMilli(1723086539829L));
+			Assertions.assertEquals(1723086539, dateTime1.getSeconds());
+			Assertions.assertEquals(1723086539, dateTime2.getSeconds());
+			Assertions.assertEquals(1723086539, dateTime3.getSeconds());
+			Assertions.assertEquals(1723086539, dateTime4.getSeconds());
+			Assertions.assertEquals(1723086539, dateTime5.getSeconds());
+			Assertions.assertEquals(1723086539, dateTime6.getSeconds());
+
+			Assertions.assertEquals(829000000, dateTime1.getNano());
+			Assertions.assertEquals(829000000, dateTime2.getNano());
+			Assertions.assertEquals(829000000, dateTime3.getNano());
+			Assertions.assertEquals(829000000, dateTime4.getNano());
+			Assertions.assertEquals(829000000, dateTime5.getNano());
+			Assertions.assertEquals(829000000, dateTime6.getNano());
+
+			Assertions.assertTrue(dateTime1.toTimestamp().equals(new Timestamp(1723086539829L)));
+			Assertions.assertTrue(dateTime2.toTimestamp().equals(new Timestamp(1723086539829L)));
+			Assertions.assertTrue(dateTime3.toTimestamp().equals(new Timestamp(1723086539829L)));
+			Assertions.assertTrue(dateTime4.toTimestamp().equals(new Timestamp(1723086539829L)));
+			Assertions.assertTrue(dateTime5.toTimestamp().equals(new Timestamp(1723086539829L)));
+			Assertions.assertTrue(dateTime6.toTimestamp().equals(new Timestamp(1723086539829L)));
+
+			Assertions.assertEquals(dateTime1.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+			Assertions.assertEquals(dateTime2.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+			Assertions.assertEquals(dateTime3.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+			Assertions.assertEquals(dateTime4.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+			Assertions.assertEquals(dateTime5.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+			Assertions.assertEquals(dateTime6.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+		}
+
 	}
 }
