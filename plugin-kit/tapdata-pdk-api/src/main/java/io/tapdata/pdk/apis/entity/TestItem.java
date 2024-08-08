@@ -35,6 +35,10 @@ public class TestItem {
 
     public static final String ITEM_TIME_DETECTION = "Time detection";
 
+    public TestItem(String item, int result) {
+        this.item = item;
+        this.result = result;
+    }
     /**
      *
      * @param item
