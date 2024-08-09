@@ -14,7 +14,7 @@ import java.io.Serializable;
  *
  * HASH 分区方法通过将数据的哈希值对指定的 modulus 取模，然后根据 remainder 决定数据分配到哪个分区
  * */
-public class TapPartitionHash extends TapPartitionType implements Serializable, JavaCustomSerializer {
+public class TapPartitionHash extends TapPartitionType implements Serializable {
     private static final long serialVersionUID = 1L;
     int modulus;
     int remainder;
@@ -51,15 +51,10 @@ public class TapPartitionHash extends TapPartitionType implements Serializable, 
 
     @Override
     public void from(InputStream inputStream) throws IOException {
+        super.from(inputStream);
         DataInputStreamEx dataInputStream = dataInputStream(inputStream);
         modulus = dataInputStream.original().readInt();
         remainder = dataInputStream.original().readInt();
     }
 
-    @Override
-    public void to(OutputStream outputStream) throws IOException {
-        DataOutputStreamEx dataOutputStreamEx = dataOutputStream(outputStream);
-        dataOutputStreamEx.original().writeInt(modulus);
-        dataOutputStreamEx.original().writeInt(remainder);
-    }
 }

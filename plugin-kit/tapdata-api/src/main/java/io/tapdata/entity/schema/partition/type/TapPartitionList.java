@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * LIST Partitioning
  * */
-public class TapPartitionList<T> extends TapPartitionType implements Serializable, JavaCustomSerializer {
+public class TapPartitionList<T> extends TapPartitionType implements Serializable {
     private static final long serialVersionUID = 1L;
 
     boolean defaultList = false;
@@ -54,6 +54,7 @@ public class TapPartitionList<T> extends TapPartitionType implements Serializabl
 
     @Override
     public void from(InputStream inputStream) throws IOException {
+        super.from(inputStream);
         DataInputStreamEx dataInputStream = dataInputStream(inputStream);
         defaultList = dataInputStream.original().readBoolean();
         listIn = InstanceFactory.instance(JsonParser.class).fromJson(dataInputStream.original().readUTF(), new TypeHolder<List<T>>(){});
@@ -61,6 +62,7 @@ public class TapPartitionList<T> extends TapPartitionType implements Serializabl
 
     @Override
     public void to(OutputStream outputStream) throws IOException {
+        super.to(outputStream);
         DataOutputStreamEx dataOutputStreamEx = dataOutputStream(outputStream);
         dataOutputStreamEx.original().writeBoolean(defaultList);
         dataOutputStreamEx.original().writeUTF(InstanceFactory.instance(JsonParser.class).toJson(listIn));
