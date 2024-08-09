@@ -15,7 +15,7 @@ import java.io.Serializable;
 /**
  * RANGE Partitioning
  * */
-public class TapPartitionRange<T> extends TapPartitionType implements Serializable, JavaCustomSerializer {
+public class TapPartitionRange<T> extends TapPartitionType implements Serializable {
     private static final long serialVersionUID = 1L;
 
     TapRangeValue<T> rangeFrom;
@@ -54,6 +54,7 @@ public class TapPartitionRange<T> extends TapPartitionType implements Serializab
 
     @Override
     public void from(InputStream inputStream) throws IOException {
+        super.from(inputStream);
         DataInputStreamEx dataInputStream = dataInputStream(inputStream);
         JsonParser instance = InstanceFactory.instance(JsonParser.class);
         rangeFrom = instance.fromJson(dataInputStream.original().readUTF(), new TypeHolder<TapRangeValue<T>>(){});
@@ -62,6 +63,7 @@ public class TapPartitionRange<T> extends TapPartitionType implements Serializab
 
     @Override
     public void to(OutputStream outputStream) throws IOException {
+        super.to(outputStream);
         DataOutputStreamEx dataOutputStreamEx = dataOutputStream(outputStream);
         JsonParser instance = InstanceFactory.instance(JsonParser.class);
         dataOutputStreamEx.original().writeUTF(instance.toJson(rangeFrom));
