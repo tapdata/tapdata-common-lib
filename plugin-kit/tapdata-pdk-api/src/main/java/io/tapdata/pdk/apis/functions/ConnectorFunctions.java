@@ -363,11 +363,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
-    public ConnectorFunctions supportCreatePartitionTableFunction(CreatePartitionSubTableFunction function) {
+    public ConnectorFunctions supportCreateSubPartitionTableFunction(CreatePartitionSubTableFunction function) {
         this.createPartitionSubTableFunction = function;
         return this;
     }
-    public ConnectorFunctions supportCreatPartitionTableFunction(CreatePartitionTableFunction function) {
+    public ConnectorFunctions supportCreatePartitionTableFunction(CreatePartitionTableFunction function) {
         this.createPartitionTableFunction = function;
         return this;
     }
