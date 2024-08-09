@@ -105,7 +105,7 @@ public class TapTable extends TapItem<TapField> {
 		return this;
 	}
 
-	private Collection<String> logicPrimaries;
+	protected Collection<String> logicPrimaries;
 
 	private TapIndexEx partitionIndex;
 
