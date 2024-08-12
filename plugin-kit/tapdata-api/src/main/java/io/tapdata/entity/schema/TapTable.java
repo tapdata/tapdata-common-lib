@@ -459,4 +459,8 @@ public class TapTable extends TapItem<TapField> {
 	public void setPartitionInfo(TapPartition partitionInfo) {
 		this.partitionInfo = partitionInfo;
 	}
+
+	public Collection<String> getLogicPrimaries() {
+		return logicPrimaries;
+	}
 }
