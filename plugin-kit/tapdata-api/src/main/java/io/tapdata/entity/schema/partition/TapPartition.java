@@ -18,6 +18,9 @@ public class TapPartition implements Serializable {
 
     List<TapSubPartitionTableInfo> subPartitionTableInfo;
 
+    boolean invalidType;
+    String invalidMsg;
+
     public static TapPartition create() {
         return new TapPartition();
     }
@@ -89,5 +92,21 @@ public class TapPartition implements Serializable {
 
     public void setOriginPartitionStageSQL(String originPartitionStageSQL) {
         this.originPartitionStageSQL = originPartitionStageSQL;
+    }
+
+    public boolean isInvalidType() {
+        return invalidType;
+    }
+
+    public void setInvalidType(boolean invalidType) {
+        this.invalidType = invalidType;
+    }
+
+    public String getInvalidMsg() {
+        return invalidMsg;
+    }
+
+    public void setInvalidMsg(String invalidMsg) {
+        this.invalidMsg = invalidMsg;
     }
 }
