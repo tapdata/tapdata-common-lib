@@ -22,13 +22,15 @@ public class ConnectorCapabilities {
     private Map<String, String> capabilityAlternativeMap;
     private Map<String, Map<String, String>> capabilityAlternativeThreadMap;
 
-    public synchronized ConnectorCapabilities alternative(String capabilityId, String alternative) {
-        if (capabilityAlternativeMap == null) {
-            capabilityAlternativeMap = new ConcurrentHashMap<>();
-            capabilityAlternativeMap.put(capabilityId, alternative);
-        }
-        if (capabilityAlternativeThreadMap == null) {
-            capabilityAlternativeThreadMap = new ConcurrentHashMap<>();
+    public ConnectorCapabilities alternative(String capabilityId, String alternative) {
+        synchronized (this) {
+            if (capabilityAlternativeMap == null) {
+                capabilityAlternativeMap = new ConcurrentHashMap<>();
+                capabilityAlternativeMap.put(capabilityId, alternative);
+            }
+            if (capabilityAlternativeThreadMap == null) {
+                capabilityAlternativeThreadMap = new ConcurrentHashMap<>();
+            }
         }
         if (capabilityAlternativeThreadMap.containsKey(Thread.currentThread().getName())) {
             capabilityAlternativeThreadMap.get(Thread.currentThread().getName()).put(capabilityId, alternative);
