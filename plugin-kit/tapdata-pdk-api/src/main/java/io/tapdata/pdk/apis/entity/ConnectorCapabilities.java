@@ -20,25 +20,25 @@ public class ConnectorCapabilities {
     }
 
     private Map<String, String> capabilityAlternativeMap;
-    private Map<String, Map<String, String>> capabilityAlternativeThreadMap;
+    private volatile Map<String, Map<String, String>> capabilityAlternativeThreadMap;
 
     public ConnectorCapabilities alternative(String capabilityId, String alternative) {
-        synchronized (this) {
-            if (capabilityAlternativeMap == null) {
-                capabilityAlternativeMap = new ConcurrentHashMap<>();
-                capabilityAlternativeMap.put(capabilityId, alternative);
-            }
-            if (capabilityAlternativeThreadMap == null) {
-                capabilityAlternativeThreadMap = new ConcurrentHashMap<>();
+        if (capabilityAlternativeThreadMap == null) {
+            synchronized (this) {
+                if (capabilityAlternativeThreadMap == null) {
+                    capabilityAlternativeThreadMap = new ConcurrentHashMap<>();
+                }
             }
         }
-        if (capabilityAlternativeThreadMap.containsKey(Thread.currentThread().getName())) {
-            capabilityAlternativeThreadMap.get(Thread.currentThread().getName()).put(capabilityId, alternative);
-        } else {
+        capabilityAlternativeThreadMap.computeIfPresent(Thread.currentThread().getName(), (k, v) -> {
+            v.put(capabilityId, alternative);
+            return v;
+        });
+        capabilityAlternativeThreadMap.computeIfAbsent(Thread.currentThread().getName(), k -> {
             Map<String, String> threadMap = new ConcurrentHashMap<>();
             threadMap.put(capabilityId, alternative);
-            capabilityAlternativeThreadMap.put(Thread.currentThread().getName(), threadMap);
-        }
+            return threadMap;
+        });
         return this;
     }
 
@@ -49,8 +49,6 @@ public class ConnectorCapabilities {
     public String getCapabilityAlternative(String capabilityId) {
         if (capabilityAlternativeThreadMap != null && capabilityAlternativeThreadMap.containsKey(Thread.currentThread().getName()))
             return capabilityAlternativeThreadMap.get(Thread.currentThread().getName()).get(capabilityId);
-        if (capabilityAlternativeMap != null)
-            return capabilityAlternativeMap.get(capabilityId);
         return null;
     }
 
