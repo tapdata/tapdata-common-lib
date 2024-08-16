@@ -1,6 +1,8 @@
 package io.tapdata.entity.event.ddl.entity;
 
-public class ValueChange<T> {
+import java.io.Serializable;
+
+public class ValueChange<T> implements Serializable {
     private T before;
     public ValueChange<T> before(T before) {
         this.before = before;
