@@ -31,7 +31,7 @@ import java.util.function.Function;
  * 
  * @create 2024-07-19 22:20
  **/
-public interface ConcurrentProcessor<T, R> {
+public interface ConcurrentProcessor<T, R> extends AutoCloseable {
 	void start();
 
 	void runAsync(T input, Function<T, R> function);
