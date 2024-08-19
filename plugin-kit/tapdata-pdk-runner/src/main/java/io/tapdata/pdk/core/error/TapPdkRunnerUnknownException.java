@@ -9,7 +9,7 @@ import io.tapdata.exception.TapCodeException;
  **/
 public class TapPdkRunnerUnknownException extends TapCodeException {
 	private static final long serialVersionUID = 4820551931387403402L;
-	private String tableName = "unknown";
+	private String tableName;
 	public TapPdkRunnerUnknownException(Throwable cause) {
 		super(TapPdkRunnerExCode_18.UNKNOWN_ERROR, cause);
 	}
@@ -21,8 +21,10 @@ public class TapPdkRunnerUnknownException extends TapCodeException {
 	}
 	@Override
 	public String getMessage() {
-		String message = "Unknown exception occur when operate table: %s";
-		message = String.format(message, tableName);
-		return message;
+		String message = "Unknown PDK exception occur, ";
+		if (tableName != null) {
+			message += String.format("when operate table: %s, ", tableName);
+		}
+		return message + super.getMessage();
 	}
 }
