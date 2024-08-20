@@ -17,7 +17,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	protected final int queueSize;
 	protected final String tag;
 	protected final BlockingQueue<ThreadTask<T, R>>[] producerQueue;
-	protected final BlockingQueue<R>[] consumerQueue;
+	protected final BlockingQueue<ApplyValue>[] consumerQueue;
 	protected final AtomicBoolean running;
 	protected final AtomicBoolean pause;
 	protected int producerIndex;
@@ -71,13 +71,16 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 								ThreadProcessorTask<T, R> processorTask = (ThreadProcessorTask<T, R>) threadTask;
 								T input = processorTask.getInput();
 								Function<T, R> processor = processorTask.getProcessor();
-								R apply = processor.apply(input);
+								Object apply = processor.apply(input);
+								ApplyValue applyValue;
 								if (null == apply) {
-									continue;
+									applyValue = new ApplyValue(null);
+								} else {
+									applyValue = new ApplyValue(apply);
 								}
-								consumerQueue[index].put(apply);
+								consumerQueue[index].put(applyValue);
 							} else if (threadTask instanceof ThreadBarrierTask) {
-								ThreadBarrierTask<T, R> threadBarrierTask = (ThreadBarrierTask<T, R>) threadTask;
+								ThreadBarrierTask<T, Object> threadBarrierTask = (ThreadBarrierTask<T, Object>) threadTask;
 								CyclicBarrier cyclicBarrier = threadBarrierTask.getCyclicBarrier();
 								if (null == cyclicBarrier) {
 									continue;
@@ -152,9 +155,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	public R get() {
 		synchronized (this.consumeLock) {
 			try {
-				R take = consumerQueue[consumerIndex].take();
+				ApplyValue take = consumerQueue[consumerIndex].take();
 				consumerIndex = (consumerIndex + 1) % thread;
-				return take;
+				return (R) take.getValue();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -164,7 +167,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public R get(long timeout, TimeUnit timeUnit) {
-		R result = null;
+		ApplyValue result = null;
 		synchronized (this.consumeLock) {
 			try {
 				result = consumerQueue[consumerIndex].poll(timeout, timeUnit);
@@ -175,7 +178,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 				Thread.currentThread().interrupt();
 			}
 		}
-		return result;
+		return (R) result.getValue();
 	}
 
 	@Override

@@ -202,4 +202,36 @@ class SimpleConcurrentProcessorImplTest {
 		assertThrows(IllegalArgumentException.class, () -> processor.runAsyncWithBlocking("input", null));
 		assertThrows(IllegalArgumentException.class, () -> processor.runAsyncWithBlocking("input", null, 1L, TimeUnit.SECONDS));
 	}
+
+	@Test
+	@DisplayName("test main process by calling methods: runAsync(), get(), with apply null")
+	void test7() {
+		List<Integer> list = new ArrayList<>();
+		CountDownLatch countDownLatch = new CountDownLatch(10000);
+		IntStream.range(0, Long.valueOf(countDownLatch.getCount()).intValue()).forEach(list::add);
+		SimpleConcurrentProcessorImpl<Integer, Integer> processor = new SimpleConcurrentProcessorImpl<>(4, 10, "test");
+		processor.start();
+		List<Integer> result = new ArrayList<>();
+		new Thread(() -> {
+			for (Integer i : list) {
+				processor.runAsync(i, input -> {
+					if (input == 3) {
+						return null;
+					}
+					return input;
+				});
+			}
+		}).start();
+		new Thread(() -> {
+			while (countDownLatch.getCount() >= 0L) {
+				result.add(processor.get());
+				countDownLatch.countDown();
+			}
+		}).start();
+		assertDoesNotThrow(() -> countDownLatch.await());
+		processor.close();
+		list.remove(3);
+		list.add(3, null);
+		assertEquals(list, result);
+	}
 }
