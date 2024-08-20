@@ -178,7 +178,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 				Thread.currentThread().interrupt();
 			}
 		}
-		return (R) result.getValue();
+		return result == null ? null : (R) result.getValue();
 	}
 
 	@Override
