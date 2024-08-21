@@ -1,5 +1,7 @@
 package io.tapdata.common.concurrent;
 
+import io.tapdata.common.concurrent.exception.ConcurrentProcessorApplyException;
+
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -42,9 +44,9 @@ public interface ConcurrentProcessor<T, R> extends AutoCloseable {
 
 	boolean runAsyncWithBlocking(T input, Function<T, R> function, long timeout, TimeUnit timeUnit);
 
-	R get();
+	R get() throws ConcurrentProcessorApplyException;
 
-	R get(long timeout, TimeUnit timeUnit);
+	R get(long timeout, TimeUnit timeUnit) throws ConcurrentProcessorApplyException;
 
 	void pause();
 

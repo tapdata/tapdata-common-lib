@@ -1,5 +1,7 @@
 package io.tapdata.common.concurrent;
 
+import io.tapdata.common.concurrent.exception.ConcurrentProcessorApplyException;
+
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,12 +73,17 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 								ThreadProcessorTask<T, R> processorTask = (ThreadProcessorTask<T, R>) threadTask;
 								T input = processorTask.getInput();
 								Function<T, R> processor = processorTask.getProcessor();
-								Object apply = processor.apply(input);
+								Object apply;
 								ApplyValue applyValue;
-								if (null == apply) {
-									applyValue = new ApplyValue(null);
-								} else {
-									applyValue = new ApplyValue(apply);
+								try {
+									apply = processor.apply(input);
+									if (null == apply) {
+										applyValue = new ApplyValue(null);
+									} else {
+										applyValue = new ApplyValue(apply);
+									}
+								} catch (Exception e) {
+									applyValue = new ApplyValue(input, e);
 								}
 								consumerQueue[index].put(applyValue);
 							} else if (threadTask instanceof ThreadBarrierTask) {
@@ -152,11 +159,14 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	abstract String getTag();
 
 	@Override
-	public R get() {
+	public R get() throws ConcurrentProcessorApplyException {
 		synchronized (this.consumeLock) {
 			try {
 				ApplyValue take = consumerQueue[consumerIndex].take();
 				consumerIndex = (consumerIndex + 1) % thread;
+				if (null != take.getException()) {
+					throw new ConcurrentProcessorApplyException(take.getException(), take.getValue());
+				}
 				return (R) take.getValue();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
@@ -166,19 +176,24 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	}
 
 	@Override
-	public R get(long timeout, TimeUnit timeUnit) {
-		ApplyValue result = null;
+	public R get(long timeout, TimeUnit timeUnit) throws ConcurrentProcessorApplyException {
+		ApplyValue result;
 		synchronized (this.consumeLock) {
 			try {
 				result = consumerQueue[consumerIndex].poll(timeout, timeUnit);
 				if (null != result) {
 					consumerIndex = (consumerIndex + 1) % thread;
+					if (null != result.getException()) {
+						throw new ConcurrentProcessorApplyException(result.getException(), result.getValue());
+					} else {
+						return (R) result.getValue();
+					}
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		}
-		return (R) result.getValue();
+		return null;
 	}
 
 	@Override
