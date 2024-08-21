@@ -1,5 +1,7 @@
 package io.tapdata.common.concurrent;
 
+import io.tapdata.common.concurrent.exception.ConcurrentProcessorApplyException;
+
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,7 +19,7 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	protected final int queueSize;
 	protected final String tag;
 	protected final BlockingQueue<ThreadTask<T, R>>[] producerQueue;
-	protected final BlockingQueue<R>[] consumerQueue;
+	protected final BlockingQueue<ApplyValue>[] consumerQueue;
 	protected final AtomicBoolean running;
 	protected final AtomicBoolean pause;
 	protected int producerIndex;
@@ -71,13 +73,21 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 								ThreadProcessorTask<T, R> processorTask = (ThreadProcessorTask<T, R>) threadTask;
 								T input = processorTask.getInput();
 								Function<T, R> processor = processorTask.getProcessor();
-								R apply = processor.apply(input);
-								if (null == apply) {
-									continue;
+								Object apply;
+								ApplyValue applyValue;
+								try {
+									apply = processor.apply(input);
+									if (null == apply) {
+										applyValue = new ApplyValue(null);
+									} else {
+										applyValue = new ApplyValue(apply);
+									}
+								} catch (Exception e) {
+									applyValue = new ApplyValue(input, e);
 								}
-								consumerQueue[index].put(apply);
+								consumerQueue[index].put(applyValue);
 							} else if (threadTask instanceof ThreadBarrierTask) {
-								ThreadBarrierTask<T, R> threadBarrierTask = (ThreadBarrierTask<T, R>) threadTask;
+								ThreadBarrierTask<T, Object> threadBarrierTask = (ThreadBarrierTask<T, Object>) threadTask;
 								CyclicBarrier cyclicBarrier = threadBarrierTask.getCyclicBarrier();
 								if (null == cyclicBarrier) {
 									continue;
@@ -149,12 +159,15 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	abstract String getTag();
 
 	@Override
-	public R get() {
+	public R get() throws ConcurrentProcessorApplyException {
 		synchronized (this.consumeLock) {
 			try {
-				R take = consumerQueue[consumerIndex].take();
+				ApplyValue take = consumerQueue[consumerIndex].take();
 				consumerIndex = (consumerIndex + 1) % thread;
-				return take;
+				if (null != take.getException()) {
+					throw new ConcurrentProcessorApplyException(take.getException(), take.getValue());
+				}
+				return (R) take.getValue();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -163,19 +176,24 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	}
 
 	@Override
-	public R get(long timeout, TimeUnit timeUnit) {
-		R result = null;
+	public R get(long timeout, TimeUnit timeUnit) throws ConcurrentProcessorApplyException {
+		ApplyValue result;
 		synchronized (this.consumeLock) {
 			try {
 				result = consumerQueue[consumerIndex].poll(timeout, timeUnit);
 				if (null != result) {
 					consumerIndex = (consumerIndex + 1) % thread;
+					if (null != result.getException()) {
+						throw new ConcurrentProcessorApplyException(result.getException(), result.getValue());
+					} else {
+						return (R) result.getValue();
+					}
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		}
-		return result;
+		return null;
 	}
 
 	@Override

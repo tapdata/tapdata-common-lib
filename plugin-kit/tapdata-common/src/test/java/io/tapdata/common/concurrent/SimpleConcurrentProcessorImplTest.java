@@ -1,5 +1,6 @@
 package io.tapdata.common.concurrent;
 
+import io.tapdata.common.concurrent.exception.ConcurrentProcessorApplyException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class SimpleConcurrentProcessorImplTest {
 		}).start();
 		new Thread(() -> {
 			while (countDownLatch.getCount() >= 0L) {
-				result.add(processor.get());
+				assertDoesNotThrow(() -> result.add(processor.get()));
 				countDownLatch.countDown();
 			}
 		}).start();
@@ -67,7 +68,7 @@ class SimpleConcurrentProcessorImplTest {
 		}).start();
 		new Thread(() -> {
 			while (countDownLatch.getCount() >= 0L) {
-				Integer i = processor.get(1L, TimeUnit.SECONDS);
+				Integer i = assertDoesNotThrow(() -> processor.get(1L, TimeUnit.SECONDS));
 				if (null != i) {
 					result.add(i);
 					countDownLatch.countDown();
@@ -107,7 +108,7 @@ class SimpleConcurrentProcessorImplTest {
 
 		new Thread(() -> {
 			while (countDownLatch.getCount() > 0) {
-				result.add(processor.get());
+				result.add(assertDoesNotThrow(() -> processor.get()));
 				countDownLatch.countDown();
 			}
 		}).start();
@@ -148,7 +149,7 @@ class SimpleConcurrentProcessorImplTest {
 
 		new Thread(() -> {
 			while (countDownLatch.getCount() > 0) {
-				result.add(processor.get());
+				result.add(assertDoesNotThrow(() -> processor.get()));
 				countDownLatch.countDown();
 			}
 		}).start();
@@ -175,7 +176,7 @@ class SimpleConcurrentProcessorImplTest {
 
 		new Thread(() -> {
 			while (countDownLatch.getCount() > 0) {
-				Integer i = processor.get();
+				Integer i = assertDoesNotThrow(() -> processor.get());
 				result.add(i);
 				if (i == 3) {
 					assertDoesNotThrow(() -> TimeUnit.MILLISECONDS.sleep(500L));
@@ -201,5 +202,74 @@ class SimpleConcurrentProcessorImplTest {
 		assertThrows(IllegalArgumentException.class, () -> processor.runAsync("input", null));
 		assertThrows(IllegalArgumentException.class, () -> processor.runAsyncWithBlocking("input", null));
 		assertThrows(IllegalArgumentException.class, () -> processor.runAsyncWithBlocking("input", null, 1L, TimeUnit.SECONDS));
+	}
+
+	@Test
+	@DisplayName("test main process by calling methods: runAsync(), get(), with apply null")
+	void test7() {
+		List<Integer> list = new ArrayList<>();
+		CountDownLatch countDownLatch = new CountDownLatch(10000);
+		IntStream.range(0, Long.valueOf(countDownLatch.getCount()).intValue()).forEach(list::add);
+		SimpleConcurrentProcessorImpl<Integer, Integer> processor = new SimpleConcurrentProcessorImpl<>(4, 10, "test");
+		processor.start();
+		List<Integer> result = new ArrayList<>();
+		new Thread(() -> {
+			for (Integer i : list) {
+				processor.runAsync(i, input -> {
+					if (input == 3) {
+						return null;
+					}
+					return input;
+				});
+			}
+		}).start();
+		new Thread(() -> {
+			while (countDownLatch.getCount() >= 0L) {
+				result.add(assertDoesNotThrow(() -> processor.get()));
+				countDownLatch.countDown();
+			}
+		}).start();
+		assertDoesNotThrow(() -> countDownLatch.await());
+		processor.close();
+		list.remove(3);
+		list.add(3, null);
+		assertEquals(list, result);
+	}
+
+	@Test
+	@DisplayName("test when apply function have error, should be throw through get method")
+	void test8() {
+		List<Integer> list = new ArrayList<>();
+		CountDownLatch countDownLatch = new CountDownLatch(10);
+		IntStream.range(0, Long.valueOf(countDownLatch.getCount()).intValue()).forEach(list::add);
+		SimpleConcurrentProcessorImpl<Integer, Integer> processor = new SimpleConcurrentProcessorImpl<>(4, 10, "test");
+		processor.start();
+		List<Integer> result = new ArrayList<>();
+		new Thread(() -> {
+			for (Integer i : list) {
+				processor.runAsync(i, input -> {
+					if (input == 3) {
+						throw new RuntimeException("test error");
+					}
+					return input;
+				});
+			}
+		}).start();
+		new Thread(() -> {
+			while (countDownLatch.getCount() >= 0L) {
+				if (countDownLatch.getCount() == 7) {
+					ConcurrentProcessorApplyException concurrentProcessorApplyException = assertThrows(ConcurrentProcessorApplyException.class, processor::get);
+					assertEquals(3, concurrentProcessorApplyException.getOriginValue());
+					assertEquals("test error", concurrentProcessorApplyException.getCause().getMessage());
+				} else {
+					result.add(assertDoesNotThrow(() -> processor.get()));
+				}
+				countDownLatch.countDown();
+			}
+		}).start();
+		assertDoesNotThrow(() -> countDownLatch.await());
+		processor.close();
+		list.remove(3);
+		assertEquals(list, result);
 	}
 }
