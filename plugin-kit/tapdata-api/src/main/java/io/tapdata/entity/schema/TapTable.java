@@ -112,6 +112,17 @@ public class TapTable extends TapItem<TapField> {
 	private String partitionMasterTableId;
 	private TapPartition partitionInfo;
 
+	public boolean checkIsMasterPartitionTable() {
+		return Objects.nonNull(getPartitionInfo())
+				&& (Objects.isNull(getPartitionMasterTableId()) || getId().equals(getPartitionMasterTableId()));
+	}
+
+	public boolean checkIsSubPartitionTable() {
+		return Objects.nonNull(getPartitionInfo())
+				&& Objects.nonNull(getPartitionMasterTableId())
+				&& !getId().equals(getPartitionMasterTableId());
+	}
+
 	public TapTable partitionInfo(TapPartition partitionInfo) {
 		this.partitionInfo = partitionInfo;
 		return this;
