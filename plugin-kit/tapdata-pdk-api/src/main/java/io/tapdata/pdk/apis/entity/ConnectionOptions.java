@@ -5,6 +5,7 @@ import io.tapdata.entity.utils.FormatUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -86,6 +87,7 @@ public class ConnectionOptions {
     private String charset;
     private String dbVersion;
     private Long timeDifference;
+    private Map<String, String> datasourceInstanceInfo;
     public ConnectionOptions charset(String charset) {
         this.charset = charset;
         return this;
@@ -201,5 +203,13 @@ public class ConnectionOptions {
 
     public void setTimeDifference(Long timeDifference) {
         this.timeDifference = timeDifference;
+    }
+
+    public Map<String, String> getDatasourceInstanceInfo() {
+        return datasourceInstanceInfo;
+    }
+
+    public void setDatasourceInstanceInfo(Map<String, String> datasourceInstanceInfo) {
+        this.datasourceInstanceInfo = datasourceInstanceInfo;
     }
 }
