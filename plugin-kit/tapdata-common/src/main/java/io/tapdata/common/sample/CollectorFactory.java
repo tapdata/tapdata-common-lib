@@ -106,8 +106,7 @@ public class CollectorFactory {
                         try {
                             bulkReporter.execute(bulkRequest);
                         } catch(Throwable throwable) {
-                            throwable.printStackTrace();
-                            logger.error("Report bulkSampleRequest failed, " + throwable.getMessage());
+                            logger.error("Report bulkSampleRequest failed: {}", throwable.getMessage(), throwable);
                         }
                     }
                 } finally {
@@ -139,15 +138,14 @@ public class CollectorFactory {
                     bulkRequest.addSampleRequest(sampleRequest);
                 }
 
-                if (bulkRequest.getStatistics().size() ==0 && bulkRequest.getSamples().size() == 0) {
+                if (bulkRequest.getStatistics().isEmpty() && bulkRequest.getSamples().isEmpty()) {
                     return;
                 }
 
                 try {
                     bulkReporter.execute(bulkRequest);
                 } catch(Throwable throwable) {
-                    throwable.printStackTrace();
-                    logger.error("Report bulkSampleRequest failed, " + throwable.getMessage());
+                    logger.error("Report bulkSampleRequest failed: {}", throwable.getMessage(), throwable);
                 }
             }, periodSeconds, periodSeconds, TimeUnit.SECONDS);
         }
@@ -158,7 +156,7 @@ public class CollectorFactory {
             if (bulkReporter == null) {
                 throw new IllegalArgumentException("BulkReporter should be provided to report collected samples;");
             }
-            scheduledExecutorService.scheduleAtFixedRate(() -> {
+            scheduledExecutorService.scheduleWithFixedDelay(() -> {
                 // upload the cached bulkRequest
                 cachedBulkRequestLock.lock();
                 try {
@@ -166,8 +164,7 @@ public class CollectorFactory {
                         try {
                             bulkReporter.execute(bulkRequest);
                         } catch(Throwable throwable) {
-                            throwable.printStackTrace();
-                            logger.error("Report bulkSampleRequest failed, " + throwable.getMessage());
+                            logger.error("Report bulkSampleRequest failed: {}", throwable.getMessage(), throwable);
                         }
                     }
                 } finally {
@@ -199,15 +196,14 @@ public class CollectorFactory {
                     bulkRequest.addSampleRequest(sampleRequest);
                 }
 
-                if (bulkRequest.getStatistics().size() ==0 && bulkRequest.getSamples().size() == 0) {
+                if (bulkRequest.getStatistics().isEmpty() && bulkRequest.getSamples().isEmpty()) {
                     return;
                 }
 
                 try {
                     bulkReporter.execute(bulkRequest);
                 } catch(Throwable throwable) {
-                    throwable.printStackTrace();
-                    logger.error("Report bulkSampleRequest failed, " + throwable.getMessage());
+                    logger.error("Report bulkSampleRequest failed: {}", throwable.getMessage(), throwable);
                 }
             }, periodSeconds, periodSeconds, TimeUnit.SECONDS);
         }
