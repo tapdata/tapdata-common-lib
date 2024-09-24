@@ -177,4 +177,7 @@ public interface PDKExCode_10 {
 
 	@TapExCode(recoverable = true)
 	String RETRYABLE_ERROR = "10012";
+
+	@TapExCode()
+	String CONFIG_ERROR = "10013";
 }
