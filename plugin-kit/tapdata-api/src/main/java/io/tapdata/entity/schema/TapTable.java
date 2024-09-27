@@ -111,6 +111,7 @@ public class TapTable extends TapItem<TapField> {
 
 	private String partitionMasterTableId;
 	private TapPartition partitionInfo;
+	private String ancestorsName;
 
 	public boolean checkIsMasterPartitionTable() {
 		return Objects.nonNull(getPartitionInfo())
@@ -469,6 +470,14 @@ public class TapTable extends TapItem<TapField> {
 
 	public void setPartitionInfo(TapPartition partitionInfo) {
 		this.partitionInfo = partitionInfo;
+	}
+
+	public String getAncestorsName() {
+		return ancestorsName;
+	}
+
+	public void setAncestorsName(String ancestorsName) {
+		this.ancestorsName = ancestorsName;
 	}
 
 	public Collection<String> getLogicPrimaries() {
