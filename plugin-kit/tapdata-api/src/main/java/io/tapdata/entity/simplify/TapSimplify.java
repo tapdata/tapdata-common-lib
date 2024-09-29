@@ -185,6 +185,7 @@ public class TapSimplify {
 		createTableEvent.setTime(System.currentTimeMillis());
 		createTableEvent.setTable(table);
 		createTableEvent.setTableId(table.getId());
+		createTableEvent.setPartitionMasterTableId(table.getPartitionMasterTableId());
 		return createTableEvent;
 	}
 

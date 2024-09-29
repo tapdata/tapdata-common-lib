@@ -8,6 +8,10 @@ import io.tapdata.exception.TapPdkBaseException;
  * @version v1.0 2023/4/26 11:39 Create
  */
 public class TapPdkSkippableDataEx extends TapPdkBaseException {
+    public TapPdkSkippableDataEx(String message, String pdkId) {
+        super(PDKExCode_10.SKIPPABLE_DATA, message, pdkId);
+    }
+
     public TapPdkSkippableDataEx(String message, String pdkId, Throwable cause) {
         super(PDKExCode_10.SKIPPABLE_DATA, message, pdkId, cause);
     }

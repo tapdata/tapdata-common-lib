@@ -34,6 +34,7 @@ public class TestItem {
     public static final String ITEM_READ_LOG = "Read log";
 
     public static final String ITEM_TIME_DETECTION = "Time detection";
+    public static final String ITEM_INSTANCE_UNIQUE_ID = "Instance Unique Id";
     public static final String ITEM_DATASOURCE_INSTANCE_INFO = "Datasource instance info";
 
     public TestItem(String item, int result) {
