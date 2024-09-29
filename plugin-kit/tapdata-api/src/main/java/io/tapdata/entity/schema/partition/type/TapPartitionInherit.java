@@ -12,7 +12,7 @@ import java.io.Serializable;
  *
  * 继承方式分区
  * */
-public class TapPartitionInherit extends TapPartitionType implements Serializable, JavaCustomSerializer {
+public class TapPartitionInherit extends TapPartitionType implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public TapPartitionInherit() {
@@ -21,9 +21,11 @@ public class TapPartitionInherit extends TapPartitionType implements Serializabl
 
     @Override
     public void from(InputStream inputStream) throws IOException {
+        super.from(inputStream);
     }
 
     @Override
     public void to(OutputStream outputStream) throws IOException {
+        super.to(outputStream);
     }
 }

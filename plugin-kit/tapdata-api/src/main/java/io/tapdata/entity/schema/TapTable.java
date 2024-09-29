@@ -83,8 +83,8 @@ public class TapTable extends TapItem<TapField> {
 
 	private Map<String, Object> tableAttr;
 
-	private Collection<String> primaryKeys;
-	private final int[] primaryKeyLock = new int[0];
+	protected Collection<String> primaryKeys;
+	protected final int[] primaryKeyLock = new int[0];
 
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;
@@ -111,6 +111,18 @@ public class TapTable extends TapItem<TapField> {
 
 	private String partitionMasterTableId;
 	private TapPartition partitionInfo;
+	private String ancestorsName;
+
+	public boolean checkIsMasterPartitionTable() {
+		return Objects.nonNull(getPartitionInfo())
+				&& (Objects.isNull(getPartitionMasterTableId()) || getId().equals(getPartitionMasterTableId()));
+	}
+
+	public boolean checkIsSubPartitionTable() {
+		return Objects.nonNull(getPartitionInfo())
+				&& Objects.nonNull(getPartitionMasterTableId())
+				&& !getId().equals(getPartitionMasterTableId());
+	}
 
 	public TapTable partitionInfo(TapPartition partitionInfo) {
 		this.partitionInfo = partitionInfo;
@@ -458,5 +470,17 @@ public class TapTable extends TapItem<TapField> {
 
 	public void setPartitionInfo(TapPartition partitionInfo) {
 		this.partitionInfo = partitionInfo;
+	}
+
+	public String getAncestorsName() {
+		return ancestorsName;
+	}
+
+	public void setAncestorsName(String ancestorsName) {
+		this.ancestorsName = ancestorsName;
+	}
+
+	public Collection<String> getLogicPrimaries() {
+		return logicPrimaries;
 	}
 }
