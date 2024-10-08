@@ -118,10 +118,6 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 									break;
 								case TapType.TYPE_NUMBER:
 									if (!(value instanceof Number)) isTypeQualified = false;
-									break;
-								case TapType.TYPE_BINARY:
-									if (!(value instanceof byte[])) isTypeQualified = false;
-									break;
 								default:
 									break;
 							}
