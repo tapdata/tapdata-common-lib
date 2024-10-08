@@ -215,6 +215,7 @@ public class TapCodecsFilterManager {
             case TapType.TYPE_ARRAY:
             case TapType.TYPE_MAP:
             case TapType.TYPE_YEAR:
+            case TapType.TYPE_BINARY:
                 return typeFromSchema.toTapValueCodec();
         }
         return null;
