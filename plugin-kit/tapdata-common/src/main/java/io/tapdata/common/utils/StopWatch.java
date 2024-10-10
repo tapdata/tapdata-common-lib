@@ -127,7 +127,7 @@ public class StopWatch {
 	 */
 	public void start(String taskName) throws IllegalStateException {
 		if (null != this.currentTaskName) {
-			throw new IllegalStateException("Can't start StopWatch: it's already running");
+			stop();
 		}
 		this.currentTaskName = taskName;
 		this.startTimeNanos = System.nanoTime();
