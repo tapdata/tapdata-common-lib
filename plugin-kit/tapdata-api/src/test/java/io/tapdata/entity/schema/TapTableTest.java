@@ -1,4 +1,4 @@
-package io.tapdata.entity.codec.filter;
+package io.tapdata.entity.schema;
 
 import com.google.common.collect.Lists;
 import io.tapdata.entity.schema.TapField;
