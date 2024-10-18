@@ -4,19 +4,9 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.partition.TapPartition;
 import io.tapdata.entity.schema.type.TapType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.ConcurrentModificationException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.lang.Thread.sleep;
+import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class TapTable extends TapItem<TapField> {
 	private static final String TAG = TapTable.class.getSimpleName();
@@ -84,7 +74,7 @@ public class TapTable extends TapItem<TapField> {
 	private Map<String, Object> tableAttr;
 
 	protected Collection<String> primaryKeys;
-	protected final int[] primaryKeyLock = new int[0];
+	protected final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
 	public TapTable pdkId(String pdkId) {
 		this.pdkId = pdkId;
@@ -144,21 +134,31 @@ public class TapTable extends TapItem<TapField> {
 
 	public TapTable add(TapIndex index) {
 		indexCheck(index);
-		if (indexList == null) {
-			indexList = new ArrayList<>();
+		readWriteLock.writeLock().lock();
+		try {
+			if (indexList == null) {
+				indexList = new ArrayList<>();
+			}
+			indexList.add(index);
+		} finally {
+			readWriteLock.writeLock().unlock();
 		}
-		indexList.add(index);
 		return this;
 	}
 
 	public TapTable add(TapField field) {
 		fieldCheck(field);
-		if (nameFieldMap == null) {
-			nameFieldMap = new LinkedHashMap<>();
-		}
-		nameFieldMap.put(field.getName(), field);
-		if (field.getPos() == null) {
-			field.pos(nameFieldMap.size());
+		readWriteLock.writeLock().lock();
+		try {
+			if (nameFieldMap == null) {
+				nameFieldMap = new LinkedHashMap<>();
+			}
+			nameFieldMap.put(field.getName(), field);
+			if (field.getPos() == null) {
+				field.pos(nameFieldMap.size());
+			}
+		} finally {
+			readWriteLock.writeLock().unlock();
 		}
 		return this;
 	}
@@ -182,67 +182,52 @@ public class TapTable extends TapItem<TapField> {
 	}
 
 	public Collection<String> primaryKeys(boolean isLogic) {
-		if (isLogic) {
-			if (null != logicPrimaries && !logicPrimaries.isEmpty()) return logicPrimaries;
-		}
+		readWriteLock.readLock().lock();
+		try {
+			if (isLogic) {
+				if (null != logicPrimaries && !logicPrimaries.isEmpty()) return logicPrimaries;
+			}
+			LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
+			if (nameFieldMapCopyRef == null)
+				return Collections.emptyList();
 
-		synchronized (this.primaryKeyLock) {
-			if (null != primaryKeys) {
-				return primaryKeys;
-			} else {
-				this.primaryKeys = new ArrayList<>();
-				int retry = 0;
-				LinkedHashMap<String, TapField> nameFieldMapCopyRef = null;
-				while(retry <= 1){
-					try {
-						nameFieldMapCopyRef = new LinkedHashMap<>(this.nameFieldMap);
-						break;
-					}catch (ConcurrentModificationException exception){
-						retry++;
-						TapLogger.warn(TAG, "Get nameFieldMap retry");
-						try {
-							sleep(10);
-						} catch (InterruptedException e) {
-							throw new RuntimeException(e);
-						}
-					}
-				}
-				if (nameFieldMapCopyRef.isEmpty())
-					return Collections.emptyList();
-				for (TapField field : nameFieldMapCopyRef.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPrimaryKeyPos(),Comparator.nullsLast(Integer::compareTo)))
-						.filter(Objects::nonNull).map(Map.Entry::getValue).collect(Collectors.toList())) {
-					if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
-							|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
-						this.primaryKeys.add(field.getName());
-					}
-				}
-				if (!this.primaryKeys.isEmpty())
-					return this.primaryKeys;
-
-				if (isLogic) {
-					if (indexList != null) {
-						for (TapIndex tapIndex : indexList) {
-							if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
-								for (TapIndexField indexField : tapIndex.getIndexFields()) {
-									this.primaryKeys.add(indexField.getName());
-								}
-								break;
-							}
-						}
-						if (!this.primaryKeys.isEmpty())
-							return primaryKeys;
-					}
+			Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
+			for (String key : nameFieldMapCopyRef.keySet()) {
+				TapField field = nameFieldMapCopyRef.get(key);
+				if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
+						|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
+					posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
 				}
 			}
-		}
 
+			if (!posPrimaryKeyName.isEmpty())
+				return posPrimaryKeyName.values();
+
+			if (isLogic) {
+				if (indexList != null) {
+					List<String> primaryKeys = new ArrayList<>();
+					for (TapIndex tapIndex : indexList) {
+						if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+							for (TapIndexField indexField : tapIndex.getIndexFields()) {
+								primaryKeys.add(indexField.getName());
+							}
+							break;
+						}
+					}
+					if (!primaryKeys.isEmpty())
+						return primaryKeys;
+				}
+			}
+		} finally {
+			readWriteLock.readLock().unlock();
+		}
 		return Collections.emptyList();
 	}
 
 	public void refreshPrimaryKeys() {
-		synchronized (this.primaryKeyLock) {
-			primaryKeys = null;
-		}
+		readWriteLock.writeLock().lock();
+		primaryKeys = null;
+		readWriteLock.writeLock().unlock();
 	}
 
 	public TapIndexEx getPartitionIndex() {
@@ -254,16 +239,18 @@ public class TapTable extends TapItem<TapField> {
 	}
 
 	public TapIndexEx partitionIndex() {
-		if(partitionIndex != null) {
-			return partitionIndex;
-		}
-		LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
-		if (nameFieldMapCopyRef == null || nameFieldMapCopyRef.isEmpty()) {
-			TapLogger.warn(TAG, "Table {} field map is empty, no partition index available. ", name);
-			return null;
-		}
+		readWriteLock.readLock().lock();
+		try {
+			if (partitionIndex != null) {
+				return partitionIndex;
+			}
+			LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
+			if (nameFieldMapCopyRef == null || nameFieldMapCopyRef.isEmpty()) {
+				TapLogger.warn(TAG, "Table {} field map is empty, no partition index available. ", name);
+				return null;
+			}
 
-		TapIndex bestIndex = null;
+			TapIndex bestIndex = null;
 
 //		if (indexList != null) {
 //			for (TapIndex tapIndex : indexList) {
@@ -273,21 +260,23 @@ public class TapTable extends TapItem<TapField> {
 //					bestIndex = tapIndex;
 //			}
 //		}
-		//Use primary key only, as index field may have null value, which can not be find by AdvanceFilter.
-		TapIndex primaryIndex = new TapIndex().unique(true);
-		for (String key : nameFieldMapCopyRef.keySet()) {
-			TapField field = nameFieldMapCopyRef.get(key);
-			if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
-					|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
-				primaryIndex.indexField(new TapIndexField().name(field.getName()).fieldAsc(true));
+			//Use primary key only, as index field may have null value, which can not be find by AdvanceFilter.
+			TapIndex primaryIndex = new TapIndex().unique(true);
+			for (String key : nameFieldMapCopyRef.keySet()) {
+				TapField field = nameFieldMapCopyRef.get(key);
+				if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
+						|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
+					primaryIndex.indexField(new TapIndexField().name(field.getName()).fieldAsc(true));
+				}
 			}
-		}
 
-		if(primaryIndex.getIndexFields() != null && (bestIndex == null || bestIndex.getIndexFields().size() >= primaryIndex.getIndexFields().size())) {
-			bestIndex = primaryIndex;
+			if (primaryIndex.getIndexFields() != null && (bestIndex == null || bestIndex.getIndexFields().size() >= primaryIndex.getIndexFields().size())) {
+				bestIndex = primaryIndex;
+			}
+			return bestIndex != null ? new TapIndexEx(bestIndex) : null;
+		} finally {
+			readWriteLock.readLock().unlock();
 		}
-
-		return bestIndex != null ? new TapIndexEx(bestIndex) : null;
 	}
 
 	/**
@@ -361,7 +350,9 @@ public class TapTable extends TapItem<TapField> {
 	}
 
 	public void setNameFieldMap(LinkedHashMap<String, TapField> nameFieldMap) {
+		readWriteLock.writeLock().lock();
 		this.nameFieldMap = nameFieldMap;
+		readWriteLock.writeLock().unlock();
 	}
 
 	public String getStorageEngine() {
@@ -393,7 +384,9 @@ public class TapTable extends TapItem<TapField> {
 	}
 
 	public void setIndexList(List<TapIndex> indexList) {
+		readWriteLock.writeLock().lock();
 		this.indexList = indexList;
+		readWriteLock.writeLock().unlock();
 	}
 
 	public List<String> getDefaultPrimaryKeys() {
