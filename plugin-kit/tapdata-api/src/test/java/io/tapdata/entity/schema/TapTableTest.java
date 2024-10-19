@@ -1,8 +1,6 @@
 package io.tapdata.entity.schema;
 
 import com.google.common.collect.Lists;
-import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +30,12 @@ public class TapTableTest {
                         if (Math.random() > 0.5) {
                             tapTable.add(new TapField("field_ex" + j, "varchar(20)"));
                         }
+                        if (Math.random() > 0.5) {
+                            tapTable.getNameFieldMap().put("field_ex" + 1000 + j, new TapField("field_ex" + j, "varchar(20)"));
+                        }
                         TapSimplify.sleep((long) (10 * Math.random()));
                         System.out.println(tapTable.primaryKeys());
+                        System.out.println(tapTable.primaryKeys(true));
                     }
                 } catch (Exception e) {
                     exception.set(e);

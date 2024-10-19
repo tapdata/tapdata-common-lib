@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.lang.Thread.sleep;
+
 public class TapTable extends TapItem<TapField> {
 	private static final String TAG = TapTable.class.getSimpleName();
 
@@ -187,7 +189,22 @@ public class TapTable extends TapItem<TapField> {
 			if (isLogic) {
 				if (null != logicPrimaries && !logicPrimaries.isEmpty()) return logicPrimaries;
 			}
-			LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
+			int retry = 0;
+			LinkedHashMap<String, TapField> nameFieldMapCopyRef = null;
+			while (retry <= 1) {
+				try {
+					nameFieldMapCopyRef = new LinkedHashMap<>(this.nameFieldMap);
+					break;
+				} catch (ConcurrentModificationException exception) {
+					retry++;
+					TapLogger.warn(TAG, "Get nameFieldMap retry");
+					try {
+						sleep(10);
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			}
 			if (nameFieldMapCopyRef == null)
 				return Collections.emptyList();
 
