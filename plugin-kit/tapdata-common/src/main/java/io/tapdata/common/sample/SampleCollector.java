@@ -168,7 +168,7 @@ public class SampleCollector {
      * @param sampler
      */
     public void addSampler(String id, Sampler sampler) {
-        idSamplerMap.putIfAbsent(id, sampler);
+        idSamplerMap.put(id, sampler);
     }
 
     /**
