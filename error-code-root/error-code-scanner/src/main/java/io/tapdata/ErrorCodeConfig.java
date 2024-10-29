@@ -2,6 +2,7 @@ package io.tapdata;
 
 import io.tapdata.exception.TapExClass;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,5 +52,10 @@ public class ErrorCodeConfig {
 			errorCodeConfig = new ErrorCodeConfig();
 			errorCodeConfig.init();
 		}
+	}
+
+	public void putErrorCode(ErrorCodeEntity errorCodeEntity) {
+		errorCodeEntityMap.put(errorCodeEntity.getCode(), errorCodeEntity);
+		errorClassMap.computeIfAbsent(errorCodeEntity.getSourceExClass(), key -> new ArrayList<>()).add(errorCodeEntity);
 	}
 }

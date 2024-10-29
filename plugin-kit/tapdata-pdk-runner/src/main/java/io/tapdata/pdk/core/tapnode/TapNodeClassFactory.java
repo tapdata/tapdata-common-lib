@@ -27,6 +27,7 @@ public class TapNodeClassFactory implements MemoryFetcher {
     private volatile ClassAnnotationHandler[] classAnnotationHandlers;
     private final TapProcessorAnnotationHandler tapProcessorAnnotationHandler = new TapProcessorAnnotationHandler();
     private final TapConnectorAnnotationHandler tapConnectorAnnotationHandler = new TapConnectorAnnotationHandler();
+    private final TapErrorCodeAnnotationHandler tapErrorCodeAnnotationHandler = new TapErrorCodeAnnotationHandler();
 
     private final Map<String, TapNodeInstance> associateIdTapNodeIdMap = new ConcurrentHashMap<>();
 
@@ -127,9 +128,10 @@ public class TapNodeClassFactory implements MemoryFetcher {
         if(classAnnotationHandlers == null) {
             synchronized (this) {
                 if(classAnnotationHandlers == null) {
-                    classAnnotationHandlers = new ClassAnnotationHandler[] {
+                    classAnnotationHandlers = new ClassAnnotationHandler[]{
                             tapProcessorAnnotationHandler,
-                            tapConnectorAnnotationHandler
+                            tapConnectorAnnotationHandler,
+                            tapErrorCodeAnnotationHandler
                     };
                 }
             }
