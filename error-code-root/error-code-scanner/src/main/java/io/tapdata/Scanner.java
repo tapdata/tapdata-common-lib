@@ -41,43 +41,47 @@ public class Scanner {
 		Reflections reflections = new Reflections(builder);
 		Set<Class<?>> exCodeClasses = reflections.getTypesAnnotatedWith(TapExClass.class);
 		for (Class<?> exCodeClass : exCodeClasses) {
-			Field[] declaredFields = exCodeClass.getDeclaredFields();
-			for (Field field : declaredFields) {
-				field.setAccessible(true);
-				TapExCode annotation = field.getAnnotation(TapExCode.class);
-				if (null == annotation) {
-					continue;
-				}
-				Object fieldValue;
-				String code;
-				try {
-					fieldValue = field.get(exCodeClass);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException("Get field value error", e);
-				}
-				if (!(fieldValue instanceof String)) {
-					continue;
-				}
-				code = fieldValue.toString();
-				ErrorCodeEntity errorCodeEntity = ErrorCodeEntity.create()
-						.name(field.getName())
-						.code(code)
-						.describe(annotation.describe())
-						.describeCN(annotation.describeCN())
-						.solution(annotation.solution())
-						.solutionCN(annotation.solutionCN())
-						.howToReproduce(annotation.howToReproduce())
-						.level(annotation.level())
-						.recoverable(annotation.recoverable())
-						.skippable(annotation.skippable())
-						.sourceExClass(exCodeClass)
-						.seeAlso(annotation.seeAlso())
-						.dynamicDescription(annotation.dynamicDescription())
-						.dynamicDescriptionCN(annotation.dynamicDescriptionCN());
+			scanClassExCode(exCodeClass, consumer);
+		}
+	}
 
-				if (null != consumer) {
-					consumer.accept(errorCodeEntity);
-				}
+	public static void scanClassExCode(Class<?> exCodeClass, Consumer<ErrorCodeEntity> consumer) {
+		Field[] declaredFields = exCodeClass.getDeclaredFields();
+		for (Field field : declaredFields) {
+			field.setAccessible(true);
+			TapExCode annotation = field.getAnnotation(TapExCode.class);
+			if (null == annotation) {
+				continue;
+			}
+			Object fieldValue;
+			String code;
+			try {
+				fieldValue = field.get(exCodeClass);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("Get field value error", e);
+			}
+			if (!(fieldValue instanceof String)) {
+				continue;
+			}
+			code = fieldValue.toString();
+			ErrorCodeEntity errorCodeEntity = ErrorCodeEntity.create()
+					.name(field.getName())
+					.code(code)
+					.describe(annotation.describe())
+					.describeCN(annotation.describeCN())
+					.solution(annotation.solution())
+					.solutionCN(annotation.solutionCN())
+					.howToReproduce(annotation.howToReproduce())
+					.level(annotation.level())
+					.recoverable(annotation.recoverable())
+					.skippable(annotation.skippable())
+					.sourceExClass(exCodeClass)
+					.seeAlso(annotation.seeAlso())
+					.dynamicDescription(annotation.dynamicDescription())
+					.dynamicDescriptionCN(annotation.dynamicDescriptionCN());
+
+			if (null != consumer) {
+				consumer.accept(errorCodeEntity);
 			}
 		}
 	}

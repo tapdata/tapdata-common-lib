@@ -209,19 +209,12 @@ public class ErrorCodeEntity implements Serializable {
 
 	public String fullErrorCode() {
 		String code = this.code;
-		String sourceExClass = this.sourceExClass.getName();
 		String prefix = DEFAULT_ERROR_CODE_PREFIX;
 		if (StringUtils.isBlank(code)) {
 			return "";
 		}
-		if (StringUtils.isNotBlank(sourceExClass)) {
-			Class<?> sourceExClz;
-			try {
-				sourceExClz = Class.forName(sourceExClass);
-			} catch (ClassNotFoundException e) {
-				throw new RuntimeException(e);
-			}
-			TapExClass tapExClass = sourceExClz.getAnnotation(TapExClass.class);
+		if (null != this.sourceExClass) {
+			TapExClass tapExClass = this.sourceExClass.getAnnotation(TapExClass.class);
 			String codePrefix = tapExClass.prefix();
 			if (StringUtils.isNotBlank(codePrefix)) {
 				prefix = codePrefix;
