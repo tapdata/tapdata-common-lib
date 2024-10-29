@@ -100,8 +100,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         if (date == null)
             throw new IllegalArgumentException("DateTime constructor date is null");
         long time = date.getTime();
-        seconds = Math.floorDiv(time, 1000);
-        nano = (int)(Math.floorMod(time, 1000) * 1000000);
+        seconds = Math.floorDiv(time, 1000L);
+        nano = (int)(Math.floorMod(time, 1000L) * 1000000);
         originType = ORIGIN_TYPE_DATE;
     }
 
@@ -109,8 +109,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         if (date == null)
             throw new IllegalArgumentException("DateTime constructor date is null");
         long time = date.getTime();
-        seconds = Math.floorDiv(time, 1000);
-        nano = (int)(Math.floorMod(time, 1000) * 1000000);
+        seconds = Math.floorDiv(time, 1000L);
+        nano = (int)(Math.floorMod(time, 1000L) * 1000000);
         originType = ORIGIN_TYPE_SQL_DATE;
     }
 
@@ -118,8 +118,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         if (time == null)
             throw new IllegalArgumentException("DateTime constructor time is null");
         long sqlTime = time.getTime();
-        seconds = Math.floorDiv(sqlTime, 1000);
-        nano = (int)(Math.floorMod(sqlTime, 1000) * 1000000);
+        seconds = Math.floorDiv(sqlTime, 1000L);
+        nano = (int)(Math.floorMod(sqlTime, 1000L) * 1000000);
         originType = ORIGIN_TYPE_TIME;
     }
 
@@ -127,7 +127,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         if (timestamp == null)
             throw new IllegalArgumentException("DateTime constructor timestamp is null");
         long time = timestamp.getTime();
-        seconds = Math.floorDiv(time, 1000);
+        seconds = Math.floorDiv(time, 1000L);
         nano = timestamp.getNanos();
         originType = ORIGIN_TYPE_TIMESTAMP;
     }
@@ -189,8 +189,8 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         if (time == null)
             throw new IllegalArgumentException("DateTime constructor time is null");
 
-        seconds = Math.floorDiv(time, 1000);
-        nano = (int)(Math.floorMod(time, 1000) * 1000000);
+        seconds = Math.floorDiv(time, 1000L);
+        nano = (int)(Math.floorMod(time, 1000L) * 1000000);
         originType = ORIGIN_TYPE_LONG;
     }
 
