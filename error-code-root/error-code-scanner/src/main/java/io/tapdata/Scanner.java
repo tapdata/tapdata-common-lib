@@ -71,7 +71,9 @@ public class Scanner {
 						.recoverable(annotation.recoverable())
 						.skippable(annotation.skippable())
 						.sourceExClass(exCodeClass)
-						.seeAlso(annotation.seeAlso());
+						.seeAlso(annotation.seeAlso())
+						.dynamicDescription(annotation.dynamicDescription())
+						.dynamicDescriptionCN(annotation.dynamicDescriptionCN());
 
 				if (null != consumer) {
 					consumer.accept(errorCodeEntity);

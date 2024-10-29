@@ -36,4 +36,10 @@ public @interface TapExCode {
 	String howToReproduce() default "";
 
 	String[] seeAlso() default {"https://docs.tapdata.io/"};
+
+	/**
+	 * With placeholder {}, dynamically replaceable description information
+	 */
+	String dynamicDescription() default "";
+	String dynamicDescriptionCN() default "";
 }

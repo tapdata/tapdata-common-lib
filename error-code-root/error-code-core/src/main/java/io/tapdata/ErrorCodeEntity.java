@@ -31,6 +31,8 @@ public class ErrorCodeEntity implements Serializable {
 	private String howToReproduce;
 	private String[] seeAlso = {"https://docs.tapdata.io/"};
 	private Class<?> sourceExClass;
+	private String dynamicDescription;
+	private String dynamicDescriptionCN;
 
 	private ErrorCodeEntity() {
 	}
@@ -109,6 +111,16 @@ public class ErrorCodeEntity implements Serializable {
 		return this;
 	}
 
+	public ErrorCodeEntity dynamicDescription(String dynamicDescription) {
+		this.dynamicDescription = dynamicDescription;
+		return this;
+	}
+
+	public ErrorCodeEntity dynamicDescriptionCN(String dynamicDescriptionCN) {
+		this.dynamicDescriptionCN = dynamicDescriptionCN;
+		return this;
+	}
+
 	public String getDescribe() {
 		return describe;
 	}
@@ -165,6 +177,14 @@ public class ErrorCodeEntity implements Serializable {
 		return name;
 	}
 
+	public String getDynamicDescription() {
+		return dynamicDescription;
+	}
+
+	public String getDynamicDescriptionCN() {
+		return dynamicDescriptionCN;
+	}
+
 	@Override
 	public String toString() {
 		return new StringJoiner(", ", ErrorCodeEntity.class.getSimpleName() + "[", "]")
@@ -182,6 +202,8 @@ public class ErrorCodeEntity implements Serializable {
 				.add("howToReproduce='" + howToReproduce + "'")
 				.add("seeAlso=" + Arrays.toString(seeAlso))
 				.add("sourceExClass='" + sourceExClass + "'")
+				.add("dynamicDescription='" + dynamicDescription + "'")
+				.add("dynamicDescriptionCN='" + dynamicDescription + "'")
 				.toString();
 	}
 
