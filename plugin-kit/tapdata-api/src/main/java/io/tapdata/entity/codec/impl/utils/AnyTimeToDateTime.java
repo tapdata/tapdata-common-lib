@@ -1,6 +1,7 @@
 package io.tapdata.entity.codec.impl.utils;
 
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.schema.value.TapDateTimeValue;
 import io.tapdata.entity.simplify.pretty.ClassHandlersV2;
 
 import java.sql.Timestamp;
@@ -29,8 +30,8 @@ public class AnyTimeToDateTime {
     private static Object specialTypeHandler(Object obj) {
         if(obj instanceof Number)
             obj = ((Number) obj).longValue();
-//        else if(obj instanceof DateTime)
-//            return (DateTime) obj;
+        else if(obj instanceof TapDateTimeValue)
+            return ((TapDateTimeValue) obj).getOriginValue();
         return obj;
     }
 
