@@ -19,6 +19,19 @@ public interface Log {
   }
   void info(String message, Object... params);
 
+  default void trace(Object message) {
+    trace(message.toString());
+  }
+
+  default void trace(String message) {
+    trace(message, new Object());
+  }
+
+  default void trace(CharSequence message) {
+    trace(String.valueOf(message));
+  }
+  void trace(String message, Object... params);
+
   // warn level public logger api
 
   default void warn(String message) {

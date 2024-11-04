@@ -20,6 +20,16 @@ public class TapLog implements Log {
   }
 
   @Override
+  public void trace(CharSequence message) {
+    TapLogger.info(TAG, message.toString());
+  }
+
+  @Override
+  public void trace(String message, Object... params) {
+    TapLogger.info(TAG, message, params);
+  }
+
+  @Override
   public void warn(String message, Object... params) {
     TapLogger.warn(TAG, message, params);
   }
