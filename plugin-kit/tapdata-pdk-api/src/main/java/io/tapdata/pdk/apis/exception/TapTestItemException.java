@@ -1,6 +1,7 @@
 package io.tapdata.pdk.apis.exception;
 
 import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.exception.TapCodeException;
 import io.tapdata.exception.TapRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,11 +15,17 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
     private String reason;
     private String stack;
     private String solution;
+    private String errorCode;
 
     public TapTestItemException() {
     }
 
-    protected TapTestItemException(Throwable cause) {
+    public TapTestItemException(Throwable cause) {
+        if (cause instanceof TapCodeException) {
+            TapCodeException tapCodeException = (TapCodeException) cause;
+            this.message = tapCodeException.getMessage();
+            this.errorCode = tapCodeException.getCode();
+        }
         this.stack = TapSimplify.getStackTrace(cause);
     }
     protected TapTestItemException(Throwable cause,String message, String reason, String solution) {
@@ -80,6 +87,14 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
 
     public void setSolution(String solution) {
         this.solution = solution;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
     }
 
 }
