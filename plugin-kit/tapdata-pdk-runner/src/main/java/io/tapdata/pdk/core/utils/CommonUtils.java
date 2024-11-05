@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.utils;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.utils.ReflectionUtil;
 import io.tapdata.exception.TapCodeException;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.functions.ConnectionFunctions;
@@ -481,5 +482,37 @@ public class CommonUtils {
             classList.add(superclass);
         }
         return res;
+    }
+
+    public static String describeErrorCode(Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+        if (throwable instanceof TapCodeException) {
+            return ((TapCodeException)throwable).getCode();
+        }
+        if (throwable instanceof CoreException) {
+            return String.valueOf(((CoreException)throwable).getCode());
+        }
+        try {
+            Object errorCode = ReflectionUtil.getFieldValue(throwable, "code");
+            if (errorCode != null) {
+                return errorCode.toString();
+            }
+        } catch (Throwable e) {
+            TapLogger.error("Not found error code for %s, error message is: %s", throwable.getClass().getName(), throwable.getMessage());
+        }
+        try {
+            Object errorCode = ReflectionUtil.getFieldValue(throwable, "errorCode");
+            if (errorCode != null) {
+                return errorCode.toString();
+            }
+        } catch (Throwable e) {
+            TapLogger.error("Not found error code for %s, error message is: %s", throwable.getClass().getName(), throwable.getMessage());
+        }
+        if (throwable.getCause() != null) {
+            return describeErrorCode(throwable.getCause());
+        }
+        return null;
     }
 }
