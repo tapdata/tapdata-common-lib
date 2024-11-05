@@ -1,9 +1,8 @@
 package io.tapdata.pdk.core.utils;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.exception.TapCodeException;
+import org.junit.jupiter.api.*;
 import org.mockito.MockedStatic;
 
 import java.time.Instant;
@@ -139,6 +138,27 @@ class CommonUtilsTest {
                 assertEquals(defValue, CommonUtils.getPropertyLong(testKey, defValue));
             }
         }
+    }
+
+    @Test
+    void testDescribeErrorCode() {
+        Assertions.assertNull(CommonUtils.describeErrorCode(null));
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new TapCodeException("1", "test")));
+        CoreException error = new CoreException("test");
+        error.setCode(1);
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(error));
+
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new RuntimeException("test runtime", error)));
+
+        Assertions.assertNull(CommonUtils.describeErrorCode(new RuntimeException("test runtime")));
+
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new RuntimeException("test runtime") {
+            private String code = "1";
+        }));
+
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new RuntimeException("test runtime") {
+            private String errorCode = "1";
+        }));
     }
 
 }

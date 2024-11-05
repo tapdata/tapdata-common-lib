@@ -2,12 +2,14 @@ package io.tapdata.pdk.core.entity.params;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import io.tapdata.pdk.core.utils.RetryLifeCycle;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class PDKMethodInvoker {
 
+    private RetryLifeCycle retryLifeCycle;
     public static PDKMethodInvoker create(){
         return new PDKMethodInvoker();
     }
@@ -118,6 +120,11 @@ public class PDKMethodInvoker {
         return this;
     }
 
+    public PDKMethodInvoker retryLifeCycle(RetryLifeCycle retryLifeCycle) {
+        this.retryLifeCycle = retryLifeCycle;
+        return this;
+    }
+
 
     public CommonUtils.AnyError getR() {
         return runnable;
@@ -221,5 +228,13 @@ public class PDKMethodInvoker {
 
     public Runnable getClearFunctionRetry() {
         return clearFunctionRetry;
+    }
+
+    public RetryLifeCycle getRetryLifeCycle() {
+        return retryLifeCycle;
+    }
+
+    public void setRetryLifeCycle(RetryLifeCycle retryLifeCycle) {
+        this.retryLifeCycle = retryLifeCycle;
     }
 }

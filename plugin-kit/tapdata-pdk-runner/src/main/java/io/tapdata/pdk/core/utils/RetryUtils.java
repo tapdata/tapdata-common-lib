@@ -37,6 +37,7 @@ public class RetryUtils extends CommonUtils {
 	public static final long DEFAULT_RETRY_PERIOD_SECONDS = 60L;
 	private static List<Class<? extends Throwable>> defaultRetryIncludeList;
 	private static BiPredicate<Throwable, Class<? extends Throwable>> matchFilter;
+	private static RetryLifeCycle emptyRetryLifeCycle = new EmptyRetryLifeCycle();
 
 	static {
 		defaultRetryIncludeList = new ArrayList<Class<? extends Throwable>>() {{
@@ -64,6 +65,7 @@ public class RetryUtils extends CommonUtils {
 		AtomicBoolean doRetry = new AtomicBoolean(false);
 		invoker.setDoRetry(doRetry);
 		long retryPeriodSeconds = invoker.getRetryPeriodSeconds() <= 0 ? DEFAULT_RETRY_PERIOD_SECONDS : invoker.getRetryPeriodSeconds();
+		RetryLifeCycle retryLifeCycle = Optional.ofNullable(invoker.getRetryLifeCycle()).orElse(emptyRetryLifeCycle);
 		while (invoker.getRetryTimes() >= 0) {
 			try {
 				runnable.run();
@@ -72,6 +74,7 @@ public class RetryUtils extends CommonUtils {
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
+					retryLifeCycle.success();
 				}
 				break;
 			} catch (Throwable errThrowable) {
@@ -110,6 +113,7 @@ public class RetryUtils extends CommonUtils {
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
 					Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getStartRetry()).ifPresent(Runnable::run);
+					retryLifeCycle.startRetry(retryTimes, async, retryPeriodSeconds, TimeUnit.SECONDS, method.name());
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(node, method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
@@ -125,6 +129,7 @@ public class RetryUtils extends CommonUtils {
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
 					doRetry.compareAndSet(false,true);
 				} else {
+					retryLifeCycle.exceededRetries(retryTimes);
                     Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
@@ -162,6 +167,7 @@ public class RetryUtils extends CommonUtils {
 		AtomicBoolean doRetry = new AtomicBoolean(false);
 		invoker.setDoRetry(doRetry);
 		long retryPeriodSeconds = invoker.getRetryPeriodSeconds() <= 0 ? DEFAULT_RETRY_PERIOD_SECONDS : invoker.getRetryPeriodSeconds();
+		RetryLifeCycle retryLifeCycle = Optional.ofNullable(invoker.getRetryLifeCycle()).orElse(emptyRetryLifeCycle);
 		while (invoker.getRetryTimes() >= 0) {
 			try {
 				runnable.run();
@@ -170,6 +176,7 @@ public class RetryUtils extends CommonUtils {
 							.ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", method.name().toLowerCase())));
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
+					retryLifeCycle.success();
 				}
 				break;
 			} catch (Throwable errThrowable) {
@@ -180,6 +187,7 @@ public class RetryUtils extends CommonUtils {
 					retryFailed(method, invoker, message, retryPeriodSeconds, errThrowable, retryTimes, needDefaultRetry, retryOptions);
 					Optional.ofNullable(invoker.getSignFunctionRetry()).ifPresent(Runnable::run);
 					Optional.ofNullable(invoker.getStartRetry()).ifPresent(Runnable::run);
+					retryLifeCycle.startRetry(retryTimes, async, retryPeriodSeconds, TimeUnit.SECONDS, method.name());
 					if (async) {
 						ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> autoRetry(method, invoker), retryPeriodSeconds, TimeUnit.SECONDS);
 						break;
@@ -195,6 +203,7 @@ public class RetryUtils extends CommonUtils {
 					callBeforeRetryMethodIfNeed(retryOptions, logTag);
 					doRetry.compareAndSet(false,true);
 				} else {
+					retryLifeCycle.exceededRetries(retryTimes);
 					Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
 					wrapAndThrowError(errThrowable);
 				}
