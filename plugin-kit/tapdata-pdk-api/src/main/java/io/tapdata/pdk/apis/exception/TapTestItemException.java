@@ -16,6 +16,7 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
     private String stack;
     private String solution;
     private String errorCode;
+    private String[] dynamicDescriptionParameters;
 
     public TapTestItemException() {
     }
@@ -25,6 +26,7 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
             TapCodeException tapCodeException = (TapCodeException) cause;
             this.message = tapCodeException.getMessage();
             this.errorCode = tapCodeException.getCode();
+            this.dynamicDescriptionParameters = tapCodeException.getDynamicDescriptionParameters();
         }
         this.stack = TapSimplify.getStackTrace(cause);
     }
@@ -95,6 +97,14 @@ public class TapTestItemException extends TapRuntimeException implements Seriali
 
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
+    }
+
+    public String[] getDynamicDescriptionParameters() {
+        return dynamicDescriptionParameters;
+    }
+
+    public void setDynamicDescriptionParameters(String[] dynamicDescriptionParameters) {
+        this.dynamicDescriptionParameters = dynamicDescriptionParameters;
     }
 
 }
