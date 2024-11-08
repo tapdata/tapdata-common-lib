@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.tapdata</groupId>
     <artifactId>error-code-root</artifactId>
-    <version>${error.code.version}</version>
+    <version>1.1-SNAPSHOT</version>
     <name>Error Code Root</name>
     <packaging>pom</packaging>
 
