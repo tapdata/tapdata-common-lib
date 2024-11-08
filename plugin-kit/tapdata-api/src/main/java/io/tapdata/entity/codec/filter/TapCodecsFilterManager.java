@@ -261,13 +261,6 @@ public class TapCodecsFilterManager {
                     if(fromTapValueCodec == null)
                         throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
 
-//                    stringTapValueEntry.setValue(fromTapValueCodec.fromTapValue(theValue));
-                    if(sourceNameFieldMap != null && !sourceNameFieldMap.containsKey(fieldName)) {
-                        //Handle inserted new field
-                        sourceNameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
-                    }
-                    //TODO Handle updated tapType field?
-                    //TODO Handle deleted field?
                     Object value = fromTapValueCodec.fromTapValue(theValue);
 //                    theValue.setValue(null);
                     if(theValue.getOriginValue() != null)
@@ -314,13 +307,6 @@ public class TapCodecsFilterManager {
                     if(fromTapValueCodec == null)
                         throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
 
-//                    stringTapValueEntry.setValue(fromTapValueCodec.fromTapValue(theValue));
-                    if(!nameFieldMap.containsKey(fieldName)) {
-                        //Handle inserted new field
-                        nameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
-                    }
-                    //TODO Handle updated tapType field?
-                    //TODO Handle deleted field?
                     return fromTapValueCodec.fromTapValue(theValue);
                 }
             } else if(object != null) {
