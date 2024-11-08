@@ -5,11 +5,11 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>tapdata-modules</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${tapdata.modules.version}</version>
     </parent>
     <artifactId>websocket-server-module</artifactId>
     <name>websocket-server-module</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>${tapdata.modules.version}</version>
 
     <properties>
         <java.version>8</java.version>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>io.tapdata</groupId>
             <artifactId>modules-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${tapdata.modules.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>

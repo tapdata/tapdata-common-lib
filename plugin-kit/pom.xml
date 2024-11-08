@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<groupId>io.tapdata</groupId>
-	<version>1.1-SNAPSHOT</version>
+	<version>${plugin-parent}</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>plugin-kit</artifactId>
     <name>plugin-kit</name>
@@ -33,6 +33,8 @@
 		<error-code-core.version>1.1-SNAPSHOT</error-code-core.version>
 		<error-code-scanner.version>1.1-SNAPSHOT</error-code-scanner.version>
 		<plugin-parent>1.1-SNAPSHOT</plugin-parent>
+		<tapdata.modules.version>1.1-SNAPSHOT</tapdata.modules.version>
+		<tapdata.proxy.version>1.1-SNAPSHOT</tapdata.proxy.version>
 	</properties>
     <dependencies>
         <dependency>
@@ -76,6 +78,11 @@
 		<dependencies>
 			<dependency>
 				<groupId>io.tapdata</groupId>
+				<artifactId>plugin-kit</artifactId>
+				<version>${plugin-parent}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.tapdata</groupId>
 				<artifactId>tapdata-api</artifactId>
 				<version>${tapdata.api.verison}</version>
 			</dependency>
@@ -88,6 +95,11 @@
 				<groupId>io.tapdata</groupId>
 				<artifactId>tapdata-pdk-runner</artifactId>
 				<version>${tapdata.pdk.runner.verison}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.tapdata</groupId>
+				<artifactId>tapdata-modules</artifactId>
+				<version>${tapdata.modules.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.tapdata</groupId>

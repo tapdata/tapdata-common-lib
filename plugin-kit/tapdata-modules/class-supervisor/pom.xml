@@ -6,12 +6,12 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>tapdata-modules</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${tapdata.modules.version}</version>
     </parent>
 
     <artifactId>class-supervisor</artifactId>
     <name>class-supervisor</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>${tapdata.modules.version}</version>
 
     <dependencies>
         <dependency>

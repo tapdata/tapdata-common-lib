@@ -5,10 +5,10 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>plugin-kit</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>${plugin-parent}</version>
     </parent>
     <artifactId>tapdata-proxy</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${tapdata.proxy.version}</version>
     <name>tapdata-proxy</name>
 
     <properties>
@@ -23,12 +23,12 @@
         <dependency>
             <groupId>io.tapdata</groupId>
             <artifactId>modules-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${tapdata.modules.version}</version>
         </dependency>
         <dependency>
             <groupId>io.tapdata</groupId>
             <artifactId>websocket-server-module</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${tapdata.modules.version}</version>
         </dependency>
     </dependencies>
     <build>

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.tapdata</groupId>
     <artifactId>error-code-root</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>${error.code.version}</version>
     <name>Error Code Root</name>
     <packaging>pom</packaging>
 
@@ -21,7 +21,43 @@
         <java.version>8</java.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <error.code.version>1.1-SNAPSHOT</error.code.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>error-code-root</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>error-code-bom</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>error-code-core</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>error-code-parent</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>error-code-scanner</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>pdk-error-code</artifactId>
+                <version>${error.code.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <distributionManagement>
         <repository>
