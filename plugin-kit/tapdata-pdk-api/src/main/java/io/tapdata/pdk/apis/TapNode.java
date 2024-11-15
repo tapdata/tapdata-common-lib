@@ -13,5 +13,9 @@ public interface TapNode {
 
     void init(TapConnectionContext connectionContext) throws Throwable;
 
+    default void lightInit(TapConnectionContext connectionContext) throws Throwable {
+        init(connectionContext);
+    }
+
     void stop(TapConnectionContext connectionContext) throws Throwable;
 }
