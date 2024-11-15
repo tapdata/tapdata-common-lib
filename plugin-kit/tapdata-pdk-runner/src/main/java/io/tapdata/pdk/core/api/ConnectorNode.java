@@ -99,6 +99,10 @@ public class ConnectorNode extends Node {
         connector.init(connectorContext);
     }
 
+    public void connectorLightInit() throws Throwable {
+        connector.lightInit(connectorContext);
+    }
+
     public void connectorStop() throws Throwable {
         try {
             connector.stop(connectorContext);
