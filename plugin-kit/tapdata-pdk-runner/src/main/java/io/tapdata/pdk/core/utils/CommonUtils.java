@@ -488,30 +488,14 @@ public class CommonUtils {
         if (throwable == null) {
             return null;
         }
-        if (throwable instanceof TapCodeException) {
-            return ((TapCodeException)throwable).getCode();
+
+        Throwable error = matchThrowable(throwable, TapCodeException.class);
+        if (error instanceof TapCodeException) {
+            return ((TapCodeException)error).getCode();
         }
-        if (throwable instanceof CoreException) {
-            return String.valueOf(((CoreException)throwable).getCode());
-        }
-        try {
-            Object errorCode = ReflectionUtil.getFieldValue(throwable, "code");
-            if (errorCode != null) {
-                return errorCode.toString();
-            }
-        } catch (Throwable e) {
-            TapLogger.error("Not found error code for %s, error message is: %s", throwable.getClass().getName(), throwable.getMessage());
-        }
-        try {
-            Object errorCode = ReflectionUtil.getFieldValue(throwable, "errorCode");
-            if (errorCode != null) {
-                return errorCode.toString();
-            }
-        } catch (Throwable e) {
-            TapLogger.error("Not found error code for %s, error message is: %s", throwable.getClass().getName(), throwable.getMessage());
-        }
-        if (throwable.getCause() != null) {
-            return describeErrorCode(throwable.getCause());
+        error = matchThrowable(throwable, CoreException.class);
+        if (error instanceof CoreException) {
+            return ((CoreException)error).getCode() + "";
         }
         return null;
     }
