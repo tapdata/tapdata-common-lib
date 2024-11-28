@@ -233,7 +233,8 @@ public class RetryUtils extends CommonUtils {
 			try {
 				retryOptions = function.needRetry(tapConnectionContext, method, errThrowable);
 			} catch (Throwable e) {
-				throw new TapCodeException(TapPdkRunnerExCode_18.CALL_ERROR_HANDLE_API_ERROR, "Call error handle function failed", e);
+				throw new TapCodeException(TapPdkRunnerExCode_18.CALL_ERROR_HANDLE_API_ERROR, "Call error handle function failed", e)
+						.dynamicDescriptionParameters(method.name());
 			}
 		}
 		if (null == retryOptions) {
