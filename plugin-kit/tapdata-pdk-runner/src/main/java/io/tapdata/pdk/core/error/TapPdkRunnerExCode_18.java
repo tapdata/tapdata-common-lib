@@ -16,8 +16,8 @@ public interface TapPdkRunnerExCode_18 {
 	@TapExCode(
 			describe = "Exception occurred when calling error handling API",
 			describeCN = "调用错误处理API时出现异常",
-			dynamicDescription = "Current retry method name: {}",
-			dynamicDescriptionCN = "当前重试方法名：{}"
+			dynamicDescription = "Current retry method name: {}, exception message: {}",
+			dynamicDescriptionCN = "当前重试方法名：{}，异常信息：{}"
 	)
 	String CALL_ERROR_HANDLE_API_ERROR = "18002";
 	@TapExCode(

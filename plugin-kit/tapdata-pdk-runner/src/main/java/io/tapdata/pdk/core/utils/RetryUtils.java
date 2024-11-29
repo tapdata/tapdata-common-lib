@@ -227,14 +227,14 @@ public class RetryUtils extends CommonUtils {
 		return last;
 	}
 
-	private static RetryOptions callErrorHandleFunctionIfNeed(PDKMethod method, String message, Throwable errThrowable, ErrorHandleFunction function, TapConnectionContext tapConnectionContext) {
+	protected static RetryOptions callErrorHandleFunctionIfNeed(PDKMethod method, String message, Throwable errThrowable, ErrorHandleFunction function, TapConnectionContext tapConnectionContext) {
 		RetryOptions retryOptions = null;
 		if (null != function) {
 			try {
 				retryOptions = function.needRetry(tapConnectionContext, method, errThrowable);
 			} catch (Throwable e) {
 				throw new TapCodeException(TapPdkRunnerExCode_18.CALL_ERROR_HANDLE_API_ERROR, "Call error handle function failed", e)
-						.dynamicDescriptionParameters(method.name());
+						.dynamicDescriptionParameters(method.name(), errThrowable);
 			}
 		}
 		if (null == retryOptions) {
