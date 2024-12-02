@@ -17,6 +17,7 @@
         <java.version>8</java.version>
 
         <commons-lang3.version>3.12.0</commons-lang3.version>
+        <junit-jupiter-api.version>5.8.1</junit-jupiter-api.version>
     </properties>
 
     <dependencyManagement>
@@ -35,6 +36,11 @@
                 <groupId>io.tapdata</groupId>
                 <artifactId>error-code-root</artifactId>
                 <version>${error.code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit-jupiter-api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
