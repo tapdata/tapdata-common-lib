@@ -179,7 +179,8 @@ public class PDKInvocationMonitor implements MemoryFetcher {
             if (null != matchThrowable) {
                 if (!matchThrowable.getClass().getClassLoader().equals(TapCodeException.class.getClassLoader())) {
                     throw new TapCodeException(TapPdkRunnerExCode_18.EX_CLASS_LOADER_INVALID,
-                            String.format("Received exception class loader: %s, expected: %s", matchThrowable.getClass().getClassLoader(), TapCodeException.class.getClassLoader()));
+                            String.format("Received exception class loader: %s, expected: %s", matchThrowable.getClass().getClassLoader(), TapCodeException.class.getClassLoader()))
+                            .dynamicDescriptionParameters(matchThrowable.getClass().getClassLoader(), TapCodeException.class.getClassLoader());
                 }
                 tapCodeException = (TapCodeException) matchThrowable;
             } else {
