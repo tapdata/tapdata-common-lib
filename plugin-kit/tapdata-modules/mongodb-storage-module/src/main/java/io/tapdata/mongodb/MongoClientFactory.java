@@ -6,7 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import io.tapdata.entity.annotations.Bean;
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.modules.api.utils.SSLUtil;
+import io.tapdata.mongodb.utils.SSLUtil;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.Map;

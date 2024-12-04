@@ -1,9 +1,9 @@
-package io.tapdata.modules.api.utils;
+package io.tapdata.mongodb.utils;
 
 import com.mongodb.MongoClientSettings;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SSLUtilTest {
     @Test

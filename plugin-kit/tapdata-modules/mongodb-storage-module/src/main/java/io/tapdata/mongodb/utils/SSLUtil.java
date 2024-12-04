@@ -1,4 +1,4 @@
-package io.tapdata.modules.api.utils;
+package io.tapdata.mongodb.utils;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
