@@ -1,10 +1,13 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import io.tapdata.entity.annotations.Bean;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.modules.api.utils.SSLUtil;
+import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +32,7 @@ public class MongoClientFactory {
      * @param name
      * @return
      */
+    @Deprecated
     public MongoClientHolder getClient(String url, String name) {
         MongoClientHolder mongoClient = clientMap.get(name);
         if (mongoClient == null) {
@@ -45,5 +49,27 @@ public class MongoClientFactory {
             }
         }
         return clientMap.get(name);
+    }
+    public MongoClientHolder getClient() {
+        String mongoUri = CommonUtils.getProperty("tapdata_proxy_mongodb_uri");
+        MongoClientHolder mongoClient = clientMap.get(mongoUri);
+        if (mongoClient == null) {
+            synchronized (this) {
+                mongoClient = clientMap.get(mongoUri);
+                if(mongoClient == null) {
+                    String ssl = CommonUtils.getProperty("tapdata_proxy_mongodb_ssl");
+                    String caPath = CommonUtils.getProperty("tapdata_proxy_mongodb_caPath");
+                    String keyPath = CommonUtils.getProperty("tapdata_proxy_mongodb_keyPath");
+                    ConnectionString connectionString = new ConnectionString(mongoUri);
+                    MongoClientSettings settings = SSLUtil.mongoClientSettings(Boolean.parseBoolean(ssl), keyPath, caPath, mongoUri);
+                    MongoClient client = MongoClients.create(settings);
+                    mongoClient = new MongoClientHolder().mongoClient(client).connectionString(connectionString);
+                    clientMap.putIfAbsent(mongoUri, mongoClient);
+
+                    TapLogger.debug(TAG, "Connected mongodb, name " + mongoUri + "");
+                }
+            }
+        }
+        return clientMap.get(mongoUri);
     }
 }
