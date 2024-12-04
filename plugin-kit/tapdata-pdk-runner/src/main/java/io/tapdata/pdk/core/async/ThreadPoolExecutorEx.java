@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.async;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.TapUtils;
+import io.tapdata.exception.TapCodeException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
@@ -70,6 +71,10 @@ public class ThreadPoolExecutorEx extends ThreadPoolExecutor implements AutoClos
 			}).get();
 		} catch (ExecutionException e) {
 			Throwable throwable = e.getCause();
+			Throwable matched = CommonUtils.matchThrowable(throwable, TapCodeException.class);
+			if (null != matched) {
+				throw (TapCodeException) matched;
+			}
 			if(throwable != null)
 				throw new CoreException(PDKRunnerErrorCodes.SUBMIT_SYNC_RUNNABLE_FAILED, throwable, "Submit sync task {} failed, {}", task, InstanceFactory.instance(TapUtils.class).getStackTrace(throwable));
 			throw new CoreException(PDKRunnerErrorCodes.SUBMIT_SYNC_RUNNABLE_FAILED, e, "Submit sync task {} failed, {}", task, InstanceFactory.instance(TapUtils.class).getStackTrace(e));
