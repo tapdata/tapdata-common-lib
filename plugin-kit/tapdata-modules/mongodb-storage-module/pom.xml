@@ -38,7 +38,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-ext-jdk15on</artifactId>
+            <version>1.69</version>
         </dependency>
     </dependencies>
     <build>
