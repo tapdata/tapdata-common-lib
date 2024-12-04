@@ -75,6 +75,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected CreatePartitionSubTableFunction createPartitionSubTableFunction;
     protected CreatePartitionTableFunction createPartitionTableFunction;
     protected DropPartitionTableFunction dropPartitionTableFunction;
+    protected GetStreamOffsetFunction getStreamOffsetFunction;
 
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
         transactionBeginFunction = function;
@@ -150,6 +151,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ConnectorFunctions supportExecuteCommandFunction(ExecuteCommandFunction function) {
         executeCommandFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportGetStreamOffsetFunction(GetStreamOffsetFunction function) {
+        getStreamOffsetFunction = function;
         return this;
     }
 
@@ -534,5 +540,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public DropPartitionTableFunction getDropPartitionTableFunction() {
         return dropPartitionTableFunction;
+    }
+
+    public GetStreamOffsetFunction getGetStreamOffsetFunction() {
+        return getStreamOffsetFunction;
     }
 }

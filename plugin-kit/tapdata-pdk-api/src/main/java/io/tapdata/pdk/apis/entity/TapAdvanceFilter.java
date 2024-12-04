@@ -16,6 +16,7 @@ public class TapAdvanceFilter extends TapFilter {
     private List<QueryOperator> operators;
     private List<SortOn> sortOnList;
     private Projection projection;
+    private List<Collate> collateList;
 
     public static TapAdvanceFilter create() {
         return new TapAdvanceFilter();
@@ -60,6 +61,14 @@ public class TapAdvanceFilter extends TapFilter {
             sortOnList = new ArrayList<>();
         }
         sortOnList.add(sortOn);
+        return this;
+    }
+
+    public TapAdvanceFilter collate(Collate collate) {
+        if (null == collateList) {
+            collateList = new ArrayList<>();
+        }
+        collateList.add(collate);
         return this;
     }
 
@@ -109,6 +118,13 @@ public class TapAdvanceFilter extends TapFilter {
 
     public void setBatchSize(Integer batchSize) {
         this.batchSize = batchSize;
+    }
+    public List<Collate> getCollateList() {
+        return collateList;
+    }
+
+    public void setCollateList(List<Collate> collateList) {
+        this.collateList = collateList;
     }
     @Override
     public String toString() {
