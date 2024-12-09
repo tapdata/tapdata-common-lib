@@ -170,7 +170,7 @@ public class WebsocketPushChannel extends PushChannel {
         writeFile(data.getId(), data.getFileMeta());
     }
 
-    private void writeFile(String id, FileMeta fileMeta) {
+    public void writeFile(String id, FileMeta fileMeta) {
         if (fileMeta == null || fileMeta.getFileInputStream() == null || !fileMeta.isTransferFile())
             return;
         long fileSize = fileMeta.getFileSize();

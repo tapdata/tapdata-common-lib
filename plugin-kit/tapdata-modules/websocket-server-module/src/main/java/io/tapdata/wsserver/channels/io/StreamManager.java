@@ -34,7 +34,7 @@ public class StreamManager {
         return instance;
     }
 
-    private void cleanTimeoutStream() {
+    public void cleanTimeoutStream() {
         List<CachedItem> expirations = cachedOutputStreams.values().stream().filter(CachedItem::isExpire).collect(Collectors.toList());
         if (!expirations.isEmpty())
             expirations.forEach(c -> {
