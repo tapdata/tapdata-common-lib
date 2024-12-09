@@ -19,6 +19,9 @@ import io.tapdata.wsclient.utils.HttpUtils;
 import io.tapdata.wsclient.utils.TimerEx;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -164,6 +167,37 @@ public class WebsocketPushChannel extends PushChannel {
             byteBuf.writeByte(data.getType());
         }
         channel.writeAndFlush(new BinaryWebSocketFrame(byteBuf));
+        writeFile(data.getId(), data.getFileMeta());
+    }
+
+    private void writeFile(String id, FileMeta fileMeta) {
+        if (fileMeta == null || fileMeta.getFileInputStream() == null || !fileMeta.isTransferFile())
+            return;
+        long fileSize = fileMeta.getFileSize();
+        int bufferSize = 1024 * 100;
+        int totalChunks = BigDecimal.valueOf(fileSize).divide(BigDecimal.valueOf(bufferSize), 0, RoundingMode.UP).intValue();
+
+        try (InputStream inputStream = fileMeta.getFileInputStream()) {
+            byte[] buffer = new byte[bufferSize];
+            int len = inputStream.read(buffer);
+            int chunkNum = 1;
+            Chunk chunk = new Chunk();
+            chunk.setId(id);
+            chunk.setOriginalType(0);
+            chunk.setTotalChunks(totalChunks);
+            while(len != -1) {
+                chunk.setContent(buffer);
+                chunk.setOffset(len);
+                chunk.setChunkNum(chunkNum++);
+                chunk.setData(null);
+                send(chunk);
+                len = inputStream.read(buffer);
+            }
+        } catch (IOException e) {
+            TapLogger.error("ws", "Send file data failed {}", e.getMessage());
+        } finally {
+            fileMeta.setFileInputStream(null);
+        }
     }
 
     private void login() {

@@ -1,11 +1,13 @@
 package io.tapdata.proxy.connection;
 
+import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.FormatUtils;
 import io.tapdata.modules.api.net.data.Data;
+import io.tapdata.modules.api.net.data.FileMeta;
 import io.tapdata.modules.api.net.data.Result;
 import io.tapdata.modules.api.net.entity.NodeRegistry;
 import io.tapdata.modules.api.net.error.NetErrors;
@@ -17,6 +19,7 @@ import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.queue.SingleThreadBlockingQueue;
 import io.tapdata.pdk.core.utils.state.StateMachine;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,10 +28,9 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import static io.tapdata.entity.simplify.TapSimplify.fromJson;
@@ -222,6 +224,8 @@ public class NodeConnectionHttpImpl implements NodeConnection {
 		connection.setConnectTimeout(10000);
 		connection.setReadTimeout(65000);
 		connection.setDoInput(true);
+
+		AtomicBoolean needCloseConnection = new AtomicBoolean(true);
 		try {
 			if(nodeMessage != null) {
 				connection.setDoOutput(true);
@@ -234,6 +238,34 @@ public class NodeConnectionHttpImpl implements NodeConnection {
 			int code = connection.getResponseCode();
 			if(code >= 200 && code < 300) {
 				if(code == 200) {
+
+					String contentType = connection.getHeaderField(HttpHeaders.CONTENT_TYPE);
+					String contentLength = connection.getHeaderField(HttpHeaders.CONTENT_LENGTH);
+					String contentDisposition = connection.getHeaderField(HttpHeaders.CONTENT_DISPOSITION);
+					String fileMetaCode = connection.getHeaderField("X-FileMeta-Code");
+					if ("application/octet-stream".equalsIgnoreCase(contentType) && nodeMessage != null
+							&& StringUtils.isNotBlank(contentLength) && StringUtils.isNotBlank(contentDisposition)){
+
+						FileMeta fileMeta = FileMeta.builder()
+								.transferFile(true)
+								.fileInputStream(connection.getInputStream())
+								.code(fileMetaCode)
+								.filename(parseFileNameFromContentDisposition(contentDisposition))
+								.fileSize(Long.parseLong(contentLength))
+								.build();
+
+						NodeMessage responseMessage = new NodeMessage();
+						responseMessage.id(nodeMessage.getId())
+								.fromNodeId(nodeMessage.getToNodeId())
+								.toNodeId(nodeMessage.getFromNodeId())
+								.type(nodeMessage.getType())
+								.time(System.currentTimeMillis())
+								.encode(Data.ENCODE_JSON)
+								.fileMeta(fileMeta);
+						needCloseConnection.set(false);
+						return responseMessage;
+					}
+
 					try(InputStream inputStream = connection.getInputStream()) {
 						NodeMessage responseMessage = new NodeMessage();
 						responseMessage.from(inputStream);
@@ -272,10 +304,19 @@ public class NodeConnectionHttpImpl implements NodeConnection {
 				throw new IOException("Url(post) occur error, code " + code + " message " + connection.getResponseMessage());
 			}
 		} finally {
-			connection.disconnect();
+			if (needCloseConnection.get())
+				connection.disconnect();
 		}
 		return null;
 	}
+
+	private String parseFileNameFromContentDisposition(String contentDisposition) {
+		if (contentDisposition == null)
+			return null;
+		return Arrays.stream(contentDisposition.split(";"))
+				.map(String::trim).filter(s -> s.toLowerCase().startsWith("filename="))
+				.map(s -> s.substring(s.indexOf('=') + 1)).findFirst().orElse(null);
+    }
 
 	@Override
 	public <Request extends MessageTracker, Response> Response send(String type, Request request, Type responseClass) throws IOException {
@@ -311,6 +352,8 @@ public class NodeConnectionHttpImpl implements NodeConnection {
 		if(responseMessage != null) {
 			request.responseBytes(responseMessage.getData());
 		}
+		if(responseMessage != null && responseMessage.getFileMeta() != null)
+			return (Response) responseMessage.getFileMeta();
 		if(responseMessage != null && responseMessage.getData() != null)
 			return fromJson(new String(responseMessage.getData(), StandardCharsets.UTF_8), responseClass);
 		return null;

@@ -241,4 +241,8 @@ public abstract class Data extends BinaryCodec implements JavaCustomSerializer {
     public byte getType() {
         return type;
     }
+
+    public FileMeta getFileMeta() {
+        return null;
+    }
 }
