@@ -7,16 +7,22 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.tapdata.entity.annotations.Bean;
 import io.tapdata.entity.annotations.MainMethod;
-import io.tapdata.modules.api.net.data.Data;
-import io.tapdata.modules.api.net.data.IncomingData;
-import io.tapdata.modules.api.net.data.IncomingInvocation;
-import io.tapdata.modules.api.net.data.IncomingMessage;
+import io.tapdata.modules.api.net.data.*;
 import io.tapdata.wsserver.channels.error.WSErrors;
 import io.tapdata.wsserver.channels.gateway.GatewaySessionHandler;
 import io.tapdata.wsserver.channels.gateway.GatewaySessionManager;
 import io.tapdata.wsserver.channels.gateway.data.UserChannel;
+import io.tapdata.wsserver.channels.io.StreamManager;
 import io.tapdata.wsserver.channels.websocket.event.*;
 import io.tapdata.wsserver.eventbus.EventBusHolder;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @MainMethod(value = "main", order = 10000)
 @Bean
@@ -32,13 +38,22 @@ public class GatewaySessionModule {
 
     @Subscribe
     @AllowConcurrentEvents
-    void receivedIncomingData(IncomingDataReceivedEvent incomingDataReceivedEvent) {
+    void receivedIncomingData(IncomingDataReceivedEvent incomingDataReceivedEvent) throws IOException {
         IncomingData incomingData = incomingDataReceivedEvent.getIncomingData();
         UserChannel userSession = getUserChannel(incomingDataReceivedEvent, incomingData);
         if (userSession == null) return;
 
-        //TODO 防重复调用， 调用频率限制
+        if (incomingData.getFileMeta() != null && incomingData.getFileMeta().isTransferFile()) {
+            incomingData.getFileMeta().setFileInputStream(StreamManager.getInstance().createPipeInputStream(incomingData.getId()));
+        }
         gatewaySessionManager.receiveIncomingData(userSession.getUserId(), incomingData);
+    }
+
+    @Subscribe
+    @AllowConcurrentEvents
+    void receivedChunkData(ChunkDataReceivedEvent chunkDataReceivedEvent) {
+        Chunk chunk = chunkDataReceivedEvent.getChunk();
+        StreamManager.getInstance().writeData(chunk.getId(), chunk);
     }
 
     private UserChannel getUserChannel(NettyEvent<?> nettyEvent, Data data) {

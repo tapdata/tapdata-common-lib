@@ -37,6 +37,11 @@ public class IncomingData extends ContentData<IncomingData> {
         dos.writeUTF(id);
     }
 
+    public IncomingData id(String id) {
+        this.id = id;
+        return this;
+    }
+
     @Override
     public String getId() {
         return id;

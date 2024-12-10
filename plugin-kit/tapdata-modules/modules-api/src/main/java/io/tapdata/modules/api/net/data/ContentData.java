@@ -1,6 +1,5 @@
 package io.tapdata.modules.api.net.data;
 
-import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.io.DataInputStreamEx;
 import io.tapdata.entity.utils.io.DataOutputStreamEx;
 import io.tapdata.modules.api.net.message.TapEntity;
@@ -39,6 +38,11 @@ public abstract class ContentData<T extends ContentData> extends Data {
         //noinspection unchecked
         return (T) this;
     }
+    private FileMeta fileMeta;
+    public T fileMeta(FileMeta fileMeta) {
+        this.fileMeta = fileMeta;
+        return (T) this;
+    }
 
     public ContentData(byte type) {
         super(type);
@@ -58,6 +62,14 @@ public abstract class ContentData<T extends ContentData> extends Data {
             message = toTapMessage(content, contentType, contentEncode);
             content = null;
         }
+        boolean hasFile = dis.readBoolean();
+        if (hasFile) {
+            fileMeta = FileMeta.builder()
+                    .filename(dis.readUTF())
+                    .fileSize(dis.readLong())
+                    .code(dis.readUTF())
+                    .transferFile(dis.readBoolean()).build();
+        }
     }
 
     @Override
@@ -71,6 +83,15 @@ public abstract class ContentData<T extends ContentData> extends Data {
                 content = fromTapMessage(message, contentType, contentEncode);
             }
             dos.writeBytes(content);
+        }
+        if (fileMeta != null) {
+            dos.writeBoolean(true);
+            dos.writeUTF(fileMeta.getFilename());
+            dos.writeLong(fileMeta.getFileSize());
+            dos.writeUTF(fileMeta.getCode());
+            dos.writeBoolean(fileMeta.isTransferFile());
+        } else {
+            dos.writeBoolean(false);
         }
     }
 
@@ -105,6 +126,16 @@ public abstract class ContentData<T extends ContentData> extends Data {
     public void setMessage(TapEntity message) {
         this.message = message;
     }
+
+    @Override
+    public FileMeta getFileMeta() {
+        return fileMeta;
+    }
+
+    public void setFileTransfer(FileMeta fileMeta) {
+        this.fileMeta = fileMeta;
+    }
+
     @Override
     public String toString() {
         return "ContentData ContentType " + contentType + " ContentEncode " + contentEncode + " message " + message;
