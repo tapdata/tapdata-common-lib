@@ -67,9 +67,8 @@ public class MongoDAOAnnotationHandler extends ClassAnnotationHandler {
 						TapLogger.warn(TAG, "MongoDAO annotation is found on class {}, but not be initialized with empty parameter which is a must. Ignore this class...", clazz);
 						continue;
 					}
-					String mongoUri = CommonUtils.getProperty("tapdata_proxy_mongodb_uri");
 					//初始化mongoClient
-					MongoClientHolder mongoClient = mongoClientFactory.getClient(mongoUri, mongoUri);
+					MongoClientHolder mongoClient = mongoClientFactory.getClient();
 					ConnectionString connectionString = mongoClient.getConnectionString();
 					String dbName = StringUtils.isEmpty(connectionString.getDatabase()) ? mongoDocument.dbName() : connectionString.getDatabase();
 					if(StringUtils.isEmpty(dbName)) {
