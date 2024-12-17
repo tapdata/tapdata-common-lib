@@ -87,7 +87,7 @@ public class TapTime extends TapType {
 
     @Override
     public TapType cloneTapType() {
-        return tapTime().min(min).max(max).withTimeZone(withTimeZone).bytes(bytes);
+        return tapTime().min(min).max(max).withTimeZone(withTimeZone).bytes(bytes).fraction(fraction);
     }
 
     @Override
