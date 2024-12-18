@@ -1,6 +1,7 @@
 package io.tapdata.exception;
 
 import io.tapdata.PDKExCode_10;
+import org.apache.commons.lang3.StringUtils;
 
 public class TapPdkRetryableEx extends TapPdkBaseException{
 
@@ -14,6 +15,10 @@ public class TapPdkRetryableEx extends TapPdkBaseException{
 
     @Override
     public String getMessage() {
-        return "PDK retry exception (Server Error Code " + serverErrorCode + "): " + super.getMessage();
+        String message = "PDK retry exception (Server Error Code " + serverErrorCode + "): ";
+        if (StringUtils.isNotBlank(tableName)) {
+            message += String.format("when operate table: %s, ", tableName);
+        }
+        return message + super.getMessage();
     }
 }
