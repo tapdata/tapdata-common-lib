@@ -267,6 +267,11 @@ public class EngineSessionHandler extends GatewaySessionHandler {
 	@Override
 	public Result onDataReceived(IncomingData data) {
 		TapLogger.debug(TAG, "onDataReceived {}", data);
+		if (data.getFileMeta() != null) {
+			if (data.getMessage() instanceof EngineMessageResultEntity) {
+				((EngineMessageResultEntity) data.getMessage()).setContent(data.getFileMeta());
+			}
+		}
 		return typeHandlers.handle(data.getMessage());
 	}
 

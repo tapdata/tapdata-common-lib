@@ -2,7 +2,6 @@ package io.tapdata.wsserver.channels.websocket.impl;
 
 import com.google.common.eventbus.EventBus;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -10,8 +9,6 @@ import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.modules.api.net.data.*;
 import io.tapdata.modules.api.net.error.NetErrors;
-import io.tapdata.wsserver.channels.error.WSCoreException;
-import io.tapdata.wsserver.channels.error.WSErrors;
 import io.tapdata.wsserver.channels.websocket.event.*;
 import io.tapdata.wsserver.channels.websocket.utils.NetUtils;
 import io.tapdata.wsserver.eventbus.EventBusHolder;
@@ -125,6 +122,9 @@ public class GatewayHandler extends AbstractWebSocketServerHandler {
             case IncomingInvocation.TYPE:
                 eventBus.post(new IncomingInvocationReceivedEvent().incomingInvocation(new IncomingInvocation(body, encode)).ctx(ctx));
                 break;
+            case Chunk.TYPE:
+                eventBus.post(new ChunkDataReceivedEvent().chunk(new Chunk(body, encode)).ctx(ctx));
+                break;
             default:
                 TapLogger.error(TAG, "Unexpected type received {}, length {}. Ignored...", type, body != null ? body.length : 0);
                 break;
@@ -138,6 +138,7 @@ public class GatewayHandler extends AbstractWebSocketServerHandler {
             case Ping.TYPE:
             case IncomingInvocation.TYPE:
             case IncomingMessage.TYPE:
+            case Chunk.TYPE:
                 break;
             default:
                 throw new IllegalArgumentException("Illegal type $type received from ctx ${ctx}");

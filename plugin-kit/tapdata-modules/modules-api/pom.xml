@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>tapdata-modules</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.2-SNAPSHOT</version>
     </parent>
     <artifactId>modules-api</artifactId>
     <name>modules-api</name>
@@ -22,6 +22,11 @@
         <dependency>
             <groupId>io.tapdata</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -85,15 +90,6 @@
                         </configuration>
                     </plugin>
 
-                    <!-- Surefire plugin configuration using properties -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration>
-                            <argLine>--add-exports java.base/sun.misc=ALL-UNNAMED --add-opens java.base/sun.misc=ALL-UNNAMED</argLine>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -120,15 +116,6 @@
                         </configuration>
                     </plugin>
 
-                    <!-- Surefire plugin configuration using properties -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration>
-                            <argLine>--add-exports java.base/sun.misc=ALL-UNNAMED --add-opens java.base/sun.misc=ALL-UNNAMED</argLine>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>

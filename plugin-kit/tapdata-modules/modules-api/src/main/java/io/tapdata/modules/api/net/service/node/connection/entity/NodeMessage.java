@@ -3,6 +3,7 @@ package io.tapdata.modules.api.net.service.node.connection.entity;
 import io.tapdata.entity.serializer.JavaCustomSerializer;
 import io.tapdata.entity.utils.io.DataInputStreamEx;
 import io.tapdata.entity.utils.io.DataOutputStreamEx;
+import io.tapdata.modules.api.net.data.FileMeta;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +57,12 @@ public class NodeMessage implements JavaCustomSerializer {
 	private Type responseClass;
 	public NodeMessage responseClass(Type responseClass) {
 		this.responseClass = responseClass;
+		return this;
+	}
+
+	private FileMeta fileMeta;
+	public NodeMessage fileMeta(FileMeta fileMeta) {
+		this.fileMeta = fileMeta;
 		return this;
 	}
 
@@ -137,6 +144,14 @@ public class NodeMessage implements JavaCustomSerializer {
 
 	public void setTime(Long time) {
 		this.time = time;
+	}
+
+	public FileMeta getFileMeta() {
+		return fileMeta;
+	}
+
+	public void setFileMeta(FileMeta fileMeta) {
+		this.fileMeta = fileMeta;
 	}
 
 	public void accept(Object response, Throwable throwable) {
