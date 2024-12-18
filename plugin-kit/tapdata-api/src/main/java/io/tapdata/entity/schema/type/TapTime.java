@@ -39,6 +39,11 @@ public class TapTime extends TapType {
         this.max = max;
         return this;
     }
+    private Integer fraction;
+    public TapTime fraction(Integer fraction) {
+        this.fraction = fraction;
+        return this;
+    }
 
     public Boolean getWithTimeZone() {
         return withTimeZone;
@@ -72,9 +77,17 @@ public class TapTime extends TapType {
         this.max = max;
     }
 
+    public Integer getFraction() {
+        return fraction;
+    }
+
+    public void setFraction(Integer fraction) {
+        this.fraction = fraction;
+    }
+
     @Override
     public TapType cloneTapType() {
-        return tapTime().min(min).max(max).withTimeZone(withTimeZone).bytes(bytes);
+        return tapTime().min(min).max(max).withTimeZone(withTimeZone).bytes(bytes).fraction(fraction);
     }
 
     @Override

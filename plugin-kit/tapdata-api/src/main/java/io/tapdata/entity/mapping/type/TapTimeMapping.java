@@ -1,12 +1,11 @@
 package io.tapdata.entity.mapping.type;
 
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.type.TapDate;
 import io.tapdata.entity.schema.type.TapTime;
 import io.tapdata.entity.schema.type.TapType;
-import io.tapdata.entity.utils.TypeUtils;
 
 import java.math.BigDecimal;
 import java.sql.Time;
@@ -29,7 +28,21 @@ public class TapTimeMapping extends TapDateBase {
 
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        return new TapTime().bytes(bytes).min(min).max(max);
+        String fractionStr = getParam(params, KEY_FRACTION);
+        Integer fraction = null;
+        if (fractionStr != null) {
+            fractionStr = fractionStr.trim();
+            try {
+                fraction = Integer.parseInt(fractionStr);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        }
+        if(fraction == null)
+            fraction = defaultFraction;
+        if(fraction == null)
+            fraction = maxFraction;
+        return new TapTime().bytes(bytes).min(min).max(max).withTimeZone(withTimeZone).fraction(fraction);
     }
 
     @Override
@@ -60,8 +73,34 @@ public class TapTimeMapping extends TapDateBase {
 
     @Override
     public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
+        String theFinalExpression = null;
+        TapResult<String> tapResult = new TapResult<>();
         if (tapType instanceof TapTime) {
-            return TapResult.successfully(removeBracketVariables(typeExpression, 0));
+            TapTime tapTime = (TapTime) tapType;
+            theFinalExpression = typeExpression;
+
+            Integer fraction = tapTime.getFraction();
+            if (fraction != null) {
+                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_FRACTION, false);
+
+                if(this.maxFraction != null && this.minFraction != null) {
+                    if(minFraction > fraction) {
+                        tapResult.addItem(new ResultItem("TapDateTimeMapping MIN_FRACTION", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Fraction " + fraction + " from source exceeded the minimum of target fraction " + this.minFraction + ", expression " + typeExpression));
+                        fraction = minFraction;
+                    } else if(maxFraction < fraction) {
+                        tapResult.addItem(new ResultItem("TapDateTimeMapping MAX_FRACTION", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Precision " + fraction + " from source exceeded the maximum of target fraction " + this.maxFraction + ", expression " + typeExpression));
+                        fraction = maxFraction;
+                    }
+                }
+                theFinalExpression = theFinalExpression.replace("$" + KEY_FRACTION, String.valueOf(fraction));
+            }
+
+            theFinalExpression = removeBracketVariables(theFinalExpression, 0);
+            if(tapResult.getResultItems() != null && !tapResult.getResultItems().isEmpty())
+                tapResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
+            else
+                tapResult.result(TapResult.RESULT_SUCCESSFULLY);
+            return tapResult.data(theFinalExpression);
         }
         return null;
     }
