@@ -13,11 +13,11 @@ import java.io.ByteArrayInputStream;
 public class ContentDataTest {
 
     // generator JUnit test case
-    private ContentData contentData;
+    private TransferFileMessage contentData;
 
     @BeforeEach
     void setUp() {
-        contentData = new ContentData((byte)61) {
+        contentData = new TransferFileMessage() {
         };
     }
 
@@ -36,7 +36,7 @@ public class ContentDataTest {
         contentData.persistent();
         byte[] data = contentData.getData();
 
-        ContentData contentData1 = new ContentData((byte) 61) {
+        TransferFileMessage contentData1 = new TransferFileMessage() {
         };
         contentData1.setData(data);
         contentData1.setContentEncode(BinaryCodec.ENCODE_JAVA_CUSTOM_SERIALIZER);
@@ -50,7 +50,7 @@ public class ContentDataTest {
         contentData.setFileTransfer(null);
         contentData.persistent();
         data = contentData.getData();
-        contentData1 = new ContentData((byte) 61) {
+        contentData1 = new TransferFileMessage() {
         };
         contentData1.setData(data);
         contentData1.setContentEncode(BinaryCodec.ENCODE_JAVA_CUSTOM_SERIALIZER);

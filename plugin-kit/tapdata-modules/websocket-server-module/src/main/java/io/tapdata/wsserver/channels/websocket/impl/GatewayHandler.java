@@ -113,6 +113,9 @@ public class GatewayHandler extends AbstractWebSocketServerHandler {
             case IncomingData.TYPE:
                 eventBus.post(new IncomingDataReceivedEvent().incomingData(new IncomingData(body, encode)).ctx(ctx));
                 break;
+            case TransferFileMessage.TYPE:
+                eventBus.post(new IncomingDataReceivedEvent().incomingData(new TransferFileMessage(body, encode)).ctx(ctx));
+                break;
             case Ping.TYPE:
                 eventBus.post(new PingReceivedEvent().ping(new Ping()).ctx(ctx));
                 break;
@@ -135,6 +138,7 @@ public class GatewayHandler extends AbstractWebSocketServerHandler {
         switch (type) {
             case Identity.TYPE:
             case IncomingData.TYPE:
+            case TransferFileMessage.TYPE:
             case Ping.TYPE:
             case IncomingInvocation.TYPE:
             case IncomingMessage.TYPE:
