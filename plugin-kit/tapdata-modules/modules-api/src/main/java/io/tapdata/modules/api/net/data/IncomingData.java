@@ -14,6 +14,10 @@ public class IncomingData extends ContentData<IncomingData> {
         super(TYPE);
     }
 
+    public IncomingData(byte type) {
+        super(type);
+    }
+
     public IncomingData(byte[] data, Byte encode) {
         this();
 
