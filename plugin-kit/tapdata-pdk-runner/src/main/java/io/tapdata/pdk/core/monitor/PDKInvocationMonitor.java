@@ -12,6 +12,7 @@ import io.tapdata.pdk.core.error.TapPdkRunnerExCode_18;
 import io.tapdata.pdk.core.error.TapPdkRunnerUnknownException;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import io.tapdata.pdk.core.utils.RetryLifeCycle;
 import io.tapdata.pdk.core.utils.RetryUtils;
 
 import java.util.List;
@@ -276,6 +277,7 @@ public class PDKInvocationMonitor implements MemoryFetcher {
             invoker.getDoRetry().compareAndSet(true, false);
             Optional.ofNullable(invoker.getLogListener())
                     .ifPresent(log -> log.info(LOG_PREFIX + String.format("Method (%s) retry succeed", PDKMethod.SOURCE_STREAM_READ.name().toLowerCase())));
+            Optional.ofNullable(invoker.getRetryLifeCycle()).ifPresent(RetryLifeCycle::success);
             Optional.ofNullable(invoker.getResetRetry()).ifPresent(Runnable::run);
             Optional.ofNullable(invoker.getClearFunctionRetry()).ifPresent(Runnable::run);
         }
