@@ -3,7 +3,6 @@ package io.tapdata.pdk.core.utils;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.entity.utils.ReflectionUtil;
 import io.tapdata.exception.TapCodeException;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.functions.ConnectionFunctions;
@@ -12,11 +11,11 @@ import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.ConnectionNode;
 import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.Node;
+import io.tapdata.pdk.core.constants.ShareCDCConstant;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.error.TapPdkRunnerUnknownException;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.crypto.Cipher;
@@ -498,5 +497,9 @@ public class CommonUtils {
             return ((CoreException)error).getCode() + "";
         }
         return null;
+    }
+
+    public static int shareCDCDelayMode() {
+        return getPropertyInt(ShareCDCConstant.DELAY_MODE_PROP_KEY, ShareCDCConstant.DELAY_MODE_DEFAULT);
     }
 }
