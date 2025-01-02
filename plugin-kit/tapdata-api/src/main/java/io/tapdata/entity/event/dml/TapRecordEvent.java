@@ -2,19 +2,13 @@ package io.tapdata.entity.event.dml;
 
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.io.DataInputStreamEx;
-import io.tapdata.entity.utils.io.DataOutputStreamEx;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 public abstract class TapRecordEvent extends TapBaseEvent {
+
+    public static final String INFO_KEY_SYNC_STAGE = "SYNC_STAGE";
     /**
      * 数据源的类型， mysql一类
      */
@@ -28,6 +22,7 @@ public abstract class TapRecordEvent extends TapBaseEvent {
     public TapRecordEvent(int type) {
         super(type);
     }
+
     /*
     public void from(InputStream inputStream) throws IOException {
         super.from(inputStream);
@@ -45,12 +40,13 @@ public abstract class TapRecordEvent extends TapBaseEvent {
     @Override
     public void clone(TapEvent tapEvent) {
         super.clone(tapEvent);
-        if(tapEvent instanceof TapRecordEvent) {
+        if (tapEvent instanceof TapRecordEvent) {
             TapRecordEvent recordEvent = (TapRecordEvent) tapEvent;
             recordEvent.connector = connector;
             recordEvent.connectorVersion = connectorVersion;
         }
     }
+
     public boolean getContainsIllegalDate() {
         return containsIllegalDate;
     }
