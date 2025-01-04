@@ -168,6 +168,15 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.autoIncStartValue = autoIncStartValue;
         return this;
     }
+
+    /**
+     * Increment start value
+     */
+    private Long autoIncrementValue;
+    public TapField autoIncrementValue(Long autoIncrementValue) {
+        this.autoIncrementValue = autoIncrementValue;
+        return this;
+    }
 //    /**
 //     * Unique field
 //     */
@@ -230,6 +239,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.primaryKeyPos = primaryKeyPos;
         newField.autoInc = autoInc;
         newField.autoIncStartValue = autoIncStartValue;
+        newField.autoIncrementValue = autoIncrementValue;
         newField.check = check;
         newField.comment = comment;
         newField.constraint = constraint;
@@ -336,6 +346,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setAutoIncStartValue(Long autoIncStartValue) {
         this.autoIncStartValue = autoIncStartValue;
+    }
+
+    public Long getAutoIncrementValue() {
+        return autoIncrementValue;
+    }
+
+    public void setAutoIncrementValue(Long autoIncrementValue) {
+        this.autoIncrementValue = autoIncrementValue;
     }
 
 //    public Boolean getUnique() {
