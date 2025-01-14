@@ -5,32 +5,34 @@
   <groupId>io.tapdata</groupId>
   <artifactId>connector-archetype</artifactId>
   <version>1.0.0</version>
-  <packaging>maven-archetype</packaging>
+<!--  <packaging>maven-archetype</packaging>-->
 
   <name>connector-archetype</name>
 
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
   </properties>
 
-  <build>
-    <extensions>
-      <extension>
-        <groupId>org.apache.maven.archetype</groupId>
-        <artifactId>archetype-packaging</artifactId>
-        <version>3.2.0</version>
-      </extension>
-    </extensions>
+<!--  <build>-->
+<!--    <extensions>-->
+<!--      <extension>-->
+<!--        <groupId>org.apache.maven.archetype</groupId>-->
+<!--        <artifactId>archetype-packaging</artifactId>-->
+<!--        <version>3.2.0</version>-->
+<!--      </extension>-->
+<!--    </extensions>-->
 
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-archetype-plugin</artifactId>
-          <version>3.2.0</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
+<!--    <pluginManagement>-->
+<!--      <plugins>-->
+<!--        <plugin>-->
+<!--          <artifactId>maven-archetype-plugin</artifactId>-->
+<!--          <version>3.2.0</version>-->
+<!--        </plugin>-->
+<!--      </plugins>-->
+<!--    </pluginManagement>-->
+<!--  </build>-->
 
   <distributionManagement>
     <repository>
