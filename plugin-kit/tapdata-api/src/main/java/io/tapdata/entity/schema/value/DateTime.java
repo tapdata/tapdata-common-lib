@@ -68,6 +68,13 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     public String getIllegalDate() {
         return illegalDate;
     }
+    private byte[] originBytes;
+    public byte[] getOriginBytes() {
+        return originBytes;
+    }
+    public void setOriginBytes(byte[] originBytes) {
+        this.originBytes = originBytes;
+    }
     public boolean isContainsIllegal() {
         return containsIllegal;
     }
