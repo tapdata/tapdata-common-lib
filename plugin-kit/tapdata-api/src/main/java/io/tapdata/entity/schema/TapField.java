@@ -152,6 +152,12 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.defaultValue = defaultValue;
         return this;
     }
+
+    private Object defaultFunction;
+    public TapField defaultFunction(Object defaultFunction) {
+        this.defaultFunction = defaultFunction;
+        return this;
+    }
     /**
      * Auto incremental
      */
@@ -244,6 +250,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.comment = comment;
         newField.constraint = constraint;
         newField.defaultValue = defaultValue;
+        newField.defaultFunction = defaultFunction;
         newField.foreignKeyField = foreignKeyField;
         newField.foreignKeyTable = foreignKeyTable;
         newField.isPartitionKey = isPartitionKey;
@@ -267,6 +274,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public Object getDefaultFunction() {
+        return defaultFunction;
+    }
+
+    public void setDefaultFunction(Object defaultFunction) {
+        this.defaultFunction = defaultFunction;
     }
 
     public TapType getTapType() {
@@ -450,5 +465,13 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setCreateSource(String createSource) {
         this.createSource = createSource;
+    }
+
+    public enum TapDefaultFunction {
+        _UNKNOWN,
+        _CURRENT_TIMESTAMP,
+        _CURRENT_DATE,
+        _CURRENT_USER,
+        _GENERATE_UUID;
     }
 }
