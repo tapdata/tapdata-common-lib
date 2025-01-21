@@ -27,6 +27,16 @@ public class TapIndexField implements Serializable {
         return this;
     }
 
+    private Integer subPart;
+
+    public Integer getSubPart() {
+        return subPart;
+    }
+
+    public void setSubPart(Integer subPart) {
+        this.subPart = subPart;
+    }
+
     public Boolean getFieldAsc() {
         return fieldAsc;
     }
@@ -45,7 +55,7 @@ public class TapIndexField implements Serializable {
 
     @Override
     public String toString() {
-        return "TapIndexField name " + name + " fieldAsc " + fieldAsc + " indexType " + type;
+        return "TapIndexField name " + name + " fieldAsc " + fieldAsc + " indexType " + type + " subPart " + subPart;
     }
 
     public String getType() {
