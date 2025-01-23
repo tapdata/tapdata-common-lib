@@ -5,6 +5,7 @@ import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.type.TapMoney;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.TypeUtils;
@@ -471,6 +472,19 @@ public class TapNumberMapping extends TapMapping {
 //                score += 1;
 //            }
             return score;
+        }else if(field.getTapType() instanceof TapMoney) {
+            TapMoney tapMoney = (TapMoney) field.getTapType();
+            BigDecimal score = BigDecimal.ZERO;
+
+            Integer scale = tapMoney.getScale();
+            if((scale != null && scale != 0 && isScale()) ||
+                    (scale == null && !isScale())) {
+                score = score.add(scaleValue);
+            } else {
+                score = score.subtract(scaleValue);
+            }
+
+            return score;
         }
 
         return TapMapping.MIN_SCORE;
@@ -583,6 +597,19 @@ public class TapNumberMapping extends TapMapping {
             }
 
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
+        }else if(tapType instanceof TapMoney){
+            TapMoney tapMoney = (TapMoney) tapType;
+            theFinalExpression = typeExpression;
+            Integer precision = tapMoney.getPrecision();
+            if (precision != null){
+                theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
+            }
+            Integer scale = tapMoney.getScale();
+            if (scale != null){
+                theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
+            }
+            theFinalExpression = removeBracketVariables(theFinalExpression, 0);
+
         }
         if(tapResult.getResultItems() != null && !tapResult.getResultItems().isEmpty())
             tapResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);

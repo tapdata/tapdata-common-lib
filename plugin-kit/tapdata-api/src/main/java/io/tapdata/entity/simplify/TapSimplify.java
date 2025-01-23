@@ -146,6 +146,10 @@ public class TapSimplify {
 		return new TapDateTime();
 	}
 
+	public static TapMoney tapMoney() {
+		return new TapMoney();
+	}
+
 	public static Entry entry(String key, Object value) {
 		return new Entry(key, value);
 	}
