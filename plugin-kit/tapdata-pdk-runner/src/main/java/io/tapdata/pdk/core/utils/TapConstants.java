@@ -2,18 +2,7 @@ package io.tapdata.pdk.core.utils;
 
 import com.alibaba.fastjson.parser.ParserConfig;
 import io.tapdata.entity.schema.partition.type.TapPartitionType;
-import io.tapdata.entity.schema.type.TapArray;
-import io.tapdata.entity.schema.type.TapBinary;
-import io.tapdata.entity.schema.type.TapBoolean;
-import io.tapdata.entity.schema.type.TapDate;
-import io.tapdata.entity.schema.type.TapDateTime;
-import io.tapdata.entity.schema.type.TapMap;
-import io.tapdata.entity.schema.type.TapNumber;
-import io.tapdata.entity.schema.type.TapRaw;
-import io.tapdata.entity.schema.type.TapString;
-import io.tapdata.entity.schema.type.TapTime;
-import io.tapdata.entity.schema.type.TapType;
-import io.tapdata.entity.schema.type.TapYear;
+import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.core.api.impl.AbstractResultDeserializer;
 
@@ -32,7 +21,8 @@ public class TapConstants {
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_NUMBER).deserializeClass(TapNumber.class),
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_BINARY).deserializeClass(TapBinary.class),
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_STRING).deserializeClass(TapString.class),
-            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_DATE).deserializeClass(TapDate.class)
+            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_DATE).deserializeClass(TapDate.class),
+            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TAP_MONEY).deserializeClass(TapMoney.class)
     );
 
     public final static ParserConfig tapdataParserConfig = new ParserConfig()/* {
