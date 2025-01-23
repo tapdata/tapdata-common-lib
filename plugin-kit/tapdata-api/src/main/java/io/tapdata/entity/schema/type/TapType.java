@@ -17,6 +17,7 @@ public abstract class TapType implements Serializable {
     public static final byte TYPE_BINARY = 9;
     public static final byte TYPE_STRING = 10;
     public static final byte TYPE_DATE = 11;
+    public static final byte TAP_MONEY = 12;
     protected byte type;
 
     public static Class<? extends TapType> getTapTypeClass(byte type) {
@@ -43,6 +44,8 @@ public abstract class TapType implements Serializable {
                 return TapTime.class;
             case TYPE_YEAR:
                 return TapYear.class;
+            case TAP_MONEY:
+                return TapMoney.class;
         }
         return null;
     }
@@ -71,6 +74,8 @@ public abstract class TapType implements Serializable {
                 return TapTime.class;
             case "TapYear":
                 return TapYear.class;
+            case "TapMoney":
+                return TapMoney.class;
         }
         return null;
     }
