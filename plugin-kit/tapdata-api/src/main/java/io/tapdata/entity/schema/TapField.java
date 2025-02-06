@@ -121,22 +121,6 @@ public class TapField extends TapItem<TapField> implements Serializable {
         return this;
     }
     /**
-     * Foreign key table name.
-     */
-    private String foreignKeyTable;
-    public TapField foreignKeyTable(String foreignKeyTable) {
-        this.foreignKeyTable = foreignKeyTable;
-        return this;
-    }
-    /**
-     * Foreign key field name.
-     */
-    private String foreignKeyField;
-    public TapField foreignKeyField(String foreignKeyField) {
-        this.foreignKeyField = foreignKeyField;
-        return this;
-    }
-    /**
      * Virtual column
      */
     private Boolean isVirtual = false;
@@ -176,11 +160,20 @@ public class TapField extends TapItem<TapField> implements Serializable {
     }
 
     /**
-     * Increment start value
+     * Increment jump value
      */
     private Long autoIncrementValue;
     public TapField autoIncrementValue(Long autoIncrementValue) {
         this.autoIncrementValue = autoIncrementValue;
+        return this;
+    }
+
+    /**
+     * Increment start value
+     */
+    private Long autoIncCacheValue;
+    public TapField autoIncCacheValue(Long autoIncCacheValue) {
+        this.autoIncCacheValue = autoIncCacheValue;
         return this;
     }
 //    /**
@@ -251,8 +244,6 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.constraint = constraint;
         newField.defaultValue = defaultValue;
         newField.defaultFunction = defaultFunction;
-        newField.foreignKeyField = foreignKeyField;
-        newField.foreignKeyTable = foreignKeyTable;
         newField.isPartitionKey = isPartitionKey;
         newField.isPrimaryKey = isPrimaryKey;
         newField.tapType = tapType != null ? tapType.cloneTapType() : null; //XXX need clone? better clone.
@@ -331,22 +322,6 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.primaryKeyPos = primaryKeyPos;
     }
 
-    public String getForeignKeyTable() {
-        return foreignKeyTable;
-    }
-
-    public void setForeignKeyTable(String foreignKeyTable) {
-        this.foreignKeyTable = foreignKeyTable;
-    }
-
-    public String getForeignKeyField() {
-        return foreignKeyField;
-    }
-
-    public void setForeignKeyField(String foreignKeyField) {
-        this.foreignKeyField = foreignKeyField;
-    }
-
     public Boolean getAutoInc() {
         return autoInc;
     }
@@ -369,6 +344,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setAutoIncrementValue(Long autoIncrementValue) {
         this.autoIncrementValue = autoIncrementValue;
+    }
+
+    public Long getAutoIncCacheValue() {
+        return autoIncCacheValue;
+    }
+
+    public void setAutoIncCacheValue(Long autoIncCacheValue) {
+        this.autoIncCacheValue = autoIncCacheValue;
     }
 
 //    public Boolean getUnique() {
