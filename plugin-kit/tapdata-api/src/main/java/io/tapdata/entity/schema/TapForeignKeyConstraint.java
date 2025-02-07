@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TapForeignKeyConstraint extends TapConstraint implements Serializable {
+public class TapForeignKeyConstraint extends TapConstraint<TapForeignKeyConstraint> implements Serializable {
 
     private List<String> foreignKeyFields;
     private String referencesTableName;
