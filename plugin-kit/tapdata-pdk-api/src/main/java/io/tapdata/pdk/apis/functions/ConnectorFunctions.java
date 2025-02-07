@@ -44,6 +44,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected CreateIndexFunction createIndexFunction;
     protected DeleteIndexFunction deleteIndexFunction;
     protected QueryIndexesFunction queryIndexesFunction;
+    protected QueryConstraintsFunction queryConstraintsFunction;
+    protected CreateConstraintFunction createConstraintFunction;
+    protected DropConstraintFunction dropConstraintFunction;
     //alter_database_timezone_event
     protected AlterDatabaseTimeZoneFunction alterDatabaseTimeZoneFunction;
     //alter_field_attributes_event
@@ -254,6 +257,21 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
+    public ConnectorFunctions supportQueryConstraints(QueryConstraintsFunction function) {
+        queryConstraintsFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportCreateConstraint(CreateConstraintFunction function) {
+        createConstraintFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportDropConstraint(DropConstraintFunction function) {
+        dropConstraintFunction = function;
+        return this;
+    }
+
     public ConnectorFunctions supportCreateIndex(CreateIndexFunction function) {
         createIndexFunction = function;
         return this;
@@ -436,6 +454,18 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public QueryIndexesFunction getQueryIndexesFunction() {
         return queryIndexesFunction;
+    }
+
+    public QueryConstraintsFunction getQueryConstraintsFunction() {
+        return queryConstraintsFunction;
+    }
+
+    public CreateConstraintFunction getCreateConstraintFunction() {
+        return createConstraintFunction;
+    }
+
+    public DropConstraintFunction getDropConstraintFunction() {
+        return dropConstraintFunction;
     }
 
     public ReleaseExternalFunction getReleaseExternalFunction() {

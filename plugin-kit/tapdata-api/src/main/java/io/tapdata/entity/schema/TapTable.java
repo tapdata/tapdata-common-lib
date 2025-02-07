@@ -57,7 +57,7 @@ public class TapTable extends TapItem<TapField> {
 
 	private List<TapIndex> indexList;
 
-	private List<TapConstraint> constraintList;
+	private List<TapConstraint<?>> constraintList;
 
 	private String id;
 
@@ -421,11 +421,11 @@ public class TapTable extends TapItem<TapField> {
 		readWriteLock.writeLock().unlock();
 	}
 
-	public List<TapConstraint> getConstraintList() {
+	public List<TapConstraint<?>> getConstraintList() {
 		return constraintList;
 	}
 
-	public void setConstraintList(List<TapConstraint> constraintList) {
+	public void setConstraintList(List<TapConstraint<?>> constraintList) {
 		readWriteLock.writeLock().lock();
 		this.constraintList = constraintList;
 		readWriteLock.writeLock().unlock();
