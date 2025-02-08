@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public interface QueryConstraintsFunction {
-    void query(TapConnectorContext connectorContext, TapTable table, Consumer<List<TapConstraint<?>>> consumer) throws Throwable;
+    void query(TapConnectorContext connectorContext, TapTable table, Consumer<List<TapConstraint>> consumer) throws Throwable;
 }

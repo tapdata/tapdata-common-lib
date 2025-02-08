@@ -8,22 +8,22 @@ import java.util.List;
 
 public class TapDropConstraintEvent extends TapConstraintEvent {
     public static final int TYPE = 100;
-    private List<TapConstraint<?>> constraintList;
+    private List<TapConstraint> constraintList;
 
     public TapDropConstraintEvent() {
         super(TYPE);
     }
 
-    public TapDropConstraintEvent constraintList(List<TapConstraint<?>> constraintList) {
+    public TapDropConstraintEvent constraintList(List<TapConstraint> constraintList) {
         this.constraintList = constraintList;
         return this;
     }
 
-    public List<TapConstraint<?>> getConstraintList() {
+    public List<TapConstraint> getConstraintList() {
         return constraintList;
     }
 
-    public void setConstraintList(List<TapConstraint<?>> constraintList) {
+    public void setConstraintList(List<TapConstraint> constraintList) {
         this.constraintList = constraintList;
     }
 
