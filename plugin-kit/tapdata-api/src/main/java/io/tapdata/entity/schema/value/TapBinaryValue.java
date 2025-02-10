@@ -2,10 +2,13 @@ package io.tapdata.entity.schema.value;
 import io.tapdata.entity.schema.type.TapBinary;
 import io.tapdata.entity.schema.type.TapType;
 
-public class TapBinaryValue extends TapValue<byte[], TapBinary> {
+public class TapBinaryValue extends TapValue<ByteData, TapBinary> {
     public TapBinaryValue() {}
     public TapBinaryValue(byte[] value) {
-        this.value = value;
+        this.value = new ByteData(value);
+    }
+    public TapBinaryValue(ByteData byteData) {
+        this.value = byteData;
     }
 
     @Override
