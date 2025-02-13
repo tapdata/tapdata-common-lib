@@ -12,6 +12,6 @@ public class FromTapBinaryCodec implements FromTapValueCodec<TapBinaryValue> {
         if(tapValue == null)
             return null;
         //TODO need more code
-        return tapValue.getValue();
+        return tapValue.getValue().getValue();
     }
 }
