@@ -10,7 +10,7 @@ import static io.tapdata.entity.simplify.TapSimplify.tapMoney;
 
 public class TapMoney extends TapType {
     public TapMoney() {
-        type = TAP_MONEY;
+        type = TYPE_MONEY;
     }
 
     private Integer precision;

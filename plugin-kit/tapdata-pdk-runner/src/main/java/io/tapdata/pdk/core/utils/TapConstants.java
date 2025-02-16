@@ -22,7 +22,9 @@ public class TapConstants {
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_BINARY).deserializeClass(TapBinary.class),
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_STRING).deserializeClass(TapString.class),
             JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_DATE).deserializeClass(TapDate.class),
-            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TAP_MONEY).deserializeClass(TapMoney.class)
+            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_MONEY).deserializeClass(TapMoney.class),
+            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_XML).deserializeClass(TapXml.class),
+            JsonParser.AbstractClassDetector.create().key("type").value(TapType.TYPE_JSON).deserializeClass(TapJson.class)
     );
 
     public final static ParserConfig tapdataParserConfig = new ParserConfig()/* {

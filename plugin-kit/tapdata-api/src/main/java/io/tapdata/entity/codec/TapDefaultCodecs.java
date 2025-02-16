@@ -30,6 +30,8 @@ public class TapDefaultCodecs {
     public static final String TAP_RAW_VALUE = "TapRawValue";
     public static final String TAP_STRING_VALUE = "TapStringValue";
     public static final String TAP_MONEY_VALUE = "TapMoneyValue";
+    public static final String TAP_JSON_VALUE = "TapJsonValue";
+    public static final String TAP_XML_VALUE = "TapXmlValue";
 
     public TapDefaultCodecs() {
 //        classToTapValueCodecIgnoreMap.put(byte[].class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BINARY_VALUE));
@@ -69,6 +71,8 @@ public class TapDefaultCodecs {
         supportedClassToTapValueCodecMap.put(DateTime.class.getName(), InstanceFactory.instance(ToTapValueCodec.class, TAP_DATE_TIME_VALUE));
         supportedClassToTapValueCodecMap.put(double.class.getName(), InstanceFactory.instance(ToTapValueCodec.class, TAP_MONEY_VALUE));
         supportedClassToTapValueCodecMap.put(Double.class.getName(), InstanceFactory.instance(ToTapValueCodec.class, TAP_MONEY_VALUE));
+        supportedClassToTapValueCodecMap.put(String.class.getName(), InstanceFactory.instance(ToTapValueCodec.class, TAP_JSON_VALUE));
+        supportedClassToTapValueCodecMap.put(String.class.getName(), InstanceFactory.instance(ToTapValueCodec.class, TAP_XML_VALUE));
 
 //        classToTapValueCodecMap.put(byte[].class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BINARY_VALUE));
 //        classToTapValueCodecMap.put(boolean.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BOOLEAN_VALUE));
@@ -101,6 +105,8 @@ public class TapDefaultCodecs {
         classFromTapValueCodecMap.put(TapTimeValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_TIME_VALUE));
         classFromTapValueCodecMap.put(TapYearValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_YEAR_VALUE));
         classFromTapValueCodecMap.put(TapMoneyValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_MONEY_VALUE));
+        classFromTapValueCodecMap.put(TapJsonValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_JSON_VALUE));
+        classFromTapValueCodecMap.put(TapXmlValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_XML_VALUE));
     }
 
     ToTapValueCodec<?> getToTapValueCodec(Class<?> clazz) {

@@ -150,6 +150,14 @@ public class TapSimplify {
 		return new TapMoney();
 	}
 
+	public static TapXml tapXml() {
+		return new TapXml();
+	}
+
+	public static TapJson tapJson() {
+		return new TapJson();
+	}
+
 	public static Entry entry(String key, Object value) {
 		return new Entry(key, value);
 	}
