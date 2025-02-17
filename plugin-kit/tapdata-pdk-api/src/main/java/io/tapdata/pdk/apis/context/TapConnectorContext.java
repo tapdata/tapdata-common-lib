@@ -20,6 +20,7 @@ public class TapConnectorContext extends TapConnectionContext {
     protected KVMap<Object> stateMap;
     protected KVMap<Object> globalStateMap;
     protected ConfigContext configContext;
+    protected IsomorphismType isomorphism;
 
     public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
         super(specification, connectionConfig, nodeConfig, log);
@@ -84,7 +85,21 @@ public class TapConnectorContext extends TapConnectionContext {
         this.configContext = configContext;
     }
 
+    public IsomorphismType getIsomorphism() {
+        return isomorphism;
+    }
+
+    public void setIsomorphism(IsomorphismType isomorphism) {
+        this.isomorphism = isomorphism;
+    }
+
     public String toString() {
         return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification + " id: " + id;
+    }
+
+    public enum IsomorphismType {
+        ISOMORPHISM,
+        HETEROGENEOUS,
+        COGNATE
     }
 }
