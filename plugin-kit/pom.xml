@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<groupId>io.tapdata</groupId>
-	<version>1.2-SNAPSHOT</version>
+	<version>1.3-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>plugin-kit</artifactId>
     <name>plugin-kit</name>
@@ -30,11 +30,11 @@
 		<junit.platform.version>1.8.1</junit.platform.version>
 		<mockito.version>4.11.0</mockito.version>
 		<mockito.junit.jupiter.version>4.11.0</mockito.junit.jupiter.version>
-		<error-code-core.version>1.2-SNAPSHOT</error-code-core.version>
-		<error-code-scanner.version>1.2-SNAPSHOT</error-code-scanner.version>
-		<plugin-parent>1.2-SNAPSHOT</plugin-parent>
-		<tapdata.modules.version>1.2-SNAPSHOT</tapdata.modules.version>
-		<tapdata.proxy.version>1.2-SNAPSHOT</tapdata.proxy.version>
+		<error-code-core.version>1.3-SNAPSHOT</error-code-core.version>
+		<error-code-scanner.version>1.3-SNAPSHOT</error-code-scanner.version>
+		<plugin-parent>1.3-SNAPSHOT</plugin-parent>
+		<tapdata.modules.version>1.3-SNAPSHOT</tapdata.modules.version>
+		<tapdata.proxy.version>1.3-SNAPSHOT</tapdata.proxy.version>
 	</properties>
     <dependencies>
         <dependency>
