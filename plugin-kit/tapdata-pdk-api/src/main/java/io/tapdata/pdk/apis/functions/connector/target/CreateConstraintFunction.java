@@ -5,5 +5,5 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 
 public interface CreateConstraintFunction {
-    void createConstraint(TapConnectorContext connectorContext, TapTable table, TapCreateConstraintEvent createConstraintEvent) throws Throwable;
+    void createConstraint(TapConnectorContext connectorContext, TapTable table, TapCreateConstraintEvent createConstraintEvent, boolean create) throws Throwable;
 }
