@@ -31,6 +31,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected BatchCountFunction batchCountFunction;
     protected TimestampToStreamOffsetFunction timestampToStreamOffsetFunction;
     protected WriteRecordFunction writeRecordFunction;
+    protected AfterInitialSyncFunction afterInitialSyncFunction;
     protected QueryByFilterFunction queryByFilterFunction;
     protected QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
     //create_table_event
@@ -331,6 +332,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
+    public ConnectorFunctions supportAfterInitialSync(AfterInitialSyncFunction function) {
+        this.afterInitialSyncFunction = function;
+        return this;
+    }
+
     /**
      * @deprecated
      *
@@ -402,6 +408,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public WriteRecordFunction getWriteRecordFunction() {
         return writeRecordFunction;
+    }
+
+    public AfterInitialSyncFunction getAfterInitialSyncFunction() {
+        return afterInitialSyncFunction;
     }
 
     public QueryByAdvanceFilterFunction getQueryByAdvanceFilterFunction() {
