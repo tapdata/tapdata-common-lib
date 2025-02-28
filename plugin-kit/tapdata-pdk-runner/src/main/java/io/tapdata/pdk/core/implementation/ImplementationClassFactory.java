@@ -51,7 +51,7 @@ public class ImplementationClassFactory {
         ConfigurationBuilder builder = new ConfigurationBuilder()
                 .addScanners(new TypeAnnotationsScanner())
 //                .forPackages(this.scanPackages)
-                .addClassLoader(this.classLoader);
+                .addClassLoaders(this.classLoader);
         if(urls != null) {
             builder.setUrls(urls);
         }

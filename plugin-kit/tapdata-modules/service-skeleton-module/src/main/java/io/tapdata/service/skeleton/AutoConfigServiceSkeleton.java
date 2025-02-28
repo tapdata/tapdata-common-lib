@@ -22,7 +22,7 @@ public class AutoConfigServiceSkeleton {
         ConfigurationBuilder builder = new ConfigurationBuilder()
                 .addScanners(new TypeAnnotationsScanner())
 //                .forPackages(this.scanPackages)
-                .addClassLoader(this.getClass().getClassLoader());
+                .addClassLoaders(this.getClass().getClassLoader());
         String scanPackage = CommonUtils.getProperty("service_skeleton_scan_package", "io.tapdata");
         String[] packages = scanPackage.split(",");
 

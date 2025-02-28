@@ -127,7 +127,7 @@ public class ClassUtil {
             ConfigurationBuilder builder = new ConfigurationBuilder()
                     .filterInputsBy(new FilterBuilder().include("^.*\\.class$"))
                     .setUrls(urls)
-                    .addClassLoader(dependencyURLClassLoader.getActualClassLoader());
+                    .addClassLoaders(dependencyURLClassLoader.getActualClassLoader());
             if (Objects.nonNull(scanPackage)) {
                 builder.forPackages(scanPackage);
             }

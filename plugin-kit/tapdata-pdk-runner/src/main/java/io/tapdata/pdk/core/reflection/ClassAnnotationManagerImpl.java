@@ -24,7 +24,7 @@ public class ClassAnnotationManagerImpl implements ClassAnnotationManager {
     private void scan() {
         ConfigurationBuilder builder = new ConfigurationBuilder()
                 .addScanners(new TypeAnnotationsScanner())
-                .addClassLoader(this.classLoader);
+                .addClassLoaders(this.classLoader);
 //        if(urls != null) {
 //            builder.setUrls(urls);
 //        }

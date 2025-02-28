@@ -177,7 +177,7 @@ public class GatewaySessionManager implements HealthWeightListener, MemoryFetche
         ConfigurationBuilder builder = new ConfigurationBuilder()
                 .addScanners(new TypeAnnotationsScanner())
 //                .forPackages(this.scanPackages)
-                .addClassLoader(this.getClass().getClassLoader());
+                .addClassLoaders(this.getClass().getClassLoader());
         String scanPackage = CommonUtils.getProperty("gateway_scan_package", "io.tapdata.proxy");
         String[] packages = scanPackage.split(",");
 

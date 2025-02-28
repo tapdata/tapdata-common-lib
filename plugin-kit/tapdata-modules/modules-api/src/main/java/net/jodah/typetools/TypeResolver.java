@@ -15,7 +15,6 @@
  */
 package net.jodah.typetools;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -31,15 +30,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import sun.misc.Unsafe;
 
 /**
  * Enhanced type resolution utilities.
@@ -65,16 +60,6 @@ public final class TypeResolver {
     JAVA_VERSION = Double.parseDouble(System.getProperty("java.specification.version", "0"));
 
     try {
-      final Unsafe unsafe = AccessController.doPrivileged(new PrivilegedExceptionAction<Unsafe>() {
-        @Override
-        public Unsafe run() throws Exception {
-          final Field f = Unsafe.class.getDeclaredField("theUnsafe");
-          f.setAccessible(true);
-
-          return (Unsafe) f.get(null);
-        }
-      });
-
       Class<?> sharedSecretsClass;
       AccessMaker accessSetter;
       if (JAVA_VERSION < 9) {
@@ -93,31 +78,27 @@ public final class TypeResolver {
             // In Oracle JDK 11.0.6, SharedSecrets was moved from jdk.internal.misc to jdk.internal.access.
             sharedSecretsClass = Class.forName("jdk.internal.access.SharedSecrets");
           }
-          // access control got strengthed in Java 9, but can be circumvented with Unsafe.
-          Field overrideField = AccessibleObject.class.getDeclaredField("override");
-          final long overrideFieldOffset = unsafe.objectFieldOffset(overrideField);
+            // access control got strengthened in Java 9, but can be circumvented with MethodHandles.
           accessSetter = new AccessMaker() {
             @Override
-            public void makeAccessible(AccessibleObject accessibleObject) {
-              unsafe.putBoolean(accessibleObject, overrideFieldOffset, true);
+                public void makeAccessible(AccessibleObject accessibleObject) throws Throwable {
+                    MethodHandles.lookup().findSetter(AccessibleObject.class, "override", boolean.class)
+                            .invoke(accessibleObject, true);
             }
         };
       } else {
           sharedSecretsClass = Class.forName("jdk.internal.access.SharedSecrets");
-          // In Java 12, AccessibleObject.override was added to the reflection blacklist.
-          // Access checking can still be circumvented by using the Unsafe technique to get the implementation lookup from MethodHandles.
-          Field implLookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-          long implLookupFieldOffset = unsafe.staticFieldOffset(implLookupField);
-          Object lookupStaticFieldBase = unsafe.staticFieldBase(implLookupField);
-          MethodHandles.Lookup implLookup = (MethodHandles.Lookup) unsafe.getObject(lookupStaticFieldBase, implLookupFieldOffset);
-          final MethodHandle overrideSetter = implLookup.findSetter(AccessibleObject.class, "override", boolean.class);
+            // In Java 12 and later, AccessibleObject.override was added to the reflection blacklist.
+            // Access checking can still be circumvented by using the MethodHandles technique.
           accessSetter = new AccessMaker() {
             @Override
             public void makeAccessible(AccessibleObject object) throws Throwable {
-              overrideSetter.invokeWithArguments(new Object[] {object, true});
+                    MethodHandles.lookup().findSetter(AccessibleObject.class, "override", boolean.class)
+                            .invoke(object, true);
             }
         };
       }
+
       Method javaLangAccessGetter = sharedSecretsClass.getMethod("getJavaLangAccess");
       accessSetter.makeAccessible(javaLangAccessGetter);
       JAVA_LANG_ACCESS = javaLangAccessGetter.invoke(null);

@@ -24,8 +24,7 @@ public class AutoConfigMongo {
         //扫描所有的MongoCollection
         ConfigurationBuilder builder = new ConfigurationBuilder()
                 .addScanners(new TypeAnnotationsScanner())
-//                .forPackages(this.scanPackages)
-                .addClassLoader(this.getClass().getClassLoader());
+                .addClassLoaders(this.getClass().getClassLoader());
         String scanPackage = CommonUtils.getProperty("mongodb_scan_package", "io.tapdata.mongodb");
         String[] packages = scanPackage.split(",");
 
