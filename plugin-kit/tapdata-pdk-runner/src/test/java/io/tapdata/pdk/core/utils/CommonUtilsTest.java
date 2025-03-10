@@ -152,13 +152,7 @@ class CommonUtilsTest {
 
         Assertions.assertNull(CommonUtils.describeErrorCode(new RuntimeException("test runtime")));
 
-        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new RuntimeException("test runtime") {
-            private String code = "1";
-        }));
-
-        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new RuntimeException("test runtime") {
-            private String errorCode = "1";
-        }));
+        Assertions.assertEquals("1", CommonUtils.describeErrorCode(new TapCodeException("1", "test runtime")));
     }
 
 }

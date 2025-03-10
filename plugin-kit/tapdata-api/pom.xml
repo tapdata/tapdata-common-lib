@@ -9,12 +9,13 @@
 
     <properties>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <guava.version>33.4.0-jre</guava.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.2.1-jre</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <!-- junit test -->

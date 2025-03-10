@@ -23,6 +23,7 @@
     <properties>
         <sonar.test.exclusions>**/src/test/**</sonar.test.exclusions>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <dependency-check-maven.version>12.1.0</dependency-check-maven.version>
     </properties>
 
     <build>
@@ -41,7 +42,14 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
-
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check-maven.version}</version>
+                <configuration>
+                    <autoUpdate>true</autoUpdate>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <repositories>

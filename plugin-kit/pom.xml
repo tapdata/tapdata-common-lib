@@ -38,6 +38,18 @@
 		<plugin-parent>2.0-SNAPSHOT</plugin-parent>
 		<tapdata.modules.version>2.0-SNAPSHOT</tapdata.modules.version>
 		<tapdata.proxy.version>2.0-SNAPSHOT</tapdata.proxy.version>
+		<commons-io.version>2.18.0</commons-io.version>
+		<commons.lang3.version>3.12.0</commons.lang3.version>
+		<fastjson.version>1.2.83</fastjson.version>
+		<commons.collections4.version>4.4</commons.collections4.version>
+		<log4j.version>2.17.1</log4j.version>
+		<reflections.version>0.10.2</reflections.version>
+		<hutool-all.version>5.8.25</hutool-all.version>
+		<commons-compress.version>1.26.0</commons-compress.version>
+		<junit.version>4.13.1</junit.version>
+		<bcprov-jdk18on.version>1.80</bcprov-jdk18on.version>
+		<guava.version>33.4.0-jre</guava.version>
+		<netty-all.version>4.1.118.Final</netty-all.version>
 	</properties>
     <dependencies>
         <dependency>
@@ -105,6 +117,42 @@
 				<version>${tapdata.pdk.connector.core.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>io.tapdata</groupId>
+				<artifactId>modules-api</artifactId>
+				<version>${tapdata.modules.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>${commons-io.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.reflections</groupId>
+				<artifactId>reflections</artifactId>
+				<version>${reflections.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>cn.hutool</groupId>
+				<artifactId>hutool-all</artifactId>
+				<version>${hutool-all.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>${commons-compress.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.bouncycastle</groupId>
+				<artifactId>bcprov-jdk18on</artifactId>
+				<version>${bcprov-jdk18on.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-all</artifactId>
+				<version>${netty-all.version}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter</artifactId>
 				<version>${junit.jupiter.version}</version>
@@ -161,7 +209,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>31.1-jre</version>
+				<version>${guava.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.tapdata</groupId>
@@ -177,6 +225,11 @@
 				<groupId>io.tapdata</groupId>
 				<artifactId>pdk-error-code</artifactId>
 				<version>${error-code-core.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

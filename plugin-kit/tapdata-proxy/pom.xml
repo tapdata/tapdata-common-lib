@@ -14,7 +14,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <guava.version>31.0.1-jre</guava.version>
         <sql.core.version>1.0-SNAPSHOT</sql.core.version>
     </properties>
     <!--<dependencyManagement>-->
