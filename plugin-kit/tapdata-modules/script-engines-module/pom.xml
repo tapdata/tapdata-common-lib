@@ -12,7 +12,7 @@
 
     <properties>
         <graalvm.js.version>24.1.2</graalvm.js.version>
-        <graalvm.py.version>2.7.3</graalvm.py.version>
+        <graalvm.py.version>2.7.4</graalvm.py.version>
     </properties>
     <!--<dependencyManagement>-->
     <dependencies>

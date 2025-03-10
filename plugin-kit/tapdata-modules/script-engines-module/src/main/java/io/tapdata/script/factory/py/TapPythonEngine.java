@@ -20,8 +20,10 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -215,6 +217,23 @@ public class TapPythonEngine implements ScriptEngine, Invocable, Closeable {
                 if (urlFile.getAbsolutePath().equals(url.getFile())) {
                     return loader;
                 }
+            }
+        }else{
+            try{
+                Field ucpField = loader.getClass().getSuperclass().getDeclaredField("ucp");
+                ucpField.setAccessible(true);
+                Object ucp = ucpField.get(loader);
+
+                Field pathField = ucp.getClass().getDeclaredField("path");
+                pathField.setAccessible(true);
+                List<URL> paths = (List<URL>) pathField.get(ucp);
+                for (URL url : paths) {
+                    if (urlFile.getAbsolutePath().equals(url.getFile())) {
+                        return loader;
+                    }
+                }
+            }catch (Exception e){
+                logger.error("Get python jar path error", e);
             }
         }
         URL[] urls = new URL[1];
