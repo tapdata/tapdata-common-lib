@@ -21,7 +21,6 @@
         <dependency>
             <groupId>io.tapdata</groupId>
             <artifactId>modules-api</artifactId>
-            <version>${tapdata.modules.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>

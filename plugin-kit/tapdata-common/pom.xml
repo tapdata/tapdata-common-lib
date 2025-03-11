@@ -10,7 +10,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tapdata-common</artifactId>
-    <version>0.2.23-SNAPSHOT</version>
 
     <properties>
     </properties>
