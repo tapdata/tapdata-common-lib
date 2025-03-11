@@ -40,7 +40,7 @@ public class JWTUtils {
     public static Map<String, Object> getClaims(String key, String token) {
         Key signingKey = getKey(key);
 
-        return (Map<String, Object>) Jwts.parserBuilder().setSigningKey(signingKey).build().parse(token).getBody();
+        return (Map<String, Object>) Jwts.parser().setSigningKey(signingKey).build().parse(token).getBody();
 //        return Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
     }
 
@@ -54,7 +54,7 @@ public class JWTUtils {
     public static Map<String, Object> getClaimsIgnoreExpire(String key, String token) {
         Key signingKey = getKey(key);
         try {
-            return (Map<String, Object>) Jwts.parserBuilder().setSigningKey(signingKey).build().parse(token).getBody();
+            return (Map<String, Object>) Jwts.parser().setSigningKey(signingKey).build().parse(token).getBody();
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
