@@ -176,6 +176,12 @@ public class TapField extends TapItem<TapField> implements Serializable {
         this.autoIncCacheValue = autoIncCacheValue;
         return this;
     }
+
+    private String sequenceName;
+    public TapField sequenceName(String sequenceName) {
+        this.sequenceName = sequenceName;
+        return this;
+    }
 //    /**
 //     * Unique field
 //     */
@@ -239,6 +245,8 @@ public class TapField extends TapItem<TapField> implements Serializable {
         newField.autoInc = autoInc;
         newField.autoIncStartValue = autoIncStartValue;
         newField.autoIncrementValue = autoIncrementValue;
+        newField.autoIncCacheValue = autoIncCacheValue;
+        newField.sequenceName = sequenceName;
         newField.check = check;
         newField.comment = comment;
         newField.constraint = constraint;
@@ -352,6 +360,14 @@ public class TapField extends TapItem<TapField> implements Serializable {
 
     public void setAutoIncCacheValue(Long autoIncCacheValue) {
         this.autoIncCacheValue = autoIncCacheValue;
+    }
+
+    public String getSequenceName() {
+        return sequenceName;
+    }
+
+    public void setSequenceName(String sequenceName) {
+        this.sequenceName = sequenceName;
     }
 
 //    public Boolean getUnique() {
