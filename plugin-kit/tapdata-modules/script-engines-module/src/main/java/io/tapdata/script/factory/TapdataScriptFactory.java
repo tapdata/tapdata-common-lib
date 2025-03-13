@@ -6,7 +6,6 @@ import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.script.ScriptFactory;
 import io.tapdata.entity.script.ScriptOptions;
 import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.script.factory.py.TapPythonEngine;
 import io.tapdata.script.factory.script.TapRunScriptEngine;
 
 import javax.script.ScriptEngine;
@@ -42,9 +41,6 @@ public class TapdataScriptFactory implements ScriptFactory {
 			}
 		}
 		switch (type) {
-			case "py":
-			case "jython":
-			case TYPE_PYTHON: return new TapPythonEngine(scriptOptions);
 			case "js":
 			case TYPE_JAVASCRIPT: return new TapRunScriptEngine(scriptOptions);
 		}
