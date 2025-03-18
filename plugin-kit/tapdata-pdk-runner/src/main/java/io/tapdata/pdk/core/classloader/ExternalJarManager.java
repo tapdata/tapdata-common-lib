@@ -1,6 +1,7 @@
 package io.tapdata.pdk.core.classloader;
 
 import com.google.common.collect.Lists;
+import io.tapdata.encryptor.JarEncryptor;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.memory.MemoryFetcher;
 import io.tapdata.entity.utils.DataMap;
@@ -221,17 +222,23 @@ public class ExternalJarManager implements MemoryFetcher {
                     targetJarFile = new File(finalTheRunningFolder.getAbsolutePath() + File.separator + fileNameWithoutExtension + "_" + UUID.randomUUID().toString() + ".jar");
                     FileUtils.copyFile(jar, targetJarFile);
                 }
+                try {
+                    JarEncryptor.decryptJar(jar.getPath());
+                } catch (Exception e) {
+                    TapLogger.error(TAG, "Copy encrypted jar file {} to {} failed", jar.getAbsolutePath(), targetJarFile.getAbsolutePath(), e);
+                }
                 List<URL> urls = Lists.newArrayList(targetJarFile.toURI().toURL());
                 dependencyURLClassLoader = new DependencyURLClassLoader(urls);
                 Reflections reflections = new Reflections(new ConfigurationBuilder()
                         .addScanners(new TypeAnnotationsScanner())
                         .filterInputsBy(new FilterBuilder()
 //                                .include("^.*\\.class$")
-                                        .includePackage("io", "pdk")
+                                        .includePackage("io")
+                                        .includePackage("pdk")
 //                                .exclude("^.*module-info.class$")
                         )
                         .setUrls(urls)
-                        .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
+                        .addClassLoaders(dependencyURLClassLoader.getActualClassLoader()));
                 TapLogger.debug(TAG, "Analyze jar file {}", targetJarFile.getAbsolutePath());
                 TapLogger.debug(TAG, "Tapdata SDK will only scan classes under package 'io' or 'pdk', please ensure your annotated classes are following this rule. ");
                 AnnotationUtils.runClassAnnotationHandlers(reflections, jarAnnotationHandlersListener.annotationHandlers(jar), TAG);
@@ -286,11 +293,12 @@ public class ExternalJarManager implements MemoryFetcher {
                   .addScanners(new TypeAnnotationsScanner())
                   .filterInputsBy(new FilterBuilder()
 //                                .include("^.*\\.class$")
-                          .includePackage("io", "pdk")
+                          .includePackage("io")
+                          .includePackage("pdk")
 //                                .exclude("^.*module-info.class$")
                   )
                   .setUrls(urls)
-                  .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
+                  .addClassLoaders(dependencyURLClassLoader.getActualClassLoader()));
                 Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(TapConnectorClass.class, true);
 //                System.out.println("connectorClasses " + connectorClasses);
             }
