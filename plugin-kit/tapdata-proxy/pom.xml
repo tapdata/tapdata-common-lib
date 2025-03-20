@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>plugin-kit</artifactId>
-        <version>1.3-SNAPSHOT</version>
+        <version>1.4-SNAPSHOT</version>
     </parent>
     <artifactId>tapdata-proxy</artifactId>
     <version>${tapdata.proxy.version}</version>

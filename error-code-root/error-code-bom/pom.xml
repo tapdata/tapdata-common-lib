@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>error-code-root</artifactId>
-        <version>1.3-SNAPSHOT</version>
+        <version>1.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>error-code-bom</artifactId>
