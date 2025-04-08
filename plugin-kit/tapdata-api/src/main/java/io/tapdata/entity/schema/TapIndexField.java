@@ -27,6 +27,12 @@ public class TapIndexField implements Serializable {
         return this;
     }
 
+    private Integer subPosition;
+    public TapIndexField subPosition(Integer subPosition) {
+        this.subPosition = subPosition;
+        return this;
+    }
+
     public Boolean getFieldAsc() {
         return fieldAsc;
     }
@@ -54,5 +60,13 @@ public class TapIndexField implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Integer getSubPosition() {
+        return subPosition;
+    }
+
+    public void setSubPosition(Integer subPosition) {
+        this.subPosition = subPosition;
     }
 }
