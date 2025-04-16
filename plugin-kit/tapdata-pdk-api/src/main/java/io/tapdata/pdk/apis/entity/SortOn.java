@@ -54,11 +54,20 @@ public class SortOn {
         this.nullSort = nullSort;
     }
 
+    public int getNullSort() {
+        return nullSort;
+    }
+
+    public void setNullSort(int nullSort) {
+        this.nullSort = nullSort;
+    }
+
+
     public String toString() {
         return toString("");
     }
 
     public String toString(String quote) {
-        return quote + key + quote + " " + (sort == ASCENDING ? "ASC" : "DESC");
+        return quote + key + quote + " " + (sort == ASCENDING ? "ASC" : "DESC") ;
     }
 }
