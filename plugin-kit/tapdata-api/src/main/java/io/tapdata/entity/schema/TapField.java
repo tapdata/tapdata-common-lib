@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 public class TapField extends TapItem<TapField> implements Serializable {
     public static final String FIELD_NAME = "name";
+    public static final String FIELD_ORIGINAL_FIELD_NAME = "originalFieldName";
     public static final String FIELD_DATA_TYPE = "dataType";
     public static final String FIELD_AUTO_INC = "autoInc";
     public static final String FIELD_AUTO_INC_START_VALUE = "autoIncStartValue";
@@ -72,6 +73,12 @@ public class TapField extends TapItem<TapField> implements Serializable {
     private String name;
     public TapField name(String name) {
         this.name = name;
+        return this;
+    }
+
+    private String originalFieldName;
+    public TapField originalFieldName(String originalFieldName) {
+        this.originalFieldName = originalFieldName;
         return this;
     }
     /**
@@ -234,6 +241,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
         TapField newField = new TapField();
         newField.nullable = nullable;
         newField.name = name;
+        newField.originalFieldName = originalFieldName;
         newField.dataType = dataType;
         newField.pureDataType = pureDataType;
         newField.length = length;
@@ -306,6 +314,15 @@ public class TapField extends TapItem<TapField> implements Serializable {
     public void setName(String name) {
         this.name = name;
     }
+
+    public String getOriginalFieldName() {
+        return originalFieldName;
+    }
+
+    public void setOriginalFieldName(String originalFieldName) {
+        this.originalFieldName = originalFieldName;
+    }
+
     public Integer getPartitionKeyPos() {
         return partitionKeyPos;
     }
