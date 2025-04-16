@@ -46,13 +46,6 @@ public class SortOn {
     public void setSort(int sort) {
         this.sort = sort;
     }
-    public int getNullSort() {
-        return nullSort;
-    }
-
-    public void setNullSort(int nullSort) {
-        this.nullSort = nullSort;
-    }
 
     public int getNullSort() {
         return nullSort;
