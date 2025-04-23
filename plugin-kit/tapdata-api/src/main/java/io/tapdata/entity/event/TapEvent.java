@@ -1,16 +1,9 @@
 package io.tapdata.entity.event;
 
-import io.tapdata.entity.event.ddl.TapDDLEvent;
-import io.tapdata.entity.serializer.JavaCustomSerializer;
 import io.tapdata.entity.utils.FormatUtils;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
-import io.tapdata.entity.utils.io.DataInputStreamEx;
-import io.tapdata.entity.utils.io.DataOutputStreamEx;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +25,8 @@ public abstract class TapEvent implements Serializable/*, JavaCustomSerializer*/
     protected String pdkGroup;
     protected String pdkVersion;
     protected Long memorySize;
+    protected String database;
+    protected String schema;
     /*public void from(InputStream inputStream) throws IOException {
         DataInputStreamEx dataInputStreamEx = dataInputStream(inputStream);
         type = dataInputStreamEx.original().readInt();
@@ -153,6 +148,8 @@ public abstract class TapEvent implements Serializable/*, JavaCustomSerializer*/
             tapEvent.info = new ConcurrentHashMap<>(info);
         if(traceMap != null)
             tapEvent.traceMap = new ConcurrentHashMap<>(traceMap);
+        tapEvent.database = database;
+        tapEvent.schema = schema;
     }
 
     public Long getMemorySize() {
@@ -181,5 +178,23 @@ public abstract class TapEvent implements Serializable/*, JavaCustomSerializer*/
             this.key = FormatUtils.formatTapEvent(this.getClass());
         }
         return this.key;
+    }
+
+    public TapEvent database(String database) {
+        this.database = database;
+        return this;
+    }
+
+    public TapEvent schema(String schema) {
+        this.schema = schema;
+        return this;
+    }
+
+    public String getDatabase() {
+        return database;
+    }
+
+    public String getSchema() {
+        return schema;
     }
 }
