@@ -45,7 +45,7 @@ public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
         ScriptEngine scriptEngine;
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(Optional.ofNullable(this.classLoader).orElse(Thread.currentThread().getContextClassLoader()));
+            Thread.currentThread().setContextClassLoader(Optional.ofNullable(this.classLoader).orElse(ScriptOptions.class.getClassLoader()));
             if (jsEngineEnum == EngineType.GRAALVM_JS) {
                 scriptEngine = GraalJSScriptEngine
                         .create(Engine.newBuilder()
