@@ -154,6 +154,10 @@ public class TapSimplify {
 		return new TapXml();
 	}
 
+	public static TapInputStream tapInputStream() {
+		return new TapInputStream();
+	}
+
 	public static TapJson tapJson() {
 		return new TapJson();
 	}

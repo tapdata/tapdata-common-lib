@@ -20,6 +20,7 @@ public abstract class TapType implements Serializable {
     public static final byte TYPE_MONEY = 12;
     public static final byte TYPE_XML = 13;
     public static final byte TYPE_JSON = 14;
+    public static final byte TYPE_INPUT_STREAM = 15;
     protected byte type;
 
     public static Class<? extends TapType> getTapTypeClass(byte type) {
@@ -52,6 +53,8 @@ public abstract class TapType implements Serializable {
                 return TapXml.class;
             case TYPE_JSON:
                 return TapJson.class;
+            case TYPE_INPUT_STREAM:
+                return TapInputStream.class;
         }
         return null;
     }
@@ -86,12 +89,16 @@ public abstract class TapType implements Serializable {
                 return TapXml.class;
             case "TapJson":
                 return TapJson.class;
+            case "TapInputStream":
+                return TapInputStream.class;
         }
         return null;
     }
 
     public abstract TapType cloneTapType();
+
     public abstract Class<? extends TapValue<?, ?>> tapValueClass();
+
     public abstract ToTapValueCodec<?> toTapValueCodec();
 
     public byte getType() {

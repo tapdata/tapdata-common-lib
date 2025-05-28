@@ -54,6 +54,8 @@ public interface TapFileStorage {
      */
     void readFile(String path, Consumer<InputStream> consumer) throws Exception;
 
+    InputStream readFile(String path) throws Exception;
+
     /**
      * Check the file is exists or not on the path.
      * Directory is not file, if path is directory, then should return false.
