@@ -277,7 +277,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 	}
 
 	@Override
-	public Object toObject(byte[] data, ToObjectOptions options) {
+	public Object toObject(byte[] data, ToObjectOptions options,Boolean isOffset) {
 		if(data == null)
 			return null;
 		try (ByteArrayInputStream bos = new ByteArrayInputStream(data);
@@ -297,7 +297,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 				return firstVersion.toObject(data, options);
 			}
 			//gzip performance is bad, 1000000 times, takes 2878 without gzip, with gzip 14000.
-			return toObjectPrivate(dis, options);
+			return toObjectPrivate(dis, options,isOffset);
 		} catch (IOException e) {
 			e.printStackTrace();
 			//Compatible for old gzip data.
@@ -306,7 +306,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 					 GZIPInputStream gos = new GZIPInputStream(bos);
 					 DataInputStream dis = new DataInputStream(gos)
 				) {
-					return toObjectPrivate(dis, options);
+					return toObjectPrivate(dis, options,isOffset);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -316,7 +316,12 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 		return null;
 	}
 
-	private Object toObjectPrivate(DataInputStream dis, ToObjectOptions options) throws IOException {
+	@Override
+	public Object toObject(byte[] data, ToObjectOptions options) {
+		return toObject(data, options,false);
+	}
+
+	private Object toObjectPrivate(DataInputStream dis, ToObjectOptions options,Boolean isOffset) throws IOException {
 		byte hasValue = dis.readByte();
 		if(hasValue == END)
 			return ENDED;
@@ -340,10 +345,10 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 					}
 				}
 				while(true) {
-					Object key = toObjectPrivate(dis, options);
+					Object key = toObjectPrivate(dis, options,isOffset);
 					if(ENDED.equals(key))
 						break;
-					Object value = toObjectPrivate(dis, options);
+					Object value = toObjectPrivate(dis, options,isOffset);
 					if(key != null) {
 						map.put(key, value);
 					}
@@ -365,7 +370,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 					}
 				}
 				while(true) {
-					Object value = toObjectPrivate(dis, options);
+					Object value = toObjectPrivate(dis, options,isOffset);
 					if(ENDED.equals(value))
 						break;
 					if(value != null)
@@ -396,7 +401,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 				Class<?> clazz = findClass(options, className);
 				return jsonParser.fromJson(content, clazz);
 			case TYPE_SERIALIZABLE:
-				try(ObjectInputStream oos = new ObjectInputStreamEx(dis, options)) {
+				try(ObjectInputStream oos = new ObjectInputStreamEx(dis, options,isOffset)) {
 					return oos.readObject();
 				} catch (ClassNotFoundException e) {
 //						e.printStackTrace();
@@ -508,10 +513,12 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 
 	private static class ObjectInputStreamEx extends ObjectInputStream {
 		private final ToObjectOptions options;
+		private final Boolean isOffset;
 
-		public ObjectInputStreamEx(InputStream in, ToObjectOptions options) throws IOException {
+		public ObjectInputStreamEx(InputStream in, ToObjectOptions options,Boolean isOffset) throws IOException {
 			super(in);
 			this.options = options;
+			this.isOffset = isOffset;
 		}
 
 		@Override
@@ -538,6 +545,21 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 				return theClass;
 
 			return super.resolveClass(desc);
+		}
+
+		@Override
+		protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
+			ObjectStreamClass descriptor = super.readClassDescriptor();
+			if(isOffset){
+				Class<?> clazz = resolveClass(descriptor);
+				if(clazz != null) {
+					ObjectStreamClass localDesc = ObjectStreamClass.lookup(clazz);
+					if (localDesc != null && localDesc.getSerialVersionUID() != descriptor.getSerialVersionUID()) {
+						return localDesc;
+					}
+				}
+			}
+			return descriptor;
 		}
 	}
 

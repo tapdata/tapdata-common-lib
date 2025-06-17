@@ -256,6 +256,10 @@ public class ObjectSerializableImpl implements ObjectSerializable {
 		}
 		return null;
 	}
+	@Override
+	public Object toObject(byte[] data, ToObjectOptions options,Boolean isOffset) {
+		return toObject(data, options);
+	}
 
 	private Object deserializeObject(DataInputStream dis, ToObjectOptions options) throws IOException {
 		byte type = dis.readByte();
