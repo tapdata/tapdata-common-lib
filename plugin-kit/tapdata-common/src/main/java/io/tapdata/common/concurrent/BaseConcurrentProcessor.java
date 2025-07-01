@@ -18,8 +18,8 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	protected final int thread;
 	protected final int queueSize;
 	protected final String tag;
-	protected final BlockingQueue<ThreadTask<T, R>>[] producerQueue;
-	protected final BlockingQueue<ApplyValue>[] consumerQueue;
+	protected BlockingQueue<ThreadTask<T, R>>[] producerQueue;
+	protected BlockingQueue<ApplyValue>[] consumerQueue;
 	protected final AtomicBoolean running;
 	protected final AtomicBoolean pause;
 	protected int producerIndex;
@@ -33,11 +33,11 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		this.thread = thread;
 		this.queueSize = queueSize;
 		this.tag = tag;
-		this.producerQueue = new LinkedBlockingQueue[thread];
-		this.consumerQueue = new LinkedBlockingQueue[thread];
+		this.producerQueue = new ArrayBlockingQueue[thread];
+		this.consumerQueue = new ArrayBlockingQueue[thread];
 		IntStream.range(0, thread).forEach(i -> {
-			this.producerQueue[i] = new LinkedBlockingQueue<>(queueSize);
-			this.consumerQueue[i] = new LinkedBlockingQueue<>(queueSize);
+			this.producerQueue[i] = new ArrayBlockingQueue<>(queueSize);
+			this.consumerQueue[i] = new ArrayBlockingQueue<>(queueSize);
 		});
 		this.running = new AtomicBoolean(false);
 		this.pause = new AtomicBoolean(false);
@@ -198,14 +198,75 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 
 	@Override
 	public void close() {
+		// Resume any paused operations to allow proper shutdown
 		resume();
+
+		// Set running flag to false to stop worker threads
 		this.running.set(false);
-		Optional.ofNullable(consumerFutures).ifPresent(futures -> {
-			for (CompletableFuture<Void> future : futures) {
-				Optional.ofNullable(future).ifPresent(f -> f.cancel(true));
-			}
-		});
-		Optional.ofNullable(consumerThreadPool).ifPresent(ThreadPoolExecutor::shutdownNow);
+
+		// Cancel all consumer futures with interruption
+		try {
+			Optional.ofNullable(consumerFutures).ifPresent(futures -> {
+				for (CompletableFuture<Void> future : futures) {
+					Optional.ofNullable(future).ifPresent(f -> f.cancel(true));
+				}
+			});
+		} catch (Exception e) {
+			// Ignore exceptions during future cancellation
+		}
+
+		// Shutdown thread pool with timeout
+		try {
+			Optional.ofNullable(consumerThreadPool).ifPresent(pool -> {
+				pool.shutdown();
+				try {
+					// Wait for graceful shutdown for 1 second
+					if (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
+						// Force shutdown if graceful shutdown failed
+						pool.shutdownNow();
+						// Wait for forced shutdown for another 1 second
+						if (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
+							// Log warning if shutdown still not complete (optional)
+						}
+					}
+				} catch (InterruptedException e) {
+					// Force shutdown on interruption
+					pool.shutdownNow();
+					Thread.currentThread().interrupt();
+				}
+			});
+		} catch (Exception e) {
+			// Ignore exceptions during thread pool shutdown
+		}
+
+		// Clear all queues to release memory
+		try {
+			Optional.ofNullable(producerQueue).ifPresent(queues -> {
+				for (BlockingQueue<ThreadTask<T, R>> queue : queues) {
+					Optional.ofNullable(queue).ifPresent(BlockingQueue::clear);
+				}
+			});
+		} catch (Exception e) {
+			// Ignore exceptions during producer queue cleanup
+		}
+
+		try {
+			Optional.ofNullable(consumerQueue).ifPresent(queues -> {
+				for (BlockingQueue<ApplyValue> queue : queues) {
+					Optional.ofNullable(queue).ifPresent(BlockingQueue::clear);
+				}
+			});
+		} catch (Exception e) {
+			// Ignore exceptions during consumer queue cleanup
+		}
+
+		// Clear references to help GC
+		try {
+			this.consumerThreadPool = null;
+			this.consumerFutures = null;
+		} catch (Exception e) {
+			// Ignore exceptions during reference cleanup
+		}
 	}
 
 	protected void putBarrierInAllProducerQueue() {
