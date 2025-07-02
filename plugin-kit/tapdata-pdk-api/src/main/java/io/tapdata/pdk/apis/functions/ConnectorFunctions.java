@@ -80,6 +80,12 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected DropPartitionTableFunction dropPartitionTableFunction;
     protected GetStreamOffsetFunction getStreamOffsetFunction;
     protected ExportEventSqlFunction exportEventSqlFunction;
+    protected FlushOffsetFunction flushOffsetFunction;
+
+    public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
+        flushOffsetFunction = function;
+        return this;
+    }
 
     public ConnectorFunctions supportTransactionBeginFunction(TransactionBeginFunction function) {
         transactionBeginFunction = function;
@@ -584,5 +590,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ExportEventSqlFunction getExportEventSqlFunction() {
         return exportEventSqlFunction;
+    }
+
+
+    public FlushOffsetFunction getFlushOffsetFunction() {
+        return flushOffsetFunction;
     }
 }
