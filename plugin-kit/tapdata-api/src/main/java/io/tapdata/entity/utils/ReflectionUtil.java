@@ -350,6 +350,32 @@ public class ReflectionUtil {
             return method.invoke(owner);
     }
 
+    public static Object invokeDeclaredMethod(Object owner, String methodName,
+                                      Object[] args) throws Exception {
+        Class<? extends Object> ownerClass = owner.getClass(); // 首先还是必须得到这个对象的Class
+        Class[] argsClass = null;
+        if (args != null) {
+            argsClass = new Class[args.length];
+            // 以下几行，配置参数的Class数组，作为寻找Method的条件
+            for (int i = 0, j = args.length; i < j; i++) {
+                argsClass[i] = args[i].getClass();
+            }
+        }
+        Method method = null;
+        if (argsClass != null)
+            method = ownerClass.getDeclaredMethod(methodName, argsClass); // 通过Method名和参数的Class数组得到要执行的Method
+        else
+            method = ownerClass.getDeclaredMethod(methodName); // 通过Method名和参数的Class数组得到要执行的Method
+
+        // 设置方法可访问，以便调用protected和private方法
+        method.setAccessible(true);
+
+        if (args != null)
+            return method.invoke(owner, args); // 执行该Method，invoke方法的参数是执行这个方法的对象，和参数数组。返回值是Object，也既是该方法的返回值
+        else
+            return method.invoke(owner);
+    }
+
     /**
      * 4. 执行某个类的静态方法 基本的原理和实例3相同，不同点是最后一行，invoke的一个参数是null，因为这是静态方法，不需要借助实例运行
      *

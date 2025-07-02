@@ -9,6 +9,7 @@ import io.tapdata.pdk.apis.functions.connection.GetCharsetsFunction;
 import io.tapdata.pdk.apis.functions.connection.GetTableInfoFunction;
 import io.tapdata.pdk.apis.functions.connection.GetTableNamesFunction;
 import io.tapdata.pdk.apis.functions.connection.TableWebsiteFunction;
+import io.tapdata.pdk.apis.functions.connection.ExecuteCommandV2Function;
 
 public class ConnectionFunctions<T extends ConnectionFunctions<?>> extends CommonFunctions<T> {
     protected GetTableInfoFunction getTableInfoFunction;
@@ -18,7 +19,7 @@ public class ConnectionFunctions<T extends ConnectionFunctions<?>> extends Commo
     protected GetCharsetsFunction getCharsetsFunction;
     protected CommandCallbackFunction commandCallbackFunction;
     protected ErrorHandleFunction errorHandleFunction;
-
+    protected ExecuteCommandV2Function executeCommandV2Function;
 
     protected ConnectorWebsiteFunction connectorWebsiteFunction;
     protected TableWebsiteFunction tableWebsiteFunction;
@@ -53,6 +54,11 @@ public class ConnectionFunctions<T extends ConnectionFunctions<?>> extends Commo
         return (T) this;
     }
 
+    public T supportExecuteCommandV2Function(ExecuteCommandV2Function function) {
+        executeCommandV2Function = function;
+        return (T) this;
+    }
+
     public ConnectionFunctions supportConnectorWebsite(ConnectorWebsiteFunction connectorWebsiteFunction){
         this.connectorWebsiteFunction = connectorWebsiteFunction;
         return this;
@@ -80,6 +86,9 @@ public class ConnectionFunctions<T extends ConnectionFunctions<?>> extends Commo
     }
     public ErrorHandleFunction getErrorHandleFunction() {
         return errorHandleFunction;
+    }
+    public ExecuteCommandV2Function getExecuteCommandV2Function() {
+        return executeCommandV2Function;
     }
 
     public CheckTableNameFunction getCheckTableNameFunction() {
