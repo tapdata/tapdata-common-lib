@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions> {
     protected CountRawCommandFunction countRawCommandFunction;
     protected RunRawCommandFunction runRawCommandFunction;
+    protected ExecuteCommandFunction executeCommandFunction;
     protected ReleaseExternalFunction releaseExternalFunction;
     protected BatchReadFunction batchReadFunction;
     protected StreamReadFunction streamReadFunction;
@@ -156,6 +157,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     }
     public ConnectorFunctions supportNewFieldFunction(NewFieldFunction function) {
         newFieldFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportExecuteCommandFunction(ExecuteCommandFunction function) {
+        executeCommandFunction = function;
         return this;
     }
 
@@ -522,6 +528,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public RawDataCallbackFilterFunctionV2 getRawDataCallbackFilterFunctionV2() {
         return rawDataCallbackFilterFunctionV2;
+    }
+
+    public ExecuteCommandFunction getExecuteCommandFunction() {
+        return executeCommandFunction;
     }
 
     public CountByPartitionFilterFunction getCountByPartitionFilterFunction() {
