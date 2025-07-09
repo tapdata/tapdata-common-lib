@@ -11,6 +11,6 @@ public interface ExecuteCommandV2Function extends TapConnectionFunction {
     /**
      * @param connectionContext the node context in a DAG
      */
-    void execute(TapConnectionContext connectionContext, String command, Consumer<List<DataMap>> consumer) throws Throwable;
+    void execute(TapConnectionContext connectionContext, String sqlType, String sql, Consumer<List<DataMap>> consumer) throws Throwable;
 }
 
