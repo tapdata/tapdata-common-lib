@@ -7,14 +7,13 @@ import io.tapdata.modules.api.net.error.NetErrors;
 import io.tapdata.modules.api.net.service.EngineMessageExecutionService;
 import io.tapdata.modules.api.net.service.EventQueueService;
 import io.tapdata.modules.api.net.service.node.connection.NodeConnectionFactory;
+import io.tapdata.modules.api.net.service.node.connection.Receiver;
 import io.tapdata.modules.api.proxy.data.NewDataReceived;
 import io.tapdata.pdk.apis.entity.message.CommandInfo;
 import io.tapdata.pdk.apis.entity.message.EngineMessage;
 import io.tapdata.pdk.apis.entity.message.ServiceCaller;
 
 import java.util.function.BiConsumer;
-
-import static io.tapdata.entity.simplify.TapSimplify.map;
 
 @Bean
 @MainMethod("main")
@@ -26,24 +25,34 @@ public class ProxyMain {
 
 	@Bean(type = "sync")
 	private EventQueueService eventQueueService;
+
 	public void main() {
-		nodeConnectionFactory.registerReceiver(CommandInfo.class.getSimpleName(), this::handleCommandInfo);
-		nodeConnectionFactory.registerReceiver(NewDataReceived.class.getSimpleName(), this::handleNewDataReceived);
-		nodeConnectionFactory.registerReceiver(ServiceCaller.class.getSimpleName(), this::handleServiceCaller);
+		nodeConnectionFactory.registerReceiver(CommandInfo.class.getSimpleName(), new CommandInfoReceiver());
+		nodeConnectionFactory.registerReceiver(NewDataReceived.class.getSimpleName(), new NewDataReceivedReceiver());
+		nodeConnectionFactory.registerReceiver(ServiceCaller.class.getSimpleName(), new ServiceCallerReceiver());
 	}
 
-	private void handleServiceCaller(String nodeId, ServiceCaller serviceCaller, BiConsumer<Object, Throwable> biConsumer) {
-		handleEngineMessage(serviceCaller, biConsumer);
-	}
+    class CommandInfoReceiver implements Receiver<Object, CommandInfo> {
+        @Override
+        public void received(String nodeId, CommandInfo commandInfo, BiConsumer<Object, Throwable> biConsumer) {
+            handleEngineMessage(commandInfo, biConsumer);
+        }
+    }
 
-	private void handleNewDataReceived(String nodeId, NewDataReceived newDataReceived, BiConsumer<Object, Throwable> biConsumer) {
-		eventQueueService.newDataReceived(newDataReceived.getSubscribeIds());
-		biConsumer.accept(null, null);
-	}
+    class NewDataReceivedReceiver implements Receiver<Object, NewDataReceived> {
+        @Override
+        public void received(String nodeId, NewDataReceived newDataReceived, BiConsumer<Object, Throwable> biConsumer) {
+            eventQueueService.newDataReceived(newDataReceived.getSubscribeIds());
+            biConsumer.accept(null, null);
+        }
+    }
 
-	private void handleCommandInfo(String nodeId, CommandInfo commandInfo, BiConsumer<Object, Throwable> biConsumer) {
-		handleEngineMessage(commandInfo, biConsumer);
-	}
+    class ServiceCallerReceiver implements Receiver<Object, ServiceCaller> {
+        @Override
+        public void received(String nodeId, ServiceCaller serviceCaller, BiConsumer<Object, Throwable> biConsumer) {
+            handleEngineMessage(serviceCaller, biConsumer);
+        }
+    }
 
 	private void handleEngineMessage(EngineMessage engineMessage, BiConsumer<Object, Throwable> biConsumer) {
 		engineMessageExecutionService.callLocal(engineMessage, (result, throwable) -> {
