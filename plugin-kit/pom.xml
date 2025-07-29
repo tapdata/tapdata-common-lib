@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<groupId>io.tapdata</groupId>
-	<version>1.5-SNAPSHOT</version>
+	<version>1.6-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>plugin-kit</artifactId>
     <name>plugin-kit</name>
@@ -22,19 +22,19 @@
 		<proxy.file.name>${project.artifactId}-v${project.version}</proxy.file.name>
 		<connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
 		<java.version>8</java.version>
-		<tapdata.pdk.runner.verison>1.14-SNAPSHOT</tapdata.pdk.runner.verison>
-		<tapdata.api.verison>1.4.6-SNAPSHOT</tapdata.api.verison>
-		<tapdata.pdk.api.verison>1.4.6-SNAPSHOT</tapdata.pdk.api.verison>
+		<tapdata.pdk.runner.verison>1.15-SNAPSHOT</tapdata.pdk.runner.verison>
+		<tapdata.api.verison>1.4.7-SNAPSHOT</tapdata.api.verison>
+		<tapdata.pdk.api.verison>1.4.7-SNAPSHOT</tapdata.pdk.api.verison>
 		<tapdata.pdk.connector.core.version>1.0-SNAPSHOT</tapdata.pdk.connector.core.version>
 		<junit.jupiter.version>5.8.1</junit.jupiter.version>
 		<junit.platform.version>1.8.1</junit.platform.version>
 		<mockito.version>4.11.0</mockito.version>
 		<mockito.junit.jupiter.version>4.11.0</mockito.junit.jupiter.version>
-		<error-code-core.version>1.5-SNAPSHOT</error-code-core.version>
-		<error-code-scanner.version>1.5-SNAPSHOT</error-code-scanner.version>
-		<plugin-parent>1.5-SNAPSHOT</plugin-parent>
-		<tapdata.modules.version>1.5-SNAPSHOT</tapdata.modules.version>
-		<tapdata.proxy.version>1.5-SNAPSHOT</tapdata.proxy.version>
+		<error-code-core.version>1.6-SNAPSHOT</error-code-core.version>
+		<error-code-scanner.version>1.6-SNAPSHOT</error-code-scanner.version>
+		<plugin-parent>1.6-SNAPSHOT</plugin-parent>
+		<tapdata.modules.version>1.6-SNAPSHOT</tapdata.modules.version>
+		<tapdata.proxy.version>1.6-SNAPSHOT</tapdata.proxy.version>
 	</properties>
     <dependencies>
         <dependency>
