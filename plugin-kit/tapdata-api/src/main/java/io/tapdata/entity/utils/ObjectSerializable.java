@@ -7,7 +7,6 @@ public interface ObjectSerializable {
 
     Object toObject(byte[] data);
     Object toObject(byte[] data, ToObjectOptions options);
-    Object toObject(byte[] data, ToObjectOptions options,Boolean isOffset);
 
     class FromObjectOptions {
         private boolean writeNullValue = true;
