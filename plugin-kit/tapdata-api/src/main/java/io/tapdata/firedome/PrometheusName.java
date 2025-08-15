@@ -7,7 +7,7 @@ package io.tapdata.firedome;
  **/
 public interface PrometheusName {
 	/* task */
-	String TASK_CDC_DELAY_SECONDS = "task_cdc_delay_seconds";
+	String TASK_CDC_DELAY_MS = "task_cdc_delay_ms";
 	String TASK_ACTIVE_DB = "task_active_db";
 	String TASK_STATUS = "task_status";
 	String TASK_MILESTONE_STATUS = "task_milestone_status";
