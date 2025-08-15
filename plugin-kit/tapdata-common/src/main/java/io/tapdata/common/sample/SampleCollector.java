@@ -3,9 +3,11 @@ package io.tapdata.common.sample;
 import io.tapdata.common.executor.ExecutorsManager;
 import io.tapdata.common.sample.process.GcSampler;
 import io.tapdata.common.sample.sampler.*;
+import io.tapdata.firedome.MultiTaggedGauge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -116,11 +118,18 @@ public class SampleCollector {
         try {
             for(Map.Entry<String, Sampler> entry : idSamplerMap.entrySet()) {
                 try {
-                    if (entry.getValue() == null) {
+                    Sampler sampler = entry.getValue();
+                    if (sampler == null) {
                         continue;
                     }
                     long time = System.currentTimeMillis();
-                    result.put(entry.getKey(), entry.getValue().value());
+                    Number value = sampler.value();
+                    if (sampler instanceof SamplerPrometheus && null != value) {
+                        MultiTaggedGauge multiTaggedGauge = ((SamplerPrometheus) sampler).multiTaggedGauge();
+                        String[] tagValues = ((SamplerPrometheus) sampler).tagValues();
+                        Optional.ofNullable(multiTaggedGauge).ifPresent(gauge -> gauge.set(value.doubleValue(), tagValues));
+                    }
+                    result.put(entry.getKey(), value);
                     long takes = System.currentTimeMillis() - time;
                     if(takes > 10) {
                         logger.debug("PointSampler {} key {} execute more than 10 milliseconds, {}", entry.getValue().getClass().getSimpleName(), entry.getKey(), takes);
@@ -168,6 +177,10 @@ public class SampleCollector {
      * @param sampler
      */
     public void addSampler(String id, Sampler sampler) {
+        idSamplerMap.put(id, sampler);
+    }
+
+    public void addSampler(String id, SamplerPrometheus sampler) {
         idSamplerMap.put(id, sampler);
     }
 
@@ -239,8 +252,22 @@ public class SampleCollector {
         return (AverageSampler) idSamplerMap.computeIfAbsent(id, s -> new AverageSampler());
     }
 
-    public WriteCostAvgSampler getWriteCostAvgSampler(String id) {
-        return (WriteCostAvgSampler) idSamplerMap.computeIfAbsent(id, s -> new WriteCostAvgSampler());
+    public AverageSampler getAverageSampler(String id, MultiTaggedGauge multiTaggedGauge, String... tagValues) {
+        return (AverageSampler) idSamplerMap.computeIfAbsent(id, s -> new AverageSampler() {
+            @Override
+            public String[] tagValues() {
+                return tagValues;
+            }
+
+            @Override
+            public MultiTaggedGauge multiTaggedGauge() {
+                return multiTaggedGauge;
+            }
+        });
+    }
+
+    public WriteCostAvgSampler getWriteCostAvgSampler(String id, MultiTaggedGauge multiTaggedGauge, String... tagValues) {
+        return (WriteCostAvgSampler) idSamplerMap.computeIfAbsent(id, s -> new WriteCostAvgSampler(multiTaggedGauge, tagValues));
     }
 
     /**

@@ -1,6 +1,8 @@
 package io.tapdata.common.sample.sampler;
 
 import io.tapdata.common.sample.Sampler;
+import io.tapdata.common.sample.SamplerPrometheus;
+import io.tapdata.firedome.MultiTaggedGauge;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -9,11 +11,18 @@ import java.util.concurrent.atomic.LongAdder;
  * Incremental record value and auto inc counter.
  * Calculate average value and clear when upload.
  */
-public class WriteCostAvgSampler implements Sampler {
+public class WriteCostAvgSampler implements SamplerPrometheus {
     private final LongAdder counter = new LongAdder();
     private final LongAdder totalValue = new LongAdder();
 
     private final AtomicLong writeRecordAcceptLastTs = new AtomicLong();
+    private final String[] tagValues;
+    private final MultiTaggedGauge multiTaggedGauge;
+
+    public WriteCostAvgSampler(MultiTaggedGauge multiTaggedGauge, String[] tagValues) {
+        this.multiTaggedGauge = multiTaggedGauge;
+        this.tagValues = tagValues;
+    }
 
     public void setWriteRecordAcceptLastTs(long ts) {
         writeRecordAcceptLastTs.set(ts);
@@ -37,5 +46,15 @@ public class WriteCostAvgSampler implements Sampler {
             return total / counterValue;
         }
         return null;
+    }
+
+    @Override
+    public MultiTaggedGauge multiTaggedGauge() {
+        return multiTaggedGauge;
+    }
+
+    @Override
+    public String[] tagValues() {
+        return tagValues;
     }
 }
