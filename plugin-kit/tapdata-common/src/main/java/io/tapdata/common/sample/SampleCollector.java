@@ -266,6 +266,10 @@ public class SampleCollector {
         });
     }
 
+    public WriteCostAvgSampler getWriteCostAvgSampler(String id) {
+        return (WriteCostAvgSampler) idSamplerMap.computeIfAbsent(id, s -> new WriteCostAvgSampler());
+    }
+
     public WriteCostAvgSampler getWriteCostAvgSampler(String id, MultiTaggedGauge multiTaggedGauge, String... tagValues) {
         return (WriteCostAvgSampler) idSamplerMap.computeIfAbsent(id, s -> new WriteCostAvgSampler(multiTaggedGauge, tagValues));
     }

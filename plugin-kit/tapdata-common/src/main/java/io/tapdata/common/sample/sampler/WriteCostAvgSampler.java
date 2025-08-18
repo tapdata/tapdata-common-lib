@@ -1,6 +1,5 @@
 package io.tapdata.common.sample.sampler;
 
-import io.tapdata.common.sample.Sampler;
 import io.tapdata.common.sample.SamplerPrometheus;
 import io.tapdata.firedome.MultiTaggedGauge;
 
@@ -16,8 +15,11 @@ public class WriteCostAvgSampler implements SamplerPrometheus {
     private final LongAdder totalValue = new LongAdder();
 
     private final AtomicLong writeRecordAcceptLastTs = new AtomicLong();
-    private final String[] tagValues;
-    private final MultiTaggedGauge multiTaggedGauge;
+    private String[] tagValues;
+    private MultiTaggedGauge multiTaggedGauge;
+
+    public WriteCostAvgSampler() {
+    }
 
     public WriteCostAvgSampler(MultiTaggedGauge multiTaggedGauge, String[] tagValues) {
         this.multiTaggedGauge = multiTaggedGauge;
