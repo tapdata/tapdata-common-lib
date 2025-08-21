@@ -16,7 +16,7 @@ public class TapBinaryMapping extends TapBytesBase {
 
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        return new TapBinary().bytes(getToTapTypeBytes(params)).fixed(fixed).defaultValue(defaultBytes).byteRatio(byteRatio);
+        return new TapBinary().bytes(getToTapTypeBytes(params)).fixed(fixed).defaultValue(defaultBytes).byteRatio(byteRatio).cannotWrite(cannotWrite);
     }
 
     @Override
