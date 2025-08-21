@@ -22,6 +22,7 @@ public abstract class TapMapping {
     protected Boolean queryOnly = false;
     protected Integer priority = Integer.MAX_VALUE;
     protected Boolean pkEnablement = true;
+    protected Boolean cannotWrite = false;
     private static final Map<String, Class<?>> classCacheMap = new ConcurrentHashMap<>();
 
     public TapMapping() {
@@ -80,6 +81,11 @@ public abstract class TapMapping {
         if(priorityObj instanceof Integer)
             priority = (Integer) priorityObj;
 
+        Boolean cannotWrite = null;
+        Object cannotWriteObj = info.get("cannotWrite");
+        if(cannotWriteObj instanceof Boolean)
+            cannotWrite = (Boolean) cannotWriteObj;
+
         if(to == null)
             return null;
 
@@ -112,6 +118,7 @@ public abstract class TapMapping {
             if(pkEnablement != null)
                 tapMapping.pkEnablement = pkEnablement;
             tapMapping.queryOnly = queryOnly;
+            tapMapping.cannotWrite = cannotWrite;
             tapMapping.from(info);
             return tapMapping;
         } catch (Throwable e) {
