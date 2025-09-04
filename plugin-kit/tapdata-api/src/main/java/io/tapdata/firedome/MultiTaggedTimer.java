@@ -21,7 +21,7 @@ public class MultiTaggedTimer {
         this.registry = registry;
     }
 
-    public Timer getTimer(String ... tagValues){
+    public synchronized Timer getTimer(String ... tagValues){
         String valuesString = Arrays.toString(tagValues);
         if(tagValues.length != tagNames.length) {
             throw new IllegalArgumentException("Timer tags mismatch! Expected args are "+Arrays.toString(tagNames)+", provided tags are "+valuesString);
