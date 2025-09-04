@@ -241,11 +241,6 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 					}
 					if (fromTapValueCodec == null)
 						throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
-
-					if (sourceNameFieldMap != null && !sourceNameFieldMap.containsKey(fieldName)) {
-						//Handle inserted new field
-						sourceNameFieldMap.put(fieldName, field(fieldName, theValue.getOriginType()).tapType(theValue.getTapType()));
-					}
 					Object value = fromTapValueCodec.fromTapValue(theValue);
 					tapValueMap.put(fieldName, value);
 				}
