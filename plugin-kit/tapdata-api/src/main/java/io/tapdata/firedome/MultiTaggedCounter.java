@@ -19,7 +19,7 @@ public class MultiTaggedCounter {
         this.registry = registry;
     }
 
-    public void increment(String ... tagValues){
+    public synchronized void increment(String ... tagValues){
         String valuesString = Arrays.toString(tagValues);
         if(tagValues.length != tagNames.length) {
             throw new IllegalArgumentException("Counter tags mismatch! Expected args are "+Arrays.toString(tagNames)+", provided tags are "+valuesString);

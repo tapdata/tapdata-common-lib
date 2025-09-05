@@ -21,22 +21,28 @@ public class MultiTaggedGauge {
         this.registry = registry;
     }
 
-    public void set(double value, String ... tagValues){
+    public synchronized void set(double value, String... tagValues) {
         String valuesString = Arrays.toString(tagValues);
-        if(tagValues.length != tagNames.length) {
-            throw new IllegalArgumentException("Gauge tags mismatch! Expected args are "+Arrays.toString(tagNames)+", provided tags are "+valuesString);
+        if (tagValues.length != tagNames.length) {
+            throw new IllegalArgumentException("Gauge tags mismatch! Expected tags: "
+                    + Arrays.toString(tagNames) + ", provided tags: " + valuesString);
         }
 
         DoubleWrapper number = wrapperMap.get(valuesString);
-        if(number == null) {
+        if (number == null) {
+            number = new DoubleWrapper(value);
+
             List<Tag> tags = new ArrayList<>(tagNames.length);
-            for(int i = 0; i<tagNames.length; i++) {
+            for (int i = 0; i < tagNames.length; i++) {
                 tags.add(new ImmutableTag(tagNames[i], tagValues[i]));
             }
-            DoubleWrapper valueHolder = new DoubleWrapper(value);
-            final Gauge gauge = Gauge.builder(name, valueHolder, DoubleWrapper::getValue).tags(tags).register(registry);
+
+            Gauge gauge = Gauge.builder(name, number, DoubleWrapper::getValue)
+                    .tags(tags)
+                    .register(registry);
+
+            wrapperMap.put(valuesString, number);
             gaugeValues.put(valuesString, gauge);
-            wrapperMap.put(valuesString, valueHolder);
         } else {
             number.setValue(value);
         }
