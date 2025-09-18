@@ -1,6 +1,12 @@
 package io.tapdata.pdk.apis.entity;
 
+import io.tapdata.entity.schema.value.DateTime;
+
 import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 import static io.tapdata.entity.simplify.TapSimplify.entry;
 import static io.tapdata.entity.simplify.TapSimplify.map;
@@ -140,12 +146,36 @@ public class QueryOperator implements Serializable {
                 break;
         }
         StringBuilder sb = new StringBuilder(quote + key + quote + operatorStr);
-        if(value instanceof Number) {
+        if (value instanceof DateTime) {
+            sb.append(toTimestampString((DateTime) value));
+        } else if(value instanceof Number) {
             sb.append(value);
         } else {
             sb.append("'").append(value).append("'");
         }
         return sb.toString();
+    }
+
+    public static String toTimestampString(DateTime dateTime) {
+        StringBuilder sb = new StringBuilder("'" + formatTapDateTime(dateTime, "yyyy-MM-dd HH:mm:ss"));
+        if (dateTime.getNano() > 0) {
+            DecimalFormat decimalFormat = new DecimalFormat("000000000");
+            sb.append(".").append(decimalFormat.format(dateTime.getNano()).replaceAll("(0)+$", ""));
+        }
+        sb.append('\'');
+        return sb.toString();
+    }
+
+    public static String formatTapDateTime(DateTime dateTime, String pattern) {
+        try {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
+            final ZoneId zoneId = dateTime.getTimeZone() != null ? dateTime.getTimeZone().toZoneId() : ZoneId.of("GMT");
+            LocalDateTime localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), zoneId);
+            return dateTimeFormatter.format(localDateTime);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void main(String[] args) {
