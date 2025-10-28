@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.tapdata</groupId>
         <artifactId>tapdata-common-lib</artifactId>
-        <version>2.3-SNAPSHOT</version>
+        <version>2.4-SNAPSHOT</version>
     </parent>
     <artifactId>error-code-root</artifactId>
-    <version>2.3-SNAPSHOT</version>
+    <version>2.4-SNAPSHOT</version>
     <name>Error Code Root</name>
     <packaging>pom</packaging>
 
@@ -22,7 +22,7 @@
     </modules>
 
     <properties>
-        <error.code.version>2.3-SNAPSHOT</error.code.version>
+        <error.code.version>2.4-SNAPSHOT</error.code.version>
     </properties>
 
     <dependencyManagement>

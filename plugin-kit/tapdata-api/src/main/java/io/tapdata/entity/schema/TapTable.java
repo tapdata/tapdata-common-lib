@@ -237,17 +237,32 @@ public class TapTable extends TapItem<TapField> {
 
 			if (isLogic) {
 				if (indexList != null) {
-					List<String> primaryKeys = new ArrayList<>();
+					List<String> uniqueCondition = new ArrayList<>();
+					boolean hasCore = false;
 					for (TapIndex tapIndex : indexList) {
-						if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+						if ((tapIndex.getPrimary() != null && tapIndex.getPrimary()) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+							uniqueCondition.clear();
 							for (TapIndexField indexField : tapIndex.getIndexFields()) {
-								primaryKeys.add(indexField.getName());
+								uniqueCondition.add(indexField.getName());
 							}
 							break;
+						} else if ((tapIndex.getCoreUnique() != null && tapIndex.getCoreUnique()) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+							if (!hasCore) {
+								hasCore = true;
+								uniqueCondition.clear();
+								for (TapIndexField indexField : tapIndex.getIndexFields()) {
+									uniqueCondition.add(indexField.getName());
+								}
+							}
+						} else if ((tapIndex.getUnique() != null && tapIndex.getUnique()) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+							if (uniqueCondition.isEmpty()) {
+								for (TapIndexField indexField : tapIndex.getIndexFields()) {
+									uniqueCondition.add(indexField.getName());
+								}
+							}
 						}
 					}
-					if (!primaryKeys.isEmpty())
-						return primaryKeys;
+					return uniqueCondition;
 				}
 			}
 		} finally {

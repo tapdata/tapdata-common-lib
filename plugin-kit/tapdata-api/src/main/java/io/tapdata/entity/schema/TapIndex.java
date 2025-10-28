@@ -30,6 +30,12 @@ public class TapIndex implements Serializable {
         return this;
     }
 
+    private Boolean coreUnique;
+    public TapIndex coreUnique(boolean coreUnique) {
+        this.coreUnique = coreUnique;
+        return this;
+    }
+
     private Boolean primary;
     public TapIndex primary(boolean primary) {
         this.primary = primary;
@@ -60,6 +66,14 @@ public class TapIndex implements Serializable {
 
     public boolean isUnique() {
         return unique != null && unique;
+    }
+
+    public Boolean getCoreUnique() {
+        return coreUnique;
+    }
+
+    public void setCoreUnique(Boolean coreUnique) {
+        this.coreUnique = coreUnique;
     }
 
     public boolean isPrimary() {
