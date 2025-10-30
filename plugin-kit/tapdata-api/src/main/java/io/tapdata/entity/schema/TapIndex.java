@@ -9,40 +9,47 @@ public class TapIndex implements Serializable {
      * Index name
      */
     private String name;
+
     public TapIndex name(String name) {
         this.name = name;
         return this;
     }
+
     /**
      * Index fields
      */
     private List<TapIndexField> indexFields;
+
     public TapIndex indexField(TapIndexField indexField) {
-        if(indexFields == null)
+        if (indexFields == null)
             indexFields = new ArrayList<>();
         indexFields.add(indexField);
         return this;
     }
 
     private Boolean unique;
+
     public TapIndex unique(boolean unique) {
         this.unique = unique;
         return this;
     }
 
     private Boolean coreUnique;
+
     public TapIndex coreUnique(boolean coreUnique) {
         this.coreUnique = coreUnique;
         return this;
     }
 
     private Boolean primary;
+
     public TapIndex primary(boolean primary) {
         this.primary = primary;
         return this;
     }
 
     private Boolean cluster;
+
     public TapIndex cluster(boolean cluster) {
         this.cluster = cluster;
         return this;
@@ -69,7 +76,7 @@ public class TapIndex implements Serializable {
     }
 
     public Boolean getCoreUnique() {
-        return coreUnique;
+        return coreUnique != null && coreUnique;
     }
 
     public void setCoreUnique(Boolean coreUnique) {
@@ -111,11 +118,11 @@ public class TapIndex implements Serializable {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(TapIndex.class.getSimpleName()).append(" ");
-        if(name != null)
+        if (name != null)
             builder.append("name ").append(name).append(" ");
-        if(indexFields != null) {
+        if (indexFields != null) {
             builder.append("indexFields: [");
-            for(TapIndexField indexField : indexFields) {
+            for (TapIndexField indexField : indexFields) {
                 builder.append(indexField).append("; ");
             }
             builder.append("]");
