@@ -40,10 +40,10 @@ public abstract class TapRecordEvent extends TapBaseEvent {
     @Override
     public void clone(TapEvent tapEvent) {
         super.clone(tapEvent);
-        if (tapEvent instanceof TapRecordEvent) {
-            TapRecordEvent recordEvent = (TapRecordEvent) tapEvent;
-            recordEvent.connector = connector;
+        if (tapEvent instanceof TapRecordEvent recordEvent) {
+			recordEvent.connector = connector;
             recordEvent.connectorVersion = connectorVersion;
+            recordEvent.exactlyOnceId = exactlyOnceId;
         }
     }
 
