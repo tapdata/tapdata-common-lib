@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.LongAdder;
  * Calculate average value and clear when upload.
  */
 public class WriteCostAvgSampler implements SamplerPrometheus {
+    public static final int CALCULATE_PERIOD = 300000;
     private final LongAdder counter = new LongAdder();
     private final LongAdder totalValue = new LongAdder();
 
@@ -25,6 +26,10 @@ public class WriteCostAvgSampler implements SamplerPrometheus {
         this.multiTaggedGauge = multiTaggedGauge;
         this.tagValues = tagValues;
     }
+
+    private final LongAdder lastTimeCounter = new LongAdder();
+    private final LongAdder lastTimeTotalValue = new LongAdder();
+    private final AtomicLong lastCalculateTime = new AtomicLong(System.currentTimeMillis());
 
     public void setWriteRecordAcceptLastTs(long ts) {
         writeRecordAcceptLastTs.set(ts);
@@ -44,6 +49,21 @@ public class WriteCostAvgSampler implements SamplerPrometheus {
     public Number value() {
         long counterValue = counter.sum();
         double total = totalValue.sum();
+        long currentTime = System.currentTimeMillis();
+
+        boolean shouldReset = (currentTime - lastCalculateTime.get() > CALCULATE_PERIOD)
+                && (counterValue == lastTimeCounter.sum())
+                && (total == lastTimeTotalValue.sum());
+        if (shouldReset) {
+            lastCalculateTime.set(currentTime);
+            counter.reset();
+            totalValue.reset();
+            return null;
+        }
+        lastTimeCounter.reset();
+        lastTimeTotalValue.reset();
+        lastTimeCounter.add(counterValue);
+        lastTimeTotalValue.add(totalValue.sum());
         if(counterValue > 0) {
             return total / counterValue;
         }
