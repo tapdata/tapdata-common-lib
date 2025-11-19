@@ -3,7 +3,7 @@ package io.tapdata.entity.schema.value;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.type.TapXml;
 
-public class TapXmlValue extends TapValue<String, TapXml> {
+public class TapXmlValue extends AbsBasicTapValue<String, TapXml> {
     public TapXmlValue() {
     }
 

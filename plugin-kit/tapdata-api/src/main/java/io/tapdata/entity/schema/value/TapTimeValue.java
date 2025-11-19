@@ -3,7 +3,7 @@ package io.tapdata.entity.schema.value;
 import io.tapdata.entity.schema.type.TapTime;
 import io.tapdata.entity.schema.type.TapType;
 
-public class TapTimeValue extends TapValue<DateTime, TapTime> {
+public class TapTimeValue extends AbsBasicTapValue<DateTime, TapTime> {
     public TapTimeValue() {}
     public TapTimeValue(DateTime dateTime) {
         value = dateTime;

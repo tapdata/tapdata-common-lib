@@ -6,7 +6,7 @@ import io.tapdata.entity.schema.type.TapYear;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class TapYearValue extends TapValue<DateTime, TapYear> {
+public class TapYearValue extends AbsBasicTapValue<DateTime, TapYear> {
     public TapYearValue() {
     }
 
