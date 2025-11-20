@@ -52,8 +52,8 @@ public class ByteData implements Serializable, JavaCustomSerializer {
     @Override
     public void to(OutputStream outputStream) throws IOException {
         DataOutputStreamEx dataOutputStreamEx = dataOutputStream(outputStream);
-        dataOutputStreamEx.write(type);
-        dataOutputStreamEx.write(value);
+        dataOutputStreamEx.writeByte(type);
+        dataOutputStreamEx.writeBytes(value);
     }
 
     @Override
