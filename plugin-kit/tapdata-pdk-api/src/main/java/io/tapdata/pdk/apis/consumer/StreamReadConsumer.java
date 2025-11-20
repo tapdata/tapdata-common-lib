@@ -5,7 +5,8 @@ import io.tapdata.pdk.apis.utils.StateListener;
 
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+
+import static io.tapdata.entity.simplify.TapSimplify.list;
 
 public class StreamReadConsumer implements BiConsumer<List<TapEvent>, Object> {
     public static final int STATE_STREAM_READ_PENDING = 1;
@@ -70,4 +71,7 @@ public class StreamReadConsumer implements BiConsumer<List<TapEvent>, Object> {
         consumer.accept(events, offset);
     }
 
+    public void accept(TapEvent event, Object offset) {
+        accept(list(event), offset);
+    }
 }

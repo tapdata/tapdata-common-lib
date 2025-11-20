@@ -24,6 +24,7 @@ public class TapNodeSpecification {
     private Map<String, String> manifest;
     private String authentication;
     private List<String> tags;
+    private AutoAccumulateBatchInfo autoAccumulateBatch;
 
     public String verify() {
         if(name == null)
@@ -127,5 +128,13 @@ public class TapNodeSpecification {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public AutoAccumulateBatchInfo getAutoAccumulateBatch() {
+        return autoAccumulateBatch;
+    }
+
+    public void setAutoAccumulateBatch(AutoAccumulateBatchInfo autoAccumulateBatch) {
+        this.autoAccumulateBatch = autoAccumulateBatch;
     }
 }
