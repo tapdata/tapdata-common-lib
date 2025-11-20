@@ -613,7 +613,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 		protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
 			ObjectStreamClass descriptor = super.readClassDescriptor();
             Class<?> clazz = resolveClass(descriptor);
-            if(clazz != null && options.isSkipSerialVersionUID(clazz)) {
+            if(clazz != null && null != options && options.isSkipSerialVersionUID(clazz)) {
                 ObjectStreamClass localDesc = ObjectStreamClass.lookup(clazz);
                 if (localDesc != null && localDesc.getSerialVersionUID() != descriptor.getSerialVersionUID()) {
                     return localDesc;
