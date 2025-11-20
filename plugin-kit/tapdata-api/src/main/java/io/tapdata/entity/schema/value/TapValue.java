@@ -2,9 +2,7 @@ package io.tapdata.entity.schema.value;
 
 import io.tapdata.entity.schema.type.TapType;
 
-import java.io.Serializable;
-
-public abstract class TapValue<T, P extends TapType> implements Serializable {
+public abstract class TapValue<T, P extends TapType> {
     /**
      * 数据源的原始值， 原始的类型， 例如mysql的类型， 对同构有用的
      */
