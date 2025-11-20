@@ -6,6 +6,9 @@ import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.value.AbsIOTapValue;
+import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.serializer.JavaCustomSerializer;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
@@ -40,6 +43,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 
 	public static final byte TYPE_MAP = 100;
 	public static final byte TYPE_LIST = 101;
+	public static final byte TYPE_TAP_VALUE = 102;
 	private static final byte END = -88;
 	public static final byte TYPE_LONG_STRING = 19;
 	public static final byte TYPE_STRING = 20;
@@ -247,6 +251,36 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 			dos.writeUTF(obj.getClass().getName());
 			javaCustomSerializer.to(dos);
 			return;
+        } else if (obj instanceof AbsIOTapValue<?,?>) {
+            // 流数据，不处理
+            dos.write(NO_VALUE);
+            return;
+        } else if (obj instanceof TapValue<?, ?> tapValue) {
+            dos.writeByte(TYPE_TAP_VALUE);
+            dos.writeUTF(obj.getClass().getName());
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getOriginValue()) {
+                fromObjectPrivate("originValue", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getOriginValue(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getOriginType()) {
+                fromObjectPrivate("originType", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getOriginType(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getValue()) {
+                fromObjectPrivate("value", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getValue(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getTapType()) {
+                fromObjectPrivate("tapType", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getTapType(), dos, fromObjectOptions);
+            }
+
+            dos.writeByte(END);
+            return;
         }
 
 		if (obj instanceof Serializable && fromObjectOptions.isToJavaPlatform()) {
@@ -333,6 +367,32 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 			return null;
 		byte type = dis.readByte();
 		switch (type) {
+			case TYPE_TAP_VALUE: {
+                String classStr = dis.readUTF();
+                try {
+                    Class<TapValue<Object, TapType>> tapValueClass = (Class<TapValue<Object, TapType>>) findClass(options, classStr);
+                    TapValue<Object, TapType> tapValue = tapValueClass.newInstance();
+
+                    while(true) {
+                        Object key = toObjectPrivate(dis, options);
+                        if(ENDED.equals(key))
+                            break;
+
+                        if (key instanceof String keyStr) {
+                            Object value = toObjectPrivate(dis, options);
+                            switch (keyStr) {
+                                case "originValue" -> tapValue.setOriginValue(value);
+                                case "originType" -> tapValue.setOriginType((String) value);
+                                case "value" -> tapValue.setValue(value);
+                                case "tapType" -> tapValue.setTapType((TapType) value);
+                            }
+                        }
+                    }
+                    return tapValue;
+                } catch (Throwable e) {
+                    throw new CoreException(TapAPIErrorCodes.ERROR_INSTANTIATE_ENGINE_CLASS_FAILED, e, "Instantiate engine class {} failed, {}", classStr, e.getMessage());
+                }
+            }
 			case TYPE_MAP:
 				String classStr = dis.readUTF();
 				Map<Object, Object> map;
