@@ -5,7 +5,7 @@ import io.tapdata.entity.schema.type.TapType;
 import java.math.BigDecimal;
 
 
-public class TapNumberValue extends TapValue<Double, TapNumber> {
+public class TapNumberValue extends AbsBasicTapValue<Double, TapNumber> {
     public TapNumberValue() {}
     public TapNumberValue(Double value) {
         this.value = value;

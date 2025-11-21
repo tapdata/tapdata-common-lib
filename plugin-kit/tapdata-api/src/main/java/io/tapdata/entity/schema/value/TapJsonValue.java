@@ -3,7 +3,7 @@ package io.tapdata.entity.schema.value;
 import io.tapdata.entity.schema.type.TapJson;
 import io.tapdata.entity.schema.type.TapType;
 
-public class TapJsonValue extends TapValue<String, TapJson> {
+public class TapJsonValue extends AbsBasicTapValue<String, TapJson> {
     public TapJsonValue() {
     }
 

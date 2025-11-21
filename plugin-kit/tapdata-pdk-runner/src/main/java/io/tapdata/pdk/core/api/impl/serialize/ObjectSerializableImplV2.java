@@ -6,6 +6,9 @@ import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.value.AbsIOTapValue;
+import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.serializer.JavaCustomSerializer;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
@@ -23,8 +26,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.GZIPInputStream;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
@@ -42,6 +43,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 
 	public static final byte TYPE_MAP = 100;
 	public static final byte TYPE_LIST = 101;
+	public static final byte TYPE_TAP_VALUE = 102;
 	private static final byte END = -88;
 	public static final byte TYPE_LONG_STRING = 19;
 	public static final byte TYPE_STRING = 20;
@@ -142,7 +144,8 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 		}
 		//instanceof compare to Map#containsKey, for 10_000_000 is 3 milliseconds to 23 milliseconds, instanceof is a lot faster than Map#containsKey.
 		if(obj instanceof Map) {
-			Map<?, ?> map = new HashMap<>();
+//			Map<?, ?> map = new HashMap<>();
+			Map<?, ?> map = new LinkedHashMap<>();
 			map.putAll((Map) obj);
 
 			dos.writeByte(TYPE_MAP);
@@ -248,7 +251,37 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 			dos.writeUTF(obj.getClass().getName());
 			javaCustomSerializer.to(dos);
 			return;
-		}
+        } else if (obj instanceof AbsIOTapValue<?,?>) {
+            // 流数据，不处理
+            dos.write(NO_VALUE);
+            return;
+        } else if (obj instanceof TapValue<?, ?> tapValue) {
+            dos.writeByte(TYPE_TAP_VALUE);
+            dos.writeUTF(obj.getClass().getName());
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getOriginValue()) {
+                fromObjectPrivate("originValue", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getOriginValue(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getOriginType()) {
+                fromObjectPrivate("originType", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getOriginType(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getValue()) {
+                fromObjectPrivate("value", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getValue(), dos, fromObjectOptions);
+            }
+
+            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getTapType()) {
+                fromObjectPrivate("tapType", dos, fromObjectOptions);
+                fromObjectPrivate(tapValue.getTapType(), dos, fromObjectOptions);
+            }
+
+            dos.writeByte(END);
+            return;
+        }
 
 		if (obj instanceof Serializable && fromObjectOptions.isToJavaPlatform()) {
 			dos.writeByte(TYPE_SERIALIZABLE);
@@ -277,51 +310,56 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 	}
 
 	@Override
-	public Object toObject(byte[] data, ToObjectOptions options,Boolean isOffset) {
-		if(data == null)
-			return null;
-		try (ByteArrayInputStream bos = new ByteArrayInputStream(data);
-			 DataInputStream dis = new DataInputStream(bos)
-		) {
-			byte version = dis.readByte();
-			if(version != VERSION) {
-				//Fallback to firstVersion of ObjectSerialization
-				if(firstVersion == null) {
-					synchronized (this) {
-						if(firstVersion == null) {
-							firstVersion = new ObjectSerializableImpl();
-							InstanceFactory.injectBean(firstVersion);
-						}
-					}
-				}
-				return firstVersion.toObject(data, options);
-			}
-			//gzip performance is bad, 1000000 times, takes 2878 without gzip, with gzip 14000.
-			return toObjectPrivate(dis, options,isOffset);
-		} catch (IOException e) {
-			e.printStackTrace();
-			//Compatible for old gzip data.
-			if(e instanceof StreamCorruptedException) {
-				try (ByteArrayInputStream bos = new ByteArrayInputStream(data);
-					 GZIPInputStream gos = new GZIPInputStream(bos);
-					 DataInputStream dis = new DataInputStream(gos)
-				) {
-					return toObjectPrivate(dis, options,isOffset);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-
-		}
-		return null;
+	public Object toObject(byte[] data, ToObjectOptions options, Boolean isOffset) {
+        options = Optional.ofNullable(options)
+            .orElseGet(ToObjectOptions::new)
+            .skipSerialVersionUID(isOffset);
+		return toObject(data, options);
 	}
 
 	@Override
 	public Object toObject(byte[] data, ToObjectOptions options) {
-		return toObject(data, options,false);
+        if(data == null) {
+            return null;
+        }
+
+        try (ByteArrayInputStream bos = new ByteArrayInputStream(data);
+             DataInputStream dis = new DataInputStream(bos)
+        ) {
+            byte version = dis.readByte();
+            if(version != VERSION) {
+                //Fallback to firstVersion of ObjectSerialization
+                if(firstVersion == null) {
+                    synchronized (this) {
+                        if(firstVersion == null) {
+                            firstVersion = new ObjectSerializableImpl();
+                            InstanceFactory.injectBean(firstVersion);
+                        }
+                    }
+                }
+                return firstVersion.toObject(data, options);
+            }
+            //gzip performance is bad, 1000000 times, takes 2878 without gzip, with gzip 14000.
+            return toObjectPrivate(dis, options);
+        } catch (IOException e) {
+            e.printStackTrace();
+            //Compatible for old gzip data.
+            if(e instanceof StreamCorruptedException) {
+                try (ByteArrayInputStream bos = new ByteArrayInputStream(data);
+                     GZIPInputStream gos = new GZIPInputStream(bos);
+                     DataInputStream dis = new DataInputStream(gos)
+                ) {
+                    return toObjectPrivate(dis, options);
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+
+        }
+        return null;
 	}
 
-	private Object toObjectPrivate(DataInputStream dis, ToObjectOptions options,Boolean isOffset) throws IOException {
+	private Object toObjectPrivate(DataInputStream dis, ToObjectOptions options) throws IOException {
 		byte hasValue = dis.readByte();
 		if(hasValue == END)
 			return ENDED;
@@ -329,6 +367,32 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 			return null;
 		byte type = dis.readByte();
 		switch (type) {
+			case TYPE_TAP_VALUE: {
+                String classStr = dis.readUTF();
+                try {
+                    Class<TapValue<Object, TapType>> tapValueClass = (Class<TapValue<Object, TapType>>) findClass(options, classStr);
+                    TapValue<Object, TapType> tapValue = tapValueClass.newInstance();
+
+                    while(true) {
+                        Object key = toObjectPrivate(dis, options);
+                        if(ENDED.equals(key))
+                            break;
+
+                        if (key instanceof String keyStr) {
+                            Object value = toObjectPrivate(dis, options);
+                            switch (keyStr) {
+                                case "originValue" -> tapValue.setOriginValue(value);
+                                case "originType" -> tapValue.setOriginType((String) value);
+                                case "value" -> tapValue.setValue(value);
+                                case "tapType" -> tapValue.setTapType((TapType) value);
+                            }
+                        }
+                    }
+                    return tapValue;
+                } catch (Throwable e) {
+                    throw new CoreException(TapAPIErrorCodes.ERROR_INSTANTIATE_ENGINE_CLASS_FAILED, e, "Instantiate engine class {} failed, {}", classStr, e.getMessage());
+                }
+            }
 			case TYPE_MAP:
 				String classStr = dis.readUTF();
 				Map<Object, Object> map;
@@ -345,10 +409,10 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 					}
 				}
 				while(true) {
-					Object key = toObjectPrivate(dis, options,isOffset);
+					Object key = toObjectPrivate(dis, options);
 					if(ENDED.equals(key))
 						break;
-					Object value = toObjectPrivate(dis, options,isOffset);
+					Object value = toObjectPrivate(dis, options);
 					if(key != null) {
 						map.put(key, value);
 					}
@@ -370,7 +434,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 					}
 				}
 				while(true) {
-					Object value = toObjectPrivate(dis, options,isOffset);
+					Object value = toObjectPrivate(dis, options);
 					if(ENDED.equals(value))
 						break;
 					if(value != null)
@@ -401,7 +465,7 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 				Class<?> clazz = findClass(options, className);
 				return jsonParser.fromJson(content, clazz);
 			case TYPE_SERIALIZABLE:
-				try(ObjectInputStream oos = new ObjectInputStreamEx(dis, options,isOffset)) {
+				try(ObjectInputStream oos = new ObjectInputStreamEx(dis, options)) {
 					return oos.readObject();
 				} catch (ClassNotFoundException e) {
 //						e.printStackTrace();
@@ -513,12 +577,10 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 
 	private static class ObjectInputStreamEx extends ObjectInputStream {
 		private final ToObjectOptions options;
-		private final Boolean isOffset;
 
-		public ObjectInputStreamEx(InputStream in, ToObjectOptions options,Boolean isOffset) throws IOException {
+		public ObjectInputStreamEx(InputStream in, ToObjectOptions options) throws IOException {
 			super(in);
 			this.options = options;
-			this.isOffset = isOffset;
 		}
 
 		@Override
@@ -550,15 +612,13 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
 		@Override
 		protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
 			ObjectStreamClass descriptor = super.readClassDescriptor();
-			if(isOffset){
-				Class<?> clazz = resolveClass(descriptor);
-				if(clazz != null) {
-					ObjectStreamClass localDesc = ObjectStreamClass.lookup(clazz);
-					if (localDesc != null && localDesc.getSerialVersionUID() != descriptor.getSerialVersionUID()) {
-						return localDesc;
-					}
-				}
-			}
+            Class<?> clazz = resolveClass(descriptor);
+            if(clazz != null && null != options && options.isSkipSerialVersionUID(clazz)) {
+                ObjectStreamClass localDesc = ObjectStreamClass.lookup(clazz);
+                if (localDesc != null && localDesc.getSerialVersionUID() != descriptor.getSerialVersionUID()) {
+                    return localDesc;
+                }
+            }
 			return descriptor;
 		}
 	}

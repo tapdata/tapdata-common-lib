@@ -5,7 +5,7 @@ import io.tapdata.entity.schema.type.TapType;
 
 import java.io.InputStream;
 
-public class TapInputStreamValue extends TapValue<InputStream, TapInputStream> {
+public class TapInputStreamValue extends AbsIOTapValue<InputStream, TapInputStream> {
     public TapInputStreamValue() {
     }
 

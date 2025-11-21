@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<groupId>io.tapdata</groupId>
-	<version>2.4-SNAPSHOT</version>
+	<version>2.5-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tapdata-common-lib</artifactId>
     <name>tapdata-common-lib</name>
