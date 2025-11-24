@@ -171,6 +171,9 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
     private boolean isSource(ConnectorFunctions connectorFunctions){
         return null != connectorFunctions.getBatchReadFunction()
                 || null != connectorFunctions.getStreamReadFunction()
+                || null != connectorFunctions.getStreamReadOneByOneFunction()
+                || null != connectorFunctions.getStreamReadMultiConnectionOneByOneFunction()
+                || null != connectorFunctions.getStreamReadMultiConnectionFunction()
                 || null != connectorFunctions.getRawDataCallbackFilterFunctionV2()
                 || null != connectorFunctions.getRawDataCallbackFilterFunction();
     }
