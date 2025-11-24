@@ -28,6 +28,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected ReleaseExternalFunction releaseExternalFunction;
     protected BatchReadFunction batchReadFunction;
     protected StreamReadFunction streamReadFunction;
+    protected StreamReadOneByOneFunction streamReadOneByOneFunction;
     protected BatchCountFunction batchCountFunction;
     protected TimestampToStreamOffsetFunction timestampToStreamOffsetFunction;
     protected WriteRecordFunction writeRecordFunction;
@@ -67,6 +68,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected GetReadPartitionsFunction getReadPartitionsFunction;
     protected QueryFieldMinMaxValueFunction queryFieldMinMaxValueFunction;
     protected StreamReadMultiConnectionFunction streamReadMultiConnectionFunction;
+    protected StreamReadMultiConnectionOneByOneFunction streamReadMultiConnectionOneByOneFunction;
     protected TransactionBeginFunction transactionBeginFunction;
     protected TransactionCommitFunction transactionCommitFunction;
     protected TransactionRollbackFunction transactionRollbackFunction;
@@ -102,6 +104,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     }
     public ConnectorFunctions supportStreamReadMultiConnectionFunction(StreamReadMultiConnectionFunction function) {
         streamReadMultiConnectionFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportStreamReadMultiConnectionOneByOneFunction(StreamReadMultiConnectionOneByOneFunction function) {
+        streamReadMultiConnectionOneByOneFunction = function;
         return this;
     }
 
@@ -333,6 +339,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         streamReadFunction = function;
         return this;
     }
+    public ConnectorFunctions supportOneByOneStreamRead(StreamReadOneByOneFunction function) {
+        streamReadOneByOneFunction = function;
+        return this;
+    }
 
     public ConnectorFunctions supportBatchCount(BatchCountFunction function) {
         this.batchCountFunction = function;
@@ -436,6 +446,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public StreamReadFunction getStreamReadFunction() {
         return streamReadFunction;
+    }
+
+    public StreamReadOneByOneFunction getStreamReadOneByOneFunction() {
+        return streamReadOneByOneFunction;
     }
 
     public BatchCountFunction getBatchCountFunction() {
@@ -552,6 +566,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public StreamReadMultiConnectionFunction getStreamReadMultiConnectionFunction() {
         return streamReadMultiConnectionFunction;
+    }
+
+    public StreamReadMultiConnectionOneByOneFunction getStreamReadMultiConnectionOneByOneFunction() {
+        return streamReadMultiConnectionOneByOneFunction;
     }
 
     public TransactionBeginFunction getTransactionBeginFunction() {
