@@ -3,6 +3,7 @@ package io.tapdata.pdk.apis.consumer;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.utils.StateListener;
 
+import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
@@ -15,6 +16,7 @@ public class StreamReadOneByOneConsumer extends TapStreamReadConsumer<TapEvent, 
     public static StreamReadOneByOneConsumer create(BiConsumer<TapEvent, Object> consumer) {
         return new StreamReadOneByOneConsumer().consumer(consumer);
     }
+    BiConsumer<List<TapEvent>, Object> batchConsumer;
 
     @Override
     public void asyncMethodAndNoRetry() {
@@ -46,9 +48,18 @@ public class StreamReadOneByOneConsumer extends TapStreamReadConsumer<TapEvent, 
         return (StreamReadOneByOneConsumer) super.consumer(consumer);
     }
 
+    public StreamReadOneByOneConsumer batchConsumer(BiConsumer<List<TapEvent>, Object> consumer) {
+        this.batchConsumer = consumer;
+        return this;
+    }
+
     @Override
     public StreamReadOneByOneConsumer stateListener(StateListener<Integer> stateListener) {
         this.stateListener = stateListener;
         return this;
+    }
+
+    public void accept(List<TapEvent> events, Object offset) {
+        batchConsumer.accept(events, offset);
     }
 }
