@@ -9,10 +9,7 @@ import org.bson.UuidRepresentation;
 import javax.net.ssl.*;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -188,27 +185,55 @@ public class SSLUtil {
     MongoClientSettings.Builder builder = MongoClientSettings.builder();
     builder.applyConnectionString(new ConnectionString(uri)).applyToSslSettings(sslSettingsBuilder -> {
       if (ssl) {
-        File sslClientPem = new File(keyPath);
-        File sslCA = new File(caPath);
-        try {
-          List<String> clientCertificates = SSLUtil.retriveCertificates(sslClientPem);
-          String clientPrivateKey = SSLUtil.retrivePrivateKey(sslClientPem);
-          if (StringUtils.isNotBlank(clientPrivateKey) && CollectionUtils.isNotEmpty(clientCertificates)) {
-            List<String> trustCertificates = SSLUtil.retriveCertificates(sslCA);
-            SSLContext sslContext = null;
-            try {
-              sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, null);
-            } catch (Exception e) {
-              throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
-            }
-            sslSettingsBuilder.context(sslContext);
-            sslSettingsBuilder.enabled(true);
-            sslSettingsBuilder.invalidHostNameAllowed(true);
+        if(uri.indexOf("tlsAllowInvalidCertificates=true") > 0 || uri.indexOf("sslAllowInvalidCertificates=true") > 0){
+          SSLContext sslContext = null;
+          try {
+            sslContext = SSLContext.getInstance("SSL");
+          } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
           }
-        } catch (Exception e) {
-          throw new RuntimeException(String.format("Create mongo client settings failed %s", e.getMessage()), e);
+          try {
+            sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+              @Override
+              public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+
+              @Override
+              public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+              }
+
+              @Override
+              public X509Certificate[] getAcceptedIssuers() {
+                return null;
+              }
+            }}, new SecureRandom());
+          } catch (KeyManagementException e) {
+            throw new RuntimeException(String.format("Initialize ssl context failed %s", e.getMessage()), e);
+          }
+          sslSettingsBuilder.enabled(true).context(sslContext).invalidHostNameAllowed(true);
+        }else if (StringUtils.isNotBlank(keyPath) && StringUtils.isNotBlank(caPath)) {
+          File sslClientPem = new File(keyPath);
+          File sslCA = new File(caPath);
+          try {
+            List<String> clientCertificates = SSLUtil.retriveCertificates(sslClientPem);
+            String clientPrivateKey = SSLUtil.retrivePrivateKey(sslClientPem);
+            if (StringUtils.isNotBlank(clientPrivateKey) && CollectionUtils.isNotEmpty(clientCertificates)) {
+              List<String> trustCertificates = SSLUtil.retriveCertificates(sslCA);
+              SSLContext sslContext = null;
+              try {
+                sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, null);
+              } catch (Exception e) {
+                throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
+              }
+              sslSettingsBuilder.context(sslContext);
+              sslSettingsBuilder.enabled(true);
+              sslSettingsBuilder.invalidHostNameAllowed(true);
+            }
+          } catch (Exception e) {
+            throw new RuntimeException(String.format("Create mongo client settings failed %s", e.getMessage()), e);
+          }
         }
-      } else {
+      }else {
         builder.uuidRepresentation(UuidRepresentation.JAVA_LEGACY);
       }
     });
