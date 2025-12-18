@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public class TapNodeSpecification {
     private String name;
+    private String realName;
     private String id;
     private String group; //Unique key for each enterprise.
     private String version;
@@ -136,5 +137,13 @@ public class TapNodeSpecification {
 
     public void setAutoAccumulateBatch(AutoAccumulateBatchInfo autoAccumulateBatch) {
         this.autoAccumulateBatch = autoAccumulateBatch;
+    }
+
+    public String getRealName() {
+        return realName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
     }
 }

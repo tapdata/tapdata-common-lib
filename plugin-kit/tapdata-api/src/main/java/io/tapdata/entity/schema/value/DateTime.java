@@ -109,6 +109,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         long time = date.getTime();
         seconds = Math.floorDiv(time, 1000L);
         nano = (int)(Math.floorMod(time, 1000L) * 1000000);
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_DATE;
     }
 
@@ -118,6 +122,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         long time = date.getTime();
         seconds = Math.floorDiv(time, 1000L);
         nano = (int)(Math.floorMod(time, 1000L) * 1000000);
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_SQL_DATE;
     }
 
@@ -127,6 +135,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         long sqlTime = time.getTime();
         seconds = Math.floorDiv(sqlTime, 1000L);
         nano = (int)(Math.floorMod(sqlTime, 1000L) * 1000000);
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_TIME;
     }
 
@@ -136,6 +148,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         long time = timestamp.getTime();
         seconds = Math.floorDiv(time, 1000L);
         nano = timestamp.getNanos();
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_TIMESTAMP;
     }
 
@@ -151,6 +167,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
 
         seconds = time.divide(BigDecimal.valueOf(((Double) Math.pow(10, fraction)).longValue()), RoundingMode.HALF_UP).longValue();
         nano = time.divideAndRemainder(BigDecimal.valueOf(((Double) Math.pow(10, fraction)).longValue()))[1].multiply(BigDecimal.valueOf(((Double) Math.pow(10, 9 - fraction)).longValue())).intValue();
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_BIG_DECIMAL_FRACTION;
         this.fraction = fraction;
     }
@@ -163,6 +183,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         }
         seconds = time / ((Double) Math.pow(10, fraction)).longValue();
         nano = (int) ((time % ((Double) Math.pow(10, fraction)).longValue()) * ((Double) Math.pow(10, 9 - fraction)).longValue());
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_LONG_FRACTION;
         this.fraction = fraction;
 //        switch (fraction) {
@@ -198,6 +222,10 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
 
         seconds = Math.floorDiv(time, 1000L);
         nano = (int)(Math.floorMod(time, 1000L) * 1000000);
+        if (nano < 0) {
+            seconds -= 1;
+            nano += 1000000000;
+        }
         originType = ORIGIN_TYPE_LONG;
     }
 
