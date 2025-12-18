@@ -4,6 +4,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.utils.StateListener;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -17,18 +18,21 @@ public class StreamReadOneByOneConsumer extends TapStreamReadConsumer<TapEvent, 
     public static StreamReadOneByOneConsumer create(BiConsumer<TapEvent, Object> consumer) {
         return new StreamReadOneByOneConsumer().consumer(consumer);
     }
-    public static StreamReadOneByOneConsumer create(BiConsumer<TapEvent, Object> consumer, Supplier<Integer> batchSizeGetter) {
-        return new StreamReadOneByOneConsumer(batchSizeGetter).consumer(consumer);
+    public static StreamReadOneByOneConsumer create(BiConsumer<TapEvent, Object> consumer, Supplier<Integer> batchSizeGetter, Supplier<Long> batchSizeTimeoutMSGetter) {
+        return new StreamReadOneByOneConsumer(batchSizeGetter, batchSizeTimeoutMSGetter).consumer(consumer);
     }
     BiConsumer<List<TapEvent>, Object> batchConsumer;
     Supplier<Integer> batchSizeGetter;
+    Supplier<Long> batchSizeTimeoutMSGetter;
 
-    public StreamReadOneByOneConsumer(Supplier<Integer> batchSizeGetter) {
+    public StreamReadOneByOneConsumer(Supplier<Integer> batchSizeGetter, Supplier<Long> batchSizeTimeoutMSGetter) {
         this.batchSizeGetter = batchSizeGetter;
+        this.batchSizeTimeoutMSGetter = batchSizeTimeoutMSGetter;
     }
 
     public StreamReadOneByOneConsumer() {
         this.batchSizeGetter = () -> 1;
+        this.batchSizeTimeoutMSGetter = () -> 1000L;
     }
 
     @Override
@@ -78,5 +82,9 @@ public class StreamReadOneByOneConsumer extends TapStreamReadConsumer<TapEvent, 
 
     public int getBatchSize() {
         return batchSizeGetter.get();
+    }
+
+    public long getBatchSizeTimeoutMS() {
+        return Optional.ofNullable(batchSizeTimeoutMSGetter).map(Supplier::get).orElse(1000L);
     }
 }
