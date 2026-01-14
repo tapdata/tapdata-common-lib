@@ -32,7 +32,6 @@ import java.util.function.Supplier;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -158,15 +157,21 @@ public class WebsocketPushChannel extends PushChannel {
 
         ByteBuf byteBuf;
         if(bytes.length > 0) {
-            byteBuf = Unpooled.directBuffer(1 + 1 + bytes.length);
+            byteBuf = channel.alloc().buffer(1 + 1 + bytes.length);
             byteBuf.writeByte(data.getType());
             byteBuf.writeByte(Data.ENCODE_JAVA_CUSTOM_SERIALIZER); //encode
             byteBuf.writeBytes(bytes);
         } else {
-            byteBuf = Unpooled.directBuffer(1);
+            byteBuf = channel.alloc().buffer(2);
             byteBuf.writeByte(data.getType());
+            byteBuf.writeByte(Data.ENCODE_JAVA_CUSTOM_SERIALIZER); //encode
         }
-        channel.writeAndFlush(new BinaryWebSocketFrame(byteBuf));
+        channel.writeAndFlush(new BinaryWebSocketFrame(byteBuf))
+                .addListener(future -> {
+                    if (!future.isSuccess()) {
+                        byteBuf.release();
+                    }
+                });
         writeFile(data.getId(), data.getFileMeta());
     }
 
