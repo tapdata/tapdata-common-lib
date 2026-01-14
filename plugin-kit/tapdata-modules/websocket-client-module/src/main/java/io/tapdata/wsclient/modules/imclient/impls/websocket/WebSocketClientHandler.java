@@ -2,7 +2,6 @@ package io.tapdata.wsclient.modules.imclient.impls.websocket;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.modules.api.net.data.Data;
-import io.tapdata.modules.api.net.data.OutgoingData;
 import io.tapdata.modules.api.net.data.Ping;
 import io.tapdata.modules.api.net.data.Result;
 import io.tapdata.wsclient.modules.imclient.impls.data.DataVersioning;
@@ -194,7 +193,6 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
 
         ChannelFuture f = b.connect("127.0.0.1", 5688);
         outboundChannel = f.channel();
-        msg.retain();
 
         ChannelFuture channelFuture = f.addListener(new ChannelFutureListener() {
             public void operationComplete(ChannelFuture future) throws Exception {
