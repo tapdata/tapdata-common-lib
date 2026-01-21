@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -201,6 +202,22 @@ class DateTimeTest {
 			Assertions.assertEquals(dateTime4.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
 			Assertions.assertEquals(dateTime5.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
 			Assertions.assertEquals(dateTime6.toLocalDateTime(), LocalDateTime.of(2024, 8, 8, 3, 8, 59, 829000000));
+		}
+
+		@Test
+		void test_0001_01_01() {
+			LocalDateTime localDateTime = LocalDateTime.of(1, 1, 1, 0, 0, 0);
+			DateTime dateTime = new DateTime(localDateTime);
+			Assertions.assertEquals(java.sql.Date.valueOf("0001-01-01"), dateTime.toSqlDate());
+			Assertions.assertEquals(Date.from(Instant.parse("0001-01-01T00:00:00Z")), dateTime.toDate());
+		}
+
+		@Test
+		void test_9999_12_31() {
+			LocalDateTime localDateTime = LocalDateTime.of(9999, 12, 31, 0, 0, 0);
+			DateTime dateTime = new DateTime(localDateTime);
+			Assertions.assertEquals(java.sql.Date.valueOf("9999-12-31"), dateTime.toSqlDate());
+			Assertions.assertEquals(Date.from(Instant.parse("9999-12-31T00:00:00Z")), dateTime.toDate());
 		}
 
 	}
