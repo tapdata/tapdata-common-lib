@@ -361,29 +361,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     }
 
     public Date toDate() {
-        long milliseconds;
-        if (seconds != null) {
-            milliseconds = seconds * 1000;
-            if (nano != null) {
-                milliseconds = milliseconds + (nano / 1000 / 1000);
-            }
-        } else {
-            return null;
-        }
-        return new Date(milliseconds);
+        return Date.from(toInstant());
     }
 
     public java.sql.Date toSqlDate() {
-        long milliseconds;
-        if (seconds != null) {
-            milliseconds = seconds * 1000;
-            if (nano != null) {
-                milliseconds = milliseconds + (nano / 1000 / 1000);
-            }
-        } else {
-            return null;
-        }
-        return new java.sql.Date(milliseconds);
+        return java.sql.Date.valueOf(toLocalDateTime().toLocalDate());
     }
 
     public Long toLong() {
