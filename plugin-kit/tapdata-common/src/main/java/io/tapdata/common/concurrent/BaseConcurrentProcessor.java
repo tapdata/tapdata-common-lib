@@ -22,8 +22,8 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	protected BlockingQueue<ApplyValue>[] consumerQueue;
 	protected final AtomicBoolean running;
 	protected final AtomicBoolean pause;
-	protected int producerIndex;
-	protected int consumerIndex;
+	protected final AtomicInteger producerIndex;
+	protected final AtomicInteger consumerIndex;
 	protected final int[] produceLock;
 	protected final int[] consumeLock;
 	protected ThreadPoolExecutor consumerThreadPool;
@@ -41,6 +41,8 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		});
 		this.running = new AtomicBoolean(false);
 		this.pause = new AtomicBoolean(false);
+		this.producerIndex = new AtomicInteger(0);
+		this.consumerIndex = new AtomicInteger(0);
 		this.produceLock = new int[0];
 		this.consumeLock = new int[0];
 		this.consumerFutures = new CompletableFuture[thread];
@@ -121,8 +123,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 			pauseWaitIfNeed();
 			synchronized (this.produceLock) {
 				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
-				this.producerQueue[producerIndex].put(threadTask);
-				producerIndex = (producerIndex + 1) % thread;
+				int index = producerIndex.get();
+				this.producerQueue[index].put(threadTask);
+				producerIndex.set((index + 1) % thread);
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -141,12 +144,13 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		try {
 			pauseWaitIfNeed();
 			synchronized (this.produceLock) {
-				BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[producerIndex];
+				int index = producerIndex.get();
+				BlockingQueue<ThreadTask<T, R>> producerQueue = this.producerQueue[index];
 
 				ThreadTask<T, R> threadTask = new ThreadProcessorTask<>(function, t);
 				offered = producerQueue.offer(threadTask, timeout, timeUnit);
 				if (offered) {
-					producerIndex = (producerIndex + 1) % thread;
+					producerIndex.set((index + 1) % thread);
 				}
 
 			}
@@ -162,8 +166,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	public R get() throws ConcurrentProcessorApplyException {
 		synchronized (this.consumeLock) {
 			try {
-				ApplyValue take = consumerQueue[consumerIndex].take();
-				consumerIndex = (consumerIndex + 1) % thread;
+				int index = consumerIndex.get();
+				ApplyValue take = consumerQueue[index].take();
+				consumerIndex.set((index + 1) % thread);
 				if (null != take.getException()) {
 					throw new ConcurrentProcessorApplyException(take.getException(), take.getValue());
 				}
@@ -180,9 +185,10 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 		ApplyValue result;
 		synchronized (this.consumeLock) {
 			try {
-				result = consumerQueue[consumerIndex].poll(timeout, timeUnit);
+				int index = consumerIndex.get();
+				result = consumerQueue[index].poll(timeout, timeUnit);
 				if (null != result) {
-					consumerIndex = (consumerIndex + 1) % thread;
+					consumerIndex.set((index + 1) % thread);
 					if (null != result.getException()) {
 						throw new ConcurrentProcessorApplyException(result.getException(), result.getValue());
 					} else {
@@ -284,8 +290,9 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	}
 
 	private void pauseWaitIfNeed() throws InterruptedException {
-		if (Boolean.TRUE.equals(pause.get())) {
-			synchronized (this.pause) {
+		synchronized (this.pause) {
+			// Check inside synchronized block to avoid race condition
+			while (pause.get()) {
 				this.pause.wait();
 			}
 		}
@@ -300,7 +307,8 @@ public abstract class BaseConcurrentProcessor<T, R> implements ConcurrentProcess
 	public void resume() {
 		if (pause.compareAndSet(true, false)) {
 			synchronized (this.pause) {
-				this.pause.notify();
+				// Use notifyAll() to wake up all waiting threads
+				this.pause.notifyAll();
 			}
 		}
 	}
