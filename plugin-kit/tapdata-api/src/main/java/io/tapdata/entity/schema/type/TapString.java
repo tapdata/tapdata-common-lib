@@ -35,6 +35,12 @@ public class TapString extends TapType {
         return this;
     }
 
+    private Boolean doubleBytes;
+    public TapString doubleBytes(Boolean doubleBytes) {
+        this.doubleBytes = doubleBytes;
+        return this;
+    }
+
     private Long defaultValue;
     public TapString defaultValue(Long defaultValue) {
         this.defaultValue = defaultValue;
@@ -61,6 +67,14 @@ public class TapString extends TapType {
 
     public void setFixed(Boolean fixed) {
         this.fixed = fixed;
+    }
+
+    public Boolean getDoubleBytes() {
+        return doubleBytes;
+    }
+
+    public void setDoubleBytes(Boolean doubleBytes) {
+        this.doubleBytes = doubleBytes;
     }
 
     public Long getDefaultValue() {

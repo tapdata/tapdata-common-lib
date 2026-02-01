@@ -47,6 +47,7 @@ public class TapStringMapping extends TapBytesBase {
     }
     final BigDecimal bytesDifValue = BigDecimal.valueOf(10).pow(17);
     final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(17);
+    final BigDecimal doubleBytesValue = BigDecimal.valueOf(50).pow(16);
     final BigDecimal byteRatioValue = BigDecimal.valueOf(10).pow(16);
     final BigDecimal defaultByteValue = BigDecimal.valueOf(10).pow(6);
 
@@ -62,6 +63,7 @@ public class TapStringMapping extends TapBytesBase {
 
             Boolean comingFixed = tapString.getFixed();
             Integer comingByteRatio = tapString.getByteRatio();
+            Boolean comingDoubleBytes = tapString.getDoubleBytes();
 //            Long comingDefaultValue = tapString.getDefaultValue();
 
             BigDecimal score = BigDecimal.ZERO;
@@ -71,6 +73,13 @@ public class TapStringMapping extends TapBytesBase {
                 score = score.add(fixedValue);
             } else {
                 score = score.subtract(fixedValue);
+            }
+
+            if(((comingDoubleBytes != null && comingDoubleBytes) && (doubleBytes != null && doubleBytes)) ||
+                    ((comingDoubleBytes == null || !comingDoubleBytes) && (doubleBytes == null || !doubleBytes))) {
+                score = score.add(doubleBytesValue);
+            } else {
+                score = score.subtract(doubleBytesValue);
             }
 
             if(comingByteRatio != null &&  byteRatio != null) {

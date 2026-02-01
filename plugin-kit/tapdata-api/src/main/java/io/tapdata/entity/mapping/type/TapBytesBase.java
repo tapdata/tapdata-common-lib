@@ -6,12 +6,14 @@ import static io.tapdata.entity.utils.TypeUtils.objectToNumber;
 
 public abstract class TapBytesBase extends TapMapping {
     public static final String KEY_FIXED = "fixed";
+    public static final String KEY_DOUBLE_BYTES = "doubleBytes";
     public static final String KEY_BYTE = "byte";
     public static final String KEY_BYTE_RATIO = "byteRatio";
     public static final String KEY_BYTE_DEFAULT = "defaultByte";
     public static final String KEY_BYTE_PREFER = "preferByte";
 
     protected Boolean fixed;
+    protected Boolean doubleBytes;
     protected Long bytes;
     protected Long defaultBytes;
     protected Long preferBytes;
@@ -53,8 +55,13 @@ public abstract class TapBytesBase extends TapMapping {
     @Override
     public void from(Map<String, Object> info) {
         Object fixedObj = info.get(KEY_FIXED);
+        Object doubleBytesObj = info.get(KEY_DOUBLE_BYTES);
         if(fixedObj instanceof Boolean) {
             fixed = (Boolean) fixedObj;
+        }
+
+        if(doubleBytesObj instanceof Boolean) {
+            doubleBytes = (Boolean) doubleBytesObj;
         }
 
         Object ratioObj = info.get(KEY_BYTE_RATIO);
@@ -82,6 +89,14 @@ public abstract class TapBytesBase extends TapMapping {
 
     public void setFixed(Boolean fixed) {
         this.fixed = fixed;
+    }
+
+    public Boolean getDoubleBytes() {
+        return doubleBytes;
+    }
+
+    public void setDoubleBytes(Boolean doubleBytes) {
+        this.doubleBytes = doubleBytes;
     }
 
     public Long getBytes() {
