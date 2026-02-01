@@ -14,7 +14,7 @@ import static io.tapdata.entity.simplify.TapSimplify.tapString;
 public class TapStringMapping extends TapBytesBase {
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        return tapString().bytes(getToTapTypeBytes(params)).fixed(fixed).byteRatio(byteRatio).defaultValue(defaultBytes);
+        return tapString().bytes(getToTapTypeBytes(params)).fixed(fixed).doubleBytes(doubleBytes).byteRatio(byteRatio).defaultValue(defaultBytes);
     }
 
     @Override
