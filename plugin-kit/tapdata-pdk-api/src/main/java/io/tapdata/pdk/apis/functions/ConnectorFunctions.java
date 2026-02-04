@@ -82,6 +82,12 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected GetStreamOffsetFunction getStreamOffsetFunction;
     protected ExportEventSqlFunction exportEventSqlFunction;
     protected FlushOffsetFunction flushOffsetFunction;
+    protected WriteRecordCallbackFunction writeRecordCallbackFunction;
+
+    public ConnectorFunctions supportWriteRecordCallback(WriteRecordCallbackFunction function) {
+        writeRecordCallbackFunction = function;
+        return this;
+    }
 
     public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
         flushOffsetFunction = function;
@@ -605,5 +611,9 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public FlushOffsetFunction getFlushOffsetFunction() {
         return flushOffsetFunction;
+    }
+
+    public WriteRecordCallbackFunction getWriteRecordCallbackFunction() {
+        return writeRecordCallbackFunction;
     }
 }
