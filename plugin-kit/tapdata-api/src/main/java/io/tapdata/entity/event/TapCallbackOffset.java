@@ -101,7 +101,7 @@ public class TapCallbackOffset extends HashMap<String, Object> {
     
     @Override
     public String toString() {
-        return "TapOffset{" +
+        return "TapCallbackOffset{" +
                 "batchOffset=" + get(KEY_BATCH_OFFSET) +
                 ", streamOffset=" + get(KEY_STREAM_OFFSET) +
                 ", tableId='" + get(KEY_TABLE_ID) + '\'' +
