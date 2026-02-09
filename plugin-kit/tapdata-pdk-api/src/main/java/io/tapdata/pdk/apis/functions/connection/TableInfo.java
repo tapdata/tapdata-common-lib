@@ -19,6 +19,14 @@ public class TableInfo {
 		return this;
 	}
 
+	private Long avgObjSize;
+
+	public TableInfo avgObjSize(Long avgObjSize) {
+		this.avgObjSize = avgObjSize;
+		return this;
+	}
+
+
 	public Long getNumOfRows() {
 		return numOfRows;
 	}
@@ -33,5 +41,13 @@ public class TableInfo {
 
 	public void setStorageSize(Long storageSize) {
 		this.storageSize = storageSize;
+	}
+
+	public Long getAvgObjSize() {
+		return avgObjSize;
+	}
+
+	public void setAvgObjSize(Long avgObjSize) {
+		this.avgObjSize = avgObjSize;
 	}
 }
