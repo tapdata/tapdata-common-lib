@@ -11,13 +11,13 @@ public class TapCallbackOffset extends HashMap<String, Object> {
     private static final long serialVersionUID = 1L;
     
     // 从 TapRecordEvent 中提取的 offset 信息
-    private static final String KEY_BATCH_OFFSET = "batchOffset";
-    private static final String KEY_STREAM_OFFSET = "streamOffset";
-    private static final String KEY_TABLE_ID = "tableId";
-    private static final String KEY_SYNC_STAGE = "syncStage";
-    private static final String KEY_SOURCE_TIME = "sourceTime";
-    private static final String KEY_EVENT_TIME = "eventTime";
-    private static final String KEY_NODE_IDS = "nodeIds";
+    public static final String KEY_BATCH_OFFSET = "batchOffset";
+    public static final String KEY_STREAM_OFFSET = "streamOffset";
+    public static final String KEY_TABLE_ID = "tableId";
+    public static final String KEY_SYNC_STAGE = "syncStage";
+    public static final String KEY_SOURCE_TIME = "sourceTime";
+    public static final String KEY_EVENT_TIME = "eventTime";
+    public static final String KEY_NODE_IDS = "nodeIds";
     
     public TapCallbackOffset() {
         super();
