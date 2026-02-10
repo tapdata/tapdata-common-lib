@@ -55,6 +55,7 @@ public class ConnectionOptions {
 
     public static final String SOURCE_SUPPORT_PARTITION = "source_support_partition";
     public static final String TARGET_SUPPORT_PARTITION = "target_support_partition";
+    public static final String FLUSH_OFFSET_CALLBACK = "flush_offset_callback";
 
     /**
      * Instance unique id to identify the same instance among multiple connections.

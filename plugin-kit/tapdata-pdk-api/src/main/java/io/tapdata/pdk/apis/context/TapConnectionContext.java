@@ -8,10 +8,12 @@ import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class TapConnectionContext extends TapContext {
     protected DataMap connectionConfig;
     protected DataMap nodeConfig;
+    protected Consumer<Object> flushOffsetCallback;
 
     public TapConnectionContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
         super(specification);
@@ -36,6 +38,13 @@ public class TapConnectionContext extends TapContext {
         this.nodeConfig = nodeConfig;
     }
 
+    public Consumer<Object> getFlushOffsetCallback() {
+        return flushOffsetCallback;
+    }
+
+    public void setFlushOffsetCallback(Consumer<Object> flushOffsetCallback) {
+        this.flushOffsetCallback = flushOffsetCallback;
+    }
 
     public String toString() {
         return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(connectionConfig) : "") + "nodeConfig: " + (nodeConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(nodeConfig) : "") + " spec: " + specification + " id: " + id;
