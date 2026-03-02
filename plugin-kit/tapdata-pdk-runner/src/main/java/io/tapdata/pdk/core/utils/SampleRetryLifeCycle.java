@@ -76,6 +76,7 @@ public class SampleRetryLifeCycle implements RetryLifeCycle {
     @Override
     public void success() {
         endRetryTs.set(System.currentTimeMillis());
+        retryTimes.set(0);
         success = true;
         onChange();
     }
