@@ -13,13 +13,14 @@ public class CommandInfo extends EngineMessage {
 	private String pdkHash;
 	private Map<String, Object> connectionConfig;
 	private Map<String, Object> nodeConfig;
+	private Map<String, Map<String, Object>> tableNodeConfig;
 	private String command;
 	private String action;
 	private Map<String, Object> argMap;
 	private Long time;
 	@Override
 	public String toString() {
-		return "CommandInfo id " + id + " type " + type + " language " + locale + " connectionId " + connectionId + " pdkHash " + pdkHash + " command " + command + " action " + action + " time " + (time != null ? new Date(time) : null) + " connectionConfig " + connectionConfig + " nodeConfig " + nodeConfig + ";";
+		return "CommandInfo id " + id + " type " + type + " language " + locale + " connectionId " + connectionId + " pdkHash " + pdkHash + " command " + command + " action " + action + " time " + (time != null ? new Date(time) : null) + " connectionConfig " + connectionConfig + " nodeConfig " + nodeConfig + " tableNodeConfig " + tableNodeConfig + ";";
 	}
 
 	public String getPdkHash() {
@@ -44,6 +45,14 @@ public class CommandInfo extends EngineMessage {
 
 	public void setNodeConfig(Map<String, Object> nodeConfig) {
 		this.nodeConfig = nodeConfig;
+	}
+
+	public Map<String, Map<String, Object>> getTableNodeConfig() {
+		return tableNodeConfig;
+	}
+
+	public void setTableNodeConfig(Map<String, Map<String, Object>> tableNodeConfig) {
+		this.tableNodeConfig = tableNodeConfig;
 	}
 
 	public String getCommand() {

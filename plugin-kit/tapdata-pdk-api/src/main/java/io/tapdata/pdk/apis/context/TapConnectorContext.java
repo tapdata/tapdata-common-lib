@@ -22,8 +22,8 @@ public class TapConnectorContext extends TapConnectionContext {
     protected ConfigContext configContext;
     protected IsomorphismType isomorphism;
 
-    public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
-        super(specification, connectionConfig, nodeConfig, log);
+    public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Map<String, DataMap> tableNodeConfig, Log log) {
+        super(specification, connectionConfig, nodeConfig, tableNodeConfig, log);
     }
 
     /**
@@ -43,6 +43,14 @@ public class TapConnectorContext extends TapConnectionContext {
 
     public void setNodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
+    }
+
+    public Map<String, DataMap> getTableNodeConfig() {
+        return tableNodeConfig;
+    }
+
+    public void setTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+        this.tableNodeConfig = tableNodeConfig;
     }
 
     public KVReadOnlyMap<TapTable> getTableMap() {
@@ -94,7 +102,7 @@ public class TapConnectorContext extends TapConnectionContext {
     }
 
     public String toString() {
-        return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification + " id: " + id;
+        return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " tableNodeConfig: " + (tableNodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(tableNodeConfig) : "") + " spec: " + specification + " id: " + id;
     }
 
     public enum IsomorphismType {

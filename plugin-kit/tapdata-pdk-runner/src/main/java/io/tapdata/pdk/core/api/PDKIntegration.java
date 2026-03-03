@@ -44,6 +44,7 @@ public class PDKIntegration {
         protected String associateId;
         protected DataMap connectionConfig;
         protected DataMap nodeConfig;
+        protected Map<String, DataMap> tableNodeConfig;
         protected String pdkId;
         protected String group;
         protected String version;
@@ -101,6 +102,11 @@ public class PDKIntegration {
             return this;
         }
 
+        public ConnectionBuilder<T> withTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+            this.tableNodeConfig = tableNodeConfig;
+            return this;
+        }
+
         public ConnectionBuilder<T> withTapDAGNode(TapDAGNode node) {
             this.pdkId = node.getPdkId();
             this.group = node.getGroup();
@@ -121,6 +127,7 @@ public class PDKIntegration {
 
     public abstract static class ProcessorBuilder<T extends Node> {
         protected DataMap nodeConfig;
+        protected Map<String, DataMap> tableNodeConfig;
         protected String dagId;
 
         protected String associateId;
@@ -199,6 +206,11 @@ public class PDKIntegration {
             return this;
         }
 
+        public ProcessorBuilder<T> withTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+            this.tableNodeConfig = tableNodeConfig;
+            return this;
+        }
+
         protected void checkParams() {
             String result = verify();
             if(result != null)
@@ -210,6 +222,7 @@ public class PDKIntegration {
 
     public abstract static class ConnectorBuilder<T extends Node> {
         protected DataMap nodeConfig;
+        protected Map<String, DataMap> tableNodeConfig;
         protected String dagId;
         protected String associateId;
         protected DataMap connectionConfig;
@@ -316,6 +329,7 @@ public class PDKIntegration {
             this.connectionConfig = node.getConnectionConfig();
             this.associateId = node.getId();
             this.nodeConfig = node.getNodeConfig();
+            this.tableNodeConfig = node.getTableNodeConfig();
             this.tasks = node.getTasks();
             this.table = node.getTable();
             this.tables = node.getTables();
@@ -373,7 +387,7 @@ public class PDKIntegration {
             connectionNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             if(log == null)
                 log = new TapLog();
-            connectionNode.connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig, log);
+            connectionNode.connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig, tableNodeConfig, log);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(connectionNode, PDKMethod.REGISTER_CAPABILITIES,
                     connectionNode::registerCapabilities,
@@ -399,7 +413,7 @@ public class PDKIntegration {
             connectorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             if(log == null)
                 log = new TapLog();
-            connectorNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig, log);
+            connectorNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig, tableNodeConfig, log);
             connectorNode.connectorContext.setConfigContext(configContext);
             if(connectorCapabilities == null)
                 connectorCapabilities = new ConnectorCapabilities();
@@ -430,7 +444,7 @@ public class PDKIntegration {
             processorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             if(log == null)
                 log = new TapLog();
-            processorNode.processorContext = new TapProcessorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, log);
+            processorNode.processorContext = new TapProcessorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, tableNodeConfig, log);
             PDKInvocationMonitor.getInstance().invokePDKMethod(processorNode, PDKMethod.PROCESSOR_FUNCTIONS,
                     () -> processorNode.processorFunctions(processorNode.processorFunctions),
                     MessageFormat.format("call processor functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);

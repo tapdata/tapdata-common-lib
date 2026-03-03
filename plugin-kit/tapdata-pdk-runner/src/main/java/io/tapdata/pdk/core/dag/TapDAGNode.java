@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class TapDAGNode {
     protected DataMap nodeConfig;
+    protected Map<String, DataMap> tableNodeConfig;
     protected DataMap connectionConfig;
     protected String id;
     protected String pdkId;
@@ -111,6 +112,14 @@ public class TapDAGNode {
 
     public void setNodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
+    }
+
+    public Map<String, DataMap> getTableNodeConfig() {
+        return tableNodeConfig;
+    }
+
+    public void setTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+        this.tableNodeConfig = tableNodeConfig;
     }
 
     public String getId() {
