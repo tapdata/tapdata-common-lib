@@ -13,12 +13,14 @@ import java.util.function.Consumer;
 public class TapConnectionContext extends TapContext {
     protected DataMap connectionConfig;
     protected DataMap nodeConfig;
+    protected Map<String, DataMap> tableNodeConfig;
     protected Consumer<Object> flushOffsetCallback;
 
-    public TapConnectionContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
+    public TapConnectionContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Map<String, DataMap> tableNodeConfig, Log log) {
         super(specification);
         this.connectionConfig = connectionConfig;
         this.nodeConfig = nodeConfig;
+        this.tableNodeConfig = tableNodeConfig;
         this.log = log;
     }
 
@@ -38,6 +40,14 @@ public class TapConnectionContext extends TapContext {
         this.nodeConfig = nodeConfig;
     }
 
+    public Map<String, DataMap> getTableNodeConfig() {
+        return tableNodeConfig;
+    }
+
+    public void setTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+        this.tableNodeConfig = tableNodeConfig;
+    }
+
     public Consumer<Object> getFlushOffsetCallback() {
         return flushOffsetCallback;
     }
@@ -47,6 +57,6 @@ public class TapConnectionContext extends TapContext {
     }
 
     public String toString() {
-        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(connectionConfig) : "") + "nodeConfig: " + (nodeConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(nodeConfig) : "") + " spec: " + specification + " id: " + id;
+        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(connectionConfig) : "") + "nodeConfig: " + (nodeConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(nodeConfig) : "") + "tableNodeConfig: " + (tableNodeConfig != null ? Objects.requireNonNull(InstanceFactory.instance(JsonParser.class)).toJson(tableNodeConfig) : "") + " spec: " + specification + " id: " + id;
     }
 }
