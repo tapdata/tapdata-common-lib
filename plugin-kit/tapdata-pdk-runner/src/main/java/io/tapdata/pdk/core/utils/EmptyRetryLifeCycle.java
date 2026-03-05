@@ -73,6 +73,7 @@ class EmptyRetryLifeCycle implements RetryLifeCycle {
     @Override
     public void success() {
         endRetryTs.set(System.currentTimeMillis());
+        retryTimes.set(0);
         success = true;
     }
 }
