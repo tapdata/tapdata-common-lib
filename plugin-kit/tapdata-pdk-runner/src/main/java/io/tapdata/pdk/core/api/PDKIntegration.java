@@ -366,6 +366,11 @@ public class PDKIntegration {
             return this;
         }
 
+        public ConnectorBuilder<T> withTableNodeConfig(Map<String, DataMap> tableNodeConfig) {
+            this.tableNodeConfig = tableNodeConfig;
+            return this;
+        }
+
         protected void checkParams() {
             String result = verify();
             if(result != null)
