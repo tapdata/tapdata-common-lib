@@ -245,6 +245,10 @@ public class WebsocketPushChannel extends PushChannel {
         wsPath = tapEngineUtils.getRealWsPath(wsPath, theUrl);
         String wsHost = data.getString("wsHost");
         String wsProtocol = data.getString("wsProtocol");
+        Integer wsProxyPort = data.getInteger("wsProxyPort");
+        if(wsProxyPort != null && wsProxyPort > 0) {
+            wsPort = wsProxyPort;
+        }
         if(wsProtocol != null) {
             protocol = wsProtocol;
         }
