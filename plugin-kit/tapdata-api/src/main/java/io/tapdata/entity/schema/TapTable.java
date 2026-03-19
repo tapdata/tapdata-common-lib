@@ -533,4 +533,15 @@ public class TapTable extends TapItem<TapField> {
 	public Collection<String> getLogicPrimaries() {
 		return logicPrimaries;
 	}
+
+	private String type;
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 }
