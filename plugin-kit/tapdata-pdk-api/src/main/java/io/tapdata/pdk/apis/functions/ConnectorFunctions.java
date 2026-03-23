@@ -91,7 +91,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return this;
     }
 
-    public ConnectorFunctions supportSendControlFunction(ProcessControlFunction function) {
+    public ConnectorFunctions supportProcessControlFunction(ProcessControlFunction function) {
         processControlFunction = function;
         return this;
     }
