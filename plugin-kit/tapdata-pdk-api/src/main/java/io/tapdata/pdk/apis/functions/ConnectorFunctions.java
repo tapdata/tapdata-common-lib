@@ -84,15 +84,15 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected GetStreamOffsetFunction getStreamOffsetFunction;
     protected ExportEventSqlFunction exportEventSqlFunction;
     protected FlushOffsetFunction flushOffsetFunction;
-    protected SendControlFunction sendControlFunction;
+    protected ProcessControlFunction processControlFunction;
 
     public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
         flushOffsetFunction = function;
         return this;
     }
 
-    public ConnectorFunctions supportSendControlFunction(SendControlFunction function) {
-        sendControlFunction = function;
+    public ConnectorFunctions supportSendControlFunction(ProcessControlFunction function) {
+        processControlFunction = function;
         return this;
     }
 
@@ -631,7 +631,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return flushOffsetFunction;
     }
 
-    public SendControlFunction getSendControlFunction() {
-        return sendControlFunction;
+    public ProcessControlFunction getProcessControlFunction() {
+        return processControlFunction;
     }
 }
