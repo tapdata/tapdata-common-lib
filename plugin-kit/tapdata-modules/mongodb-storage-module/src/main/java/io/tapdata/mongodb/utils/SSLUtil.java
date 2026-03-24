@@ -4,6 +4,12 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bson.UuidRepresentation;
 
 import javax.net.ssl.*;
@@ -89,7 +95,7 @@ public class SSLUtil {
     final KeyStore keystore = KeyStore.getInstance("JKS");
     keystore.load(null);
     // Import private key
-    final PrivateKey key = createPrivateKey(privateKey);
+    final PrivateKey key = createPrivateKey(privateKey, password);
     keystore.setKeyEntry("", key, password.toCharArray(), x509Certificates);
     return keystore;
   }
@@ -153,6 +159,46 @@ public class SSLUtil {
     return generatePrivateKeyFromDER(bytes);
   }
 
+  protected static PrivateKey createPrivateKey(String privateKey, String password) throws Exception {
+    final byte[] keyBytes = DatatypeConverter.parseBase64Binary(privateKey);
+
+    if (password != null && !password.isEmpty()) {
+      java.security.Security.addProvider(
+              new org.bouncycastle.jce.provider.BouncyCastleProvider()
+      );
+      String pemContent = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+              + privateKey + "\n"
+              + "-----END ENCRYPTED PRIVATE KEY-----";
+
+      try (PEMParser pemParser = new PEMParser(new StringReader(pemContent))) {
+        Object object = pemParser.readObject();
+
+        if (object instanceof PKCS8EncryptedPrivateKeyInfo) {
+          PKCS8EncryptedPrivateKeyInfo encryptedInfo = (PKCS8EncryptedPrivateKeyInfo) object;
+
+          InputDecryptorProvider decryptorProvider =
+                  new JceOpenSSLPKCS8DecryptorProviderBuilder()
+                          .setProvider("BC")
+                          .build(password.toCharArray());
+
+          PrivateKeyInfo privateKeyInfo = encryptedInfo.decryptPrivateKeyInfo(decryptorProvider);
+
+          return new JcaPEMKeyConverter()
+                  .setProvider("BC")
+                  .getPrivateKey(privateKeyInfo);
+        } else if (object instanceof PrivateKeyInfo) {
+          return new JcaPEMKeyConverter()
+                  .setProvider("BC")
+                  .getPrivateKey((PrivateKeyInfo) object);
+        }
+      } catch (Exception e) {
+        throw new Exception("Failed to decrypt private key: " + e.getMessage(), e);
+      }
+    }
+
+    return generatePrivateKeyFromDER(keyBytes);
+  }
+
   protected static X509Certificate[] createCertificates(List<String> certificates) throws Exception {
     if (CollectionUtils.isNotEmpty(certificates)) {
       final List<X509Certificate> result = new ArrayList<>();
@@ -181,7 +227,7 @@ public class SSLUtil {
     final CertificateFactory factory = CertificateFactory.getInstance("X.509");
     return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
   }
-  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String uri) {
+  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String sslPass, String uri) {
     MongoClientSettings.Builder builder = MongoClientSettings.builder();
     builder.applyConnectionString(new ConnectionString(uri)).applyToSslSettings(sslSettingsBuilder -> {
       if (ssl) {
@@ -221,7 +267,7 @@ public class SSLUtil {
               List<String> trustCertificates = SSLUtil.retriveCertificates(sslCA);
               SSLContext sslContext = null;
               try {
-                sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, null);
+                sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, sslPass);
               } catch (Exception e) {
                 throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
               }
@@ -238,5 +284,10 @@ public class SSLUtil {
       }
     });
     return builder.build();
+  }
+
+  @Deprecated
+  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String uri) {
+    return mongoClientSettings(ssl, keyPath, caPath, null, uri);
   }
 }
