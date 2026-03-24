@@ -181,7 +181,7 @@ public class SSLUtil {
     final CertificateFactory factory = CertificateFactory.getInstance("X.509");
     return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
   }
-  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String uri) {
+  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String sslPass, String uri) {
     MongoClientSettings.Builder builder = MongoClientSettings.builder();
     builder.applyConnectionString(new ConnectionString(uri)).applyToSslSettings(sslSettingsBuilder -> {
       if (ssl) {
@@ -221,7 +221,7 @@ public class SSLUtil {
               List<String> trustCertificates = SSLUtil.retriveCertificates(sslCA);
               SSLContext sslContext = null;
               try {
-                sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, null);
+                sslContext = SSLUtil.createSSLContext(clientPrivateKey, clientCertificates, trustCertificates, sslPass);
               } catch (Exception e) {
                 throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
               }
@@ -238,5 +238,10 @@ public class SSLUtil {
       }
     });
     return builder.build();
+  }
+
+  @Deprecated
+  public static MongoClientSettings mongoClientSettings(boolean ssl, String keyPath, String caPath, String uri) {
+    return mongoClientSettings(ssl, keyPath, caPath, null, uri);
   }
 }
