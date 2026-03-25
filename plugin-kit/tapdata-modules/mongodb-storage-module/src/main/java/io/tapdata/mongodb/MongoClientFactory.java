@@ -60,7 +60,7 @@ public class MongoClientFactory {
                     String ssl = CommonUtils.getProperty("tapdata_proxy_mongodb_ssl");
                     String caPath = CommonUtils.getProperty("tapdata_proxy_mongodb_caPath");
                     String keyPath = CommonUtils.getProperty("tapdata_proxy_mongodb_keyPath");
-                    String sslPass = CommonUtils.getProperty("tapdata_proxy_mongodb_sslPemKeyPassword");
+                    String sslPass = CommonUtils.getProperty("tapdata_proxy_mongodb_sslPass");
                     ConnectionString connectionString = new ConnectionString(mongoUri);
                     MongoClientSettings settings = SSLUtil.mongoClientSettings(Boolean.parseBoolean(ssl), keyPath, caPath, sslPass, mongoUri);
                     MongoClient client = MongoClients.create(settings);
