@@ -24,6 +24,13 @@ public class TapConnectionContext extends TapContext {
         this.log = log;
     }
 
+    public TapConnectionContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
+        super(specification);
+        this.connectionConfig = connectionConfig;
+        this.nodeConfig = nodeConfig;
+        this.log = log;
+    }
+
     public DataMap getConnectionConfig() {
         return connectionConfig;
     }
