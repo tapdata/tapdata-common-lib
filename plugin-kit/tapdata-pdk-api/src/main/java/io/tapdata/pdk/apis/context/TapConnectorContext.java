@@ -26,6 +26,10 @@ public class TapConnectorContext extends TapConnectionContext {
         super(specification, connectionConfig, nodeConfig, tableNodeConfig, log);
     }
 
+    public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig, Log log) {
+        super(specification, connectionConfig, nodeConfig, log);
+    }
+
     /**
      * configContext is only needed when you start a thread. please invoke this method at first line in the thread.
      * So that the TapLogger can be associated with corresponding task, and you can check the log in task console.
