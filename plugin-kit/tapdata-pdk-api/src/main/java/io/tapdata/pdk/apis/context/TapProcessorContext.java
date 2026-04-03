@@ -17,6 +17,12 @@ public class TapProcessorContext extends TapContext {
         this.log = log;
     }
 
+    public TapProcessorContext(TapNodeSpecification specification, DataMap nodeConfig, Log log) {
+        super(specification);
+        this.nodeConfig = nodeConfig;
+        this.log = log;
+    }
+
     public DataMap getNodeConfig() {
         return nodeConfig;
     }
