@@ -1034,9 +1034,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
 
     /**
      * JS Date.toDateString() - returns date portion as human-readable string
+     * Format: "ddd MMM dd yyyy", e.g. "Wed May 08 2024"
      */
     public String toDateString() {
-        return toDate().toString().substring(0, 10);
+        ZonedDateTime zdt = toZonedDateTime();
+        return DateTimeFormatter.ofPattern("EEE MMM dd yyyy", java.util.Locale.US).format(zdt);
     }
 
     /**

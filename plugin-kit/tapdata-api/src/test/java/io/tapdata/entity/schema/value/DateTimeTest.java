@@ -344,6 +344,33 @@ class DateTimeTest {
 
 		// To methods
 		@Test
+		@DisplayName("toDateString returns JS-style date string in UTC")
+		void testToDateStringUTC() {
+			// 2024-05-08 is a Wednesday
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals("Wed May 08 2024", dt.toDateString());
+		}
+
+		@Test
+		@DisplayName("toDateString respects DateTime's own timezone")
+		void testToDateStringWithTimezone() {
+			// 2024-12-31T23:30:00Z => in GMT+8 it's 2025-01-01
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals("Wed Jan 01 2025", dt.toDateString());
+		}
+
+		@Test
+		@DisplayName("toDateString for single-digit day pads with zero")
+		void testToDateStringSingleDigitDay() {
+			// 2024-01-01 is a Monday
+			DateTime dt = new DateTime(Instant.parse("2024-01-01T12:00:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals("Mon Jan 01 2024", dt.toDateString());
+		}
+
+		@Test
 		@DisplayName("toISOString returns ISO 8601 UTC format")
 		void testToISOString() {
 			DateTime dt = new DateTime(testInstant);
