@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.function.UnaryOperator;
 
 public class DateTime implements Serializable, JavaCustomSerializer, Comparable<DateTime> {
     public static final int ORIGIN_TYPE_NONE = 1;
@@ -82,6 +83,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
 
     public DateTime() {
         originType = ORIGIN_TYPE_NONE;
+        updateFromDate(new Date());
     }
 
     public DateTime(String illegalDate, String dateType) {
@@ -327,6 +329,142 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             dateTime.nano *= -1;
         }
         return dateTime;
+    }
+
+    public static DateTime fromObject(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("DateTime value is null");
+        }
+        if (value instanceof DateTime) {
+            return copyOf((DateTime) value);
+        }
+        if (value instanceof Timestamp) {
+            return new DateTime((Timestamp) value);
+        }
+        if (value instanceof java.sql.Date) {
+            return new DateTime((java.sql.Date) value);
+        }
+        if (value instanceof Time) {
+            return new DateTime((Time) value);
+        }
+        if (value instanceof Date) {
+            return new DateTime((Date) value);
+        }
+        if (value instanceof ZonedDateTime) {
+            return new DateTime((ZonedDateTime) value);
+        }
+        if (value instanceof LocalDateTime) {
+            return new DateTime((LocalDateTime) value);
+        }
+        if (value instanceof Instant) {
+            return new DateTime((Instant) value);
+        }
+        throw new IllegalArgumentException("Unsupported date value type: " + value.getClass().getName());
+    }
+
+    public static boolean isBefore(Object a, Object b) {
+        return compare(a, b) < 0;
+    }
+
+    public static boolean isAfter(Object a, Object b) {
+        return compare(a, b) > 0;
+    }
+
+    public static boolean isEqual(Object a, Object b) {
+        return compare(a, b) == 0;
+    }
+
+    public static boolean isSameDay(Object a, Object b, ZoneId zoneId) {
+        ZoneId actualZoneId = resolveZoneId(zoneId);
+        LocalDate left = requiredDateTime(a).toInstant().atZone(actualZoneId).toLocalDate();
+        LocalDate right = requiredDateTime(b).toInstant().atZone(actualZoneId).toLocalDate();
+        return left.equals(right);
+    }
+
+    public static boolean isSameMonth(Object a, Object b, ZoneId zoneId) {
+        ZoneId actualZoneId = resolveZoneId(zoneId);
+        ZonedDateTime left = requiredDateTime(a).toInstant().atZone(actualZoneId);
+        ZonedDateTime right = requiredDateTime(b).toInstant().atZone(actualZoneId);
+        return left.getYear() == right.getYear() && left.getMonthValue() == right.getMonthValue();
+    }
+
+    public static int compare(Object a, Object b) {
+        return requiredDateTime(a).compareTo(requiredDateTime(b));
+    }
+
+    public static DateTime addYears(Object value, int years) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusYears(years));
+    }
+
+    public static DateTime addMonths(Object value, int months) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusMonths(months));
+    }
+
+    public static DateTime addDays(Object value, int days) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusDays(days));
+    }
+
+    public static DateTime addHours(Object value, int hours) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusHours(hours));
+    }
+
+    public static DateTime addMinutes(Object value, int minutes) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusMinutes(minutes));
+    }
+
+    public static DateTime addSeconds(Object value, int seconds) {
+        return addWithZonedDateTime(value, dateTime -> dateTime.plusSeconds(seconds));
+    }
+
+    public static long diffMillis(Object a, Object b) {
+        return Duration.between(requiredDateTime(b).toInstant(), requiredDateTime(a).toInstant()).toMillis();
+    }
+
+    public static long diffSeconds(Object a, Object b) {
+        return Duration.between(requiredDateTime(b).toInstant(), requiredDateTime(a).toInstant()).getSeconds();
+    }
+
+    public static long diffMinutes(Object a, Object b) {
+        return Duration.between(requiredDateTime(b).toInstant(), requiredDateTime(a).toInstant()).toMinutes();
+    }
+
+    public static long diffHours(Object a, Object b) {
+        return Duration.between(requiredDateTime(b).toInstant(), requiredDateTime(a).toInstant()).toHours();
+    }
+
+    public static long diffDays(Object a, Object b) {
+        return Duration.between(requiredDateTime(b).toInstant(), requiredDateTime(a).toInstant()).toDays();
+    }
+
+    private static DateTime addWithZonedDateTime(Object value, UnaryOperator<ZonedDateTime> updater) {
+        DateTime result = requiredDateTime(value);
+        result.updateFromZonedDateTime(updater.apply(result.toZonedDateTime()));
+        return result;
+    }
+
+    private static DateTime requiredDateTime(Object value) {
+        DateTime dateTime = fromObject(value);
+        if (dateTime.containsIllegal || dateTime.seconds == null || dateTime.nano == null) {
+            throw new IllegalArgumentException("Illegal DateTime value for operation");
+        }
+        return dateTime;
+    }
+
+    private static ZoneId resolveZoneId(ZoneId zoneId) {
+        return Optional.ofNullable(zoneId).orElseGet(ZoneId::systemDefault);
+    }
+
+    private static DateTime copyOf(DateTime source) {
+        DateTime copy = new DateTime();
+        copy.originType = source.originType;
+        copy.fraction = source.fraction;
+        copy.seconds = source.seconds;
+        copy.nano = source.nano;
+        copy.timeZone = source.timeZone == null ? null : (TimeZone) source.timeZone.clone();
+        copy.illegalDate = source.illegalDate;
+        copy.originBytes = source.originBytes == null ? null : source.originBytes.clone();
+        copy.containsIllegal = source.containsIllegal;
+        return copy;
     }
 
     public String toTimeStr() {
@@ -583,6 +721,409 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             stringBuilder.append(String.format("%0"+i+"d",Integer.parseInt(str)));
         }
         return stringBuilder;
+    }
+
+    // ==================== Delegate methods for java.util.Date ====================
+
+    /**
+     * @see Date#after(Date)
+     */
+    public boolean after(DateTime when) {
+        return this.compareTo(when) > 0;
+    }
+
+    /**
+     * @see Date#before(Date)
+     */
+    public boolean before(DateTime when) {
+        return this.compareTo(when) < 0;
+    }
+
+    /**
+     * @see Date#compareTo(Date)
+     */
+    public int compareTo(Date anotherDate) {
+        return toDate().compareTo(anotherDate);
+    }
+
+    /**
+     * @see Date#getDate()
+     */
+    public int getDate() {
+        return toZonedDateTime().getDayOfMonth();
+    }
+
+    /**
+     * @see Date#getDay()
+     */
+    public int getDay() {
+        return toZonedDateTime().getDayOfWeek().getValue() % 7;
+    }
+
+    /**
+     * JS Date.getFullYear() - returns the 4-digit year
+     */
+    public int getFullYear() {
+        return toZonedDateTime().getYear();
+    }
+
+    /**
+     * @see Date#getHours()
+     */
+    public int getHours() {
+        return toZonedDateTime().getHour();
+    }
+
+    /**
+     * JS Date.getMilliseconds() - returns milliseconds (0-999)
+     */
+    public int getMilliseconds() {
+        return nano != null ? nano / 1000000 : 0;
+    }
+
+    /**
+     * @see Date#getMinutes()
+     */
+    public int getMinutes() {
+        return toZonedDateTime().getMinute();
+    }
+
+    /**
+     * @see Date#getMonth()
+     */
+    public int getMonth() {
+        return toZonedDateTime().getMonthValue() - 1;
+    }
+
+    /**
+     * JS Date.getSeconds() / java.util.Date.getSeconds() - returns second of minute (0-59)
+     */
+    public int getDateSeconds() {
+        return toZonedDateTime().getSecond();
+    }
+
+    /**
+     * @see Date#getTime()
+     */
+    public long getTime() {
+        return toDate().getTime();
+    }
+
+    /**
+     * @see Date#getTimezoneOffset()
+     * Returns offset in minutes (positive = behind UTC, negative = ahead of UTC, matching JS convention)
+     */
+    public int getTimezoneOffset() {
+        return -toZonedDateTime().getOffset().getTotalSeconds() / 60;
+    }
+
+    /**
+     * JS Date.getUTCDate() - returns day of month (1-31) in UTC
+     */
+    public int getUTCDate() {
+        return toInstant().atZone(ZoneOffset.UTC).getDayOfMonth();
+    }
+
+    /**
+     * JS Date.getUTCDay() - returns day of week (0=Sunday, 6=Saturday) in UTC
+     */
+    public int getUTCDay() {
+        return toInstant().atZone(ZoneOffset.UTC).getDayOfWeek().getValue() % 7;
+    }
+
+    /**
+     * JS Date.getUTCFullYear() - returns 4-digit year in UTC
+     */
+    public int getUTCFullYear() {
+        return toInstant().atZone(ZoneOffset.UTC).getYear();
+    }
+
+    /**
+     * JS Date.getUTCHours() - returns hours (0-23) in UTC
+     */
+    public int getUTCHours() {
+        return toInstant().atZone(ZoneOffset.UTC).getHour();
+    }
+
+    /**
+     * JS Date.getUTCMilliseconds() - returns milliseconds (0-999) in UTC
+     */
+    public int getUTCMilliseconds() {
+        return getMilliseconds();
+    }
+
+    /**
+     * JS Date.getUTCMinutes() - returns minutes (0-59) in UTC
+     */
+    public int getUTCMinutes() {
+        return toInstant().atZone(ZoneOffset.UTC).getMinute();
+    }
+
+    /**
+     * JS Date.getUTCMonth() - returns month (0-11) in UTC
+     */
+    public int getUTCMonth() {
+        return toInstant().atZone(ZoneOffset.UTC).getMonthValue() - 1;
+    }
+
+    /**
+     * JS Date.getUTCSeconds() - returns seconds (0-59) in UTC
+     */
+    public int getUTCSeconds() {
+        return toInstant().atZone(ZoneOffset.UTC).getSecond();
+    }
+
+    /**
+     * @see Date#getYear()
+     */
+    public int getYear() {
+        return toZonedDateTime().getYear() - 1900;
+    }
+
+    /**
+     * @see Date#setDate(int)
+     */
+    public void setDate(int date) {
+        ZonedDateTime zdt = toZonedDateTime().withDayOfMonth(date);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * JS Date.setSeconds() / java.util.Date.setSeconds() - sets second of minute (0-59)
+     */
+    public void setDateSeconds(int seconds) {
+        ZonedDateTime zdt = toZonedDateTime().withSecond(seconds);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * JS Date.setFullYear() - sets the full year (4 digits)
+     */
+    public void setFullYear(int year) {
+        ZonedDateTime zdt = toZonedDateTime();
+        zdt = zdt.withYear(year);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * @see Date#setHours(int)
+     */
+    public void setHours(int hours) {
+        ZonedDateTime zdt = toZonedDateTime().withHour(hours);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * JS Date.setMilliseconds() - sets the milliseconds (0-999)
+     */
+    public void setMilliseconds(int ms) {
+        int subMilliNano = (nano != null) ? (nano % 1000000) : 0;
+        this.nano = ms * 1000000 + subMilliNano;
+    }
+
+    /**
+     * @see Date#setMinutes(int)
+     */
+    public void setMinutes(int minutes) {
+        ZonedDateTime zdt = toZonedDateTime().withMinute(minutes);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * @see Date#setMonth(int)
+     */
+    public void setMonth(int month) {
+        ZonedDateTime zdt = toZonedDateTime().withMonth(month + 1);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * @see Date#setTime(long)
+     */
+    public void setTime(long time) {
+        this.seconds = Math.floorDiv(time, 1000L);
+        this.nano = (int)(Math.floorMod(time, 1000L) * 1000000);
+        if (this.nano < 0) {
+            this.seconds -= 1;
+            this.nano += 1000000000;
+        }
+    }
+
+    /**
+     * JS Date.setUTCDate() - sets day of month (1-31) in UTC
+     */
+    public void setUTCDate(int dayOfMonth) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withDayOfMonth(dayOfMonth);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * JS Date.setUTCFullYear() - sets the full year in UTC
+     */
+    public void setUTCFullYear(int year) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withYear(year);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * JS Date.setUTCHours() - sets the hours (0-23) in UTC
+     */
+    public void setUTCHours(int hours) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withHour(hours);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * JS Date.setUTCMilliseconds() - sets milliseconds (0-999) in UTC
+     */
+    public void setUTCMilliseconds(int ms) {
+        setMilliseconds(ms);
+    }
+
+    /**
+     * JS Date.setUTCMinutes() - sets minutes (0-59) in UTC
+     */
+    public void setUTCMinutes(int minutes) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withMinute(minutes);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * JS Date.setUTCMonth() - sets month (0-11) in UTC
+     */
+    public void setUTCMonth(int month) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withMonth(month + 1);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * JS Date.setUTCSeconds() - sets seconds (0-59) in UTC
+     */
+    public void setUTCSeconds(int seconds) {
+        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        zdt = zdt.withSecond(seconds);
+        updateFromInstant(zdt.toInstant());
+    }
+
+    /**
+     * @see Date#setYear(int)
+     */
+    public void setYear(int year) {
+        ZonedDateTime zdt = toZonedDateTime().withYear(year + 1900);
+        updateFromZonedDateTime(zdt);
+    }
+
+    /**
+     * @see Date#toGMTString()
+     */
+    public String toGMTString() {
+        return toDate().toGMTString();
+    }
+
+    /**
+     * @see Date#toLocaleString()
+     */
+    public String toLocaleString() {
+        return toDate().toLocaleString();
+    }
+
+    /**
+     * JS Date.toDateString() - returns date portion as human-readable string
+     * Format: "ddd MMM dd yyyy", e.g. "Wed May 08 2024"
+     */
+    public String toDateString() {
+        ZonedDateTime zdt = toZonedDateTime();
+        return DateTimeFormatter.ofPattern("EEE MMM dd yyyy", java.util.Locale.US).format(zdt);
+    }
+
+    /**
+     * JS Date.toISOString() - returns ISO 8601 format string in UTC
+     */
+    public String toISOString() {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                .format(toInstant().atZone(ZoneOffset.UTC));
+    }
+
+    /**
+     * JS Date.toJSON() - returns same as toISOString(), for JSON.stringify()
+     */
+    public String toJSON() {
+        return toISOString();
+    }
+
+    /**
+     * JS Date.toLocaleDateString() - returns locale-sensitive date string
+     */
+    public String toLocaleDateString() {
+        return java.text.DateFormat.getDateInstance().format(toDate());
+    }
+
+    /**
+     * JS Date.toLocaleTimeString() - returns locale-sensitive time string
+     */
+    public String toLocaleTimeString() {
+        return java.text.DateFormat.getTimeInstance().format(toDate());
+    }
+
+    /**
+     * JS Date.toTimeString() - returns time portion as human-readable string
+     */
+    public String toTimeString() {
+        String full = toDate().toString();
+        // java.util.Date.toString() format: "dow mon dd hh:mm:ss zzz yyyy"
+        // time part starts at index 11
+        int timeStart = full.indexOf(':') - 2;
+        return timeStart >= 0 ? full.substring(timeStart) : full;
+    }
+
+    /**
+     * JS Date.toUTCString() - returns UTC date string
+     */
+    public String toUTCString() {
+        return toDate().toGMTString();
+    }
+
+    /**
+     * JS Date.valueOf() - returns primitive value (milliseconds since epoch)
+     */
+    public long valueOf() {
+        return getTime();
+    }
+
+    private void updateFromDate(Date d) {
+        long time = d.getTime();
+        int savedNano = this.nano != null ? (this.nano % 1000000) : 0;
+        this.seconds = Math.floorDiv(time, 1000L);
+        this.nano = (int)(Math.floorMod(time, 1000L) * 1000000) + savedNano;
+        if (this.nano < 0) {
+            this.seconds -= 1;
+            this.nano += 1000000000;
+        }
+    }
+
+    private void updateFromZonedDateTime(ZonedDateTime zdt) {
+        Instant instant = zdt.toInstant();
+        int savedSubMilliNano = this.nano != null ? (this.nano % 1000000) : 0;
+        this.seconds = instant.getEpochSecond();
+        this.nano = instant.getNano();
+        // preserve sub-millisecond precision if original had it
+        if (savedSubMilliNano > 0 && (this.nano % 1000000) == 0) {
+            this.nano += savedSubMilliNano;
+        }
+    }
+
+    private void updateFromInstant(Instant instant) {
+        int savedSubMilliNano = this.nano != null ? (this.nano % 1000000) : 0;
+        this.seconds = instant.getEpochSecond();
+        this.nano = instant.getNano();
+        if (savedSubMilliNano > 0 && (this.nano % 1000000) == 0) {
+            this.nano += savedSubMilliNano;
+        }
     }
 
     public void plus(long amountToAdd, TemporalUnit unit) {

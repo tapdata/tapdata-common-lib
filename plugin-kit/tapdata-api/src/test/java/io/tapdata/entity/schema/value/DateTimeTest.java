@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.util.Date;
@@ -220,5 +221,263 @@ class DateTimeTest {
 			Assertions.assertEquals(Date.from(Instant.parse("9999-12-31T00:00:00Z")), dateTime.toDate());
 		}
 
+	}
+
+	@Nested
+	@DisplayName("JS/Java Date delegate methods test")
+	class DateDelegateMethodsTest {
+
+		// 2024-05-08T16:30:45.123Z => UTC: year=2024 month=4(0-indexed) date=8 day=3(Wed) hours=16 minutes=30 seconds=45 millis=123
+		private final Instant testInstant = Instant.parse("2024-05-08T16:30:45.123Z");
+
+		@Test
+		@DisplayName("getMonth should return correct month with UTC timezone")
+		void testGetMonthUTC() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals(4, dt.getMonth()); // May = 4 (0-indexed)
+		}
+
+		@Test
+		@DisplayName("getMonth should respect DateTime's own timezone")
+		void testGetMonthWithTimezone() {
+			// 2024-12-31T23:30:00Z => in UTC+8 it's 2025-01-01 07:30:00 => month should be 0 (January)
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(0, dt.getMonth()); // January in GMT+8
+		}
+
+		@Test
+		@DisplayName("getFullYear should respect DateTime's own timezone")
+		void testGetFullYearWithTimezone() {
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(2025, dt.getFullYear()); // 2025 in GMT+8
+		}
+
+		@Test
+		@DisplayName("getDate should respect DateTime's own timezone")
+		void testGetDateWithTimezone() {
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(1, dt.getDate()); // 1st in GMT+8
+		}
+
+		@Test
+		@DisplayName("getHours should respect DateTime's own timezone")
+		void testGetHoursWithTimezone() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			// 16:30 UTC => 00:30 next day in GMT+8
+			assertEquals(0, dt.getHours());
+		}
+
+		@Test
+		@DisplayName("getMinutes returns correct minutes")
+		void testGetMinutes() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals(30, dt.getMinutes());
+		}
+
+		@Test
+		@DisplayName("getDateSeconds returns correct seconds (0-59)")
+		void testGetDateSeconds() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals(45, dt.getDateSeconds());
+		}
+
+		@Test
+		@DisplayName("getMilliseconds returns correct milliseconds")
+		void testGetMilliseconds() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals(123, dt.getMilliseconds());
+		}
+
+		@Test
+		@DisplayName("getTime returns epoch milliseconds")
+		void testGetTime() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals(testInstant.toEpochMilli(), dt.getTime());
+		}
+
+		@Test
+		@DisplayName("getYear returns year minus 1900")
+		void testGetYear() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals(124, dt.getYear()); // 2024 - 1900
+		}
+
+		@Test
+		@DisplayName("getDay returns correct day of week")
+		void testGetDay() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals(3, dt.getDay()); // Wednesday = 3
+		}
+
+		// UTC methods
+		@Test
+		@DisplayName("getUTCMonth returns month in UTC regardless of timezone")
+		void testGetUTCMonth() {
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(11, dt.getUTCMonth()); // December in UTC = 11
+		}
+
+		@Test
+		@DisplayName("getUTCFullYear returns year in UTC")
+		void testGetUTCFullYear() {
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(2024, dt.getUTCFullYear()); // still 2024 in UTC
+		}
+
+		@Test
+		@DisplayName("getUTCHours returns hours in UTC")
+		void testGetUTCHours() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals(16, dt.getUTCHours()); // 16 in UTC regardless of timezone
+		}
+
+		// To methods
+		@Test
+		@DisplayName("toDateString returns JS-style date string in UTC")
+		void testToDateStringUTC() {
+			// 2024-05-08 is a Wednesday
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals("Wed May 08 2024", dt.toDateString());
+		}
+
+		@Test
+		@DisplayName("toDateString respects DateTime's own timezone")
+		void testToDateStringWithTimezone() {
+			// 2024-12-31T23:30:00Z => in GMT+8 it's 2025-01-01
+			DateTime dt = new DateTime(Instant.parse("2024-12-31T23:30:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+			assertEquals("Wed Jan 01 2025", dt.toDateString());
+		}
+
+		@Test
+		@DisplayName("toDateString for single-digit day pads with zero")
+		void testToDateStringSingleDigitDay() {
+			// 2024-01-01 is a Monday
+			DateTime dt = new DateTime(Instant.parse("2024-01-01T12:00:00.000Z"));
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			assertEquals("Mon Jan 01 2024", dt.toDateString());
+		}
+
+		@Test
+		@DisplayName("toISOString returns ISO 8601 UTC format")
+		void testToISOString() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals("2024-05-08T16:30:45.123Z", dt.toISOString());
+		}
+
+		@Test
+		@DisplayName("toJSON returns same as toISOString")
+		void testToJSON() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals(dt.toISOString(), dt.toJSON());
+		}
+
+		@Test
+		@DisplayName("valueOf returns epoch milliseconds")
+		void testValueOf() {
+			DateTime dt = new DateTime(testInstant);
+			assertEquals(dt.getTime(), dt.valueOf());
+		}
+
+		// setFullYear
+		@Test
+		@DisplayName("setFullYear modifies year correctly")
+		void testSetFullYear() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			dt.setFullYear(2000);
+			assertEquals(2000, dt.getFullYear());
+			assertEquals(4, dt.getMonth()); // month unchanged
+		}
+
+		// setMilliseconds
+		@Test
+		@DisplayName("setMilliseconds modifies milliseconds correctly")
+		void testSetMilliseconds() {
+			DateTime dt = new DateTime(testInstant);
+			dt.setMilliseconds(456);
+			assertEquals(456, dt.getMilliseconds());
+		}
+	}
+
+	@Nested
+	@DisplayName("Object-aware date operations")
+	class ObjectAwareDateOperationsTest {
+
+		@Test
+		@DisplayName("compare helpers should support DateTime, Date and Instant")
+		void testCompareHelpersSupportMixedTypes() {
+			Instant instant = Instant.parse("2024-03-01T10:15:30Z");
+			DateTime dateTime = new DateTime(instant);
+			Date date = Date.from(instant);
+			Instant later = instant.plusSeconds(1);
+
+			assertEquals(0, DateTime.compare(dateTime, date));
+			Assertions.assertTrue(DateTime.isBefore(date, later));
+			Assertions.assertTrue(DateTime.isAfter(later, dateTime));
+			Assertions.assertTrue(DateTime.isEqual(dateTime, instant));
+		}
+
+		@Test
+		@DisplayName("same day and month should use the provided zone")
+		void testSameDayAndMonthUseProvidedZone() {
+			Instant sameDayLeft = Instant.parse("2024-03-31T23:30:00Z");
+			Instant sameDayRight = Instant.parse("2024-04-01T00:15:00Z");
+			ZoneId zoneId = ZoneId.of("Asia/Shanghai");
+
+			Assertions.assertTrue(DateTime.isSameDay(sameDayLeft, sameDayRight, zoneId));
+			Assertions.assertFalse(DateTime.isSameDay(sameDayLeft, sameDayRight, ZoneOffset.UTC));
+			Assertions.assertTrue(DateTime.isSameMonth(sameDayLeft, sameDayRight, zoneId));
+			Assertions.assertFalse(DateTime.isSameMonth(sameDayLeft, sameDayRight, ZoneOffset.UTC));
+		}
+
+		@Test
+		@DisplayName("add helpers should return new DateTime instances and keep source timezone")
+		void testAddHelpersReturnNewDateTime() {
+			DateTime source = new DateTime(Instant.parse("2024-01-31T23:30:40Z"));
+			source.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+
+			DateTime plusYears = DateTime.addYears(source, 1);
+			DateTime plusMonths = DateTime.addMonths(source, 1);
+			DateTime plusDays = DateTime.addDays(source, 2);
+			DateTime plusHours = DateTime.addHours(source, 3);
+			DateTime plusMinutes = DateTime.addMinutes(source, 15);
+			DateTime plusSeconds = DateTime.addSeconds(source, 20);
+
+			assertEquals(Instant.parse("2025-01-31T23:30:40Z"), plusYears.toInstant());
+			assertEquals(Instant.parse("2024-02-29T23:30:40Z"), plusMonths.toInstant());
+			assertEquals(Instant.parse("2024-02-02T23:30:40Z"), plusDays.toInstant());
+			assertEquals(Instant.parse("2024-02-01T02:30:40Z"), plusHours.toInstant());
+			assertEquals(Instant.parse("2024-01-31T23:45:40Z"), plusMinutes.toInstant());
+			assertEquals(Instant.parse("2024-01-31T23:31:00Z"), plusSeconds.toInstant());
+			assertEquals("GMT+08:00", plusMonths.getTimeZone().getID());
+			assertEquals(Instant.parse("2024-01-31T23:30:40Z"), source.toInstant());
+		}
+
+		@Test
+		@DisplayName("diff helpers should return signed duration values")
+		void testDiffHelpersReturnSignedDuration() {
+			Instant left = Instant.parse("2024-03-02T01:02:03Z");
+			Date right = Date.from(Instant.parse("2024-03-01T00:00:00Z"));
+
+			assertEquals(90123000L, DateTime.diffMillis(left, right));
+			assertEquals(90123L, DateTime.diffSeconds(left, right));
+			assertEquals(1502L, DateTime.diffMinutes(left, right));
+			assertEquals(25L, DateTime.diffHours(left, right));
+			assertEquals(1L, DateTime.diffDays(left, right));
+			assertEquals(-90123000L, DateTime.diffMillis(right, left));
+		}
 	}
 }
