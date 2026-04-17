@@ -468,6 +468,9 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     }
 
     public String toTimeStr() {
+        if (containsIllegal && illegalDate != null) {
+            return illegalDate;
+        }
         DecimalFormat decimalFormat = new DecimalFormat("00");
         long realSecond;
         boolean negative = false;
@@ -670,7 +673,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     protected String autofillWithZero(String str, String dateType){
         if(str == null) return null;
         StringBuilder stringBuilder = new StringBuilder();
-        String[] split = str.split("-");
+        String[] split = str.split("(?<!^)-");
         switch (dateType){
             case DATETIME_TYPE:
                 stringBuilder.append(fill(split, 6));
@@ -681,7 +684,7 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             case TIME_TYPE:
                 if (split.length < 2) return null;
                 for (int i=0;i< split.length;i++){
-                    autofill(split[0],2, stringBuilder);
+                    autofill(split[i],2, stringBuilder);
                     if (i < split.length - 1){
                         stringBuilder.append(":");
                     }
