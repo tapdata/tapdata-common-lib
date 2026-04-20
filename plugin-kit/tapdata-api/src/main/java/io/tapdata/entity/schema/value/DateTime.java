@@ -485,7 +485,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         int second = (int) (realSecond % 60);
         String timeStr = decimalFormat.format(hour) + ":" + decimalFormat.format(minute) + ":" + decimalFormat.format(second);
         if (nano != 0) {
-            timeStr += ("" + (double) Math.abs(nano) / 1000000000L).substring(1);
+            String nanoStr = String.format("%09d", Math.abs(nano));
+            nanoStr = nanoStr.replaceAll("0+$", "");
+            if (!nanoStr.isEmpty()) {
+                timeStr += "." + nanoStr;
+            }
         }
         return (negative ? "-" : "") + timeStr;
     }
@@ -711,6 +715,14 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             autofill(split[4],2,stringBuilder);
             stringBuilder.append(":");
             autofill(split[5],2,stringBuilder);
+        }
+        if (split.length == 7) {
+            int nanoOfSecond = Integer.parseInt(split[6]);
+            String nanoStr = String.format("%09d", Math.abs(nanoOfSecond));
+            nanoStr = nanoStr.replaceAll("0+$", "");
+            if (!nanoStr.isEmpty()) {
+                stringBuilder.append(".").append(nanoStr);
+            }
         }
         return stringBuilder.toString();
     }
