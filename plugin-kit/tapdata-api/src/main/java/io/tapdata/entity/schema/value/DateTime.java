@@ -687,10 +687,19 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
                 break;
             case TIME_TYPE:
                 if (split.length < 2) return null;
-                for (int i=0;i< split.length;i++){
-                    autofill(split[i],2, stringBuilder);
-                    if (i < split.length - 1){
-                        stringBuilder.append(":");
+                boolean hasFrac = split.length > 3;
+                for (int i = 0; i < split.length; i++) {
+                    if (hasFrac && i == 3) {
+                        stringBuilder.append(split[i]);
+                    } else {
+                        autofill(split[i],2, stringBuilder);
+                    }
+                    if (i < split.length - 1) {
+                        if (hasFrac && i == split.length - 2) {
+                            stringBuilder.append('.');
+                        } else {
+                            stringBuilder.append(':');
+                        }
                     }
                 }
                 break;
@@ -717,11 +726,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
             autofill(split[5],2,stringBuilder);
         }
         if (split.length == 7) {
-            int nanoOfSecond = Integer.parseInt(split[6]);
-            String nanoStr = String.format("%09d", Math.abs(nanoOfSecond));
-            nanoStr = nanoStr.replaceAll("0+$", "");
-            if (!nanoStr.isEmpty()) {
-                stringBuilder.append(".").append(nanoStr);
+            String frac = split[6];
+            if (frac.length() > 9) frac = frac.substring(0, 9);
+            frac = frac.replaceAll("0+$", "");
+            if (!frac.isEmpty()) {
+                stringBuilder.append(".").append(frac);
             }
         }
         return stringBuilder.toString();
