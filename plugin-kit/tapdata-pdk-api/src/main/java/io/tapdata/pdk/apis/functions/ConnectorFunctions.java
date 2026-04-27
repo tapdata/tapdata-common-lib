@@ -57,6 +57,7 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected AlterFieldNameFunction alterFieldNameFunction;
     //alter_table_charset_event
     protected AlterTableCharsetFunction alterTableCharsetFunction;
+    protected AlterTableTTLFunction alterTableTTLFunction;
     //drop_field_event
     protected DropFieldFunction dropFieldFunction;
     //new_field_event
@@ -161,6 +162,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     }
     public ConnectorFunctions supportAlterTableCharsetFunction(AlterTableCharsetFunction function) {
         alterTableCharsetFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterTableTTLFunction(AlterTableTTLFunction function) {
+        alterTableTTLFunction = function;
         return this;
     }
     public ConnectorFunctions supportDropFieldFunction(DropFieldFunction function) {
@@ -528,6 +533,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public AlterTableCharsetFunction getAlterTableCharsetFunction() {
         return alterTableCharsetFunction;
+    }
+
+    public AlterTableTTLFunction getAlterTableTTLFunction() {
+        return alterTableTTLFunction;
     }
 
     public DropFieldFunction getDropFieldFunction() {
