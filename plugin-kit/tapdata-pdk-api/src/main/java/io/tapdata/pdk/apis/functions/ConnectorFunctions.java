@@ -85,7 +85,6 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected ExportEventSqlFunction exportEventSqlFunction;
     protected FlushOffsetFunction flushOffsetFunction;
     protected ProcessControlFunction processControlFunction;
-    protected ConsumeMessageFunction consumeMessageFunction;
 
     public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
         flushOffsetFunction = function;
@@ -94,11 +93,6 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ConnectorFunctions supportProcessControlFunction(ProcessControlFunction function) {
         processControlFunction = function;
-        return this;
-    }
-
-    public ConnectorFunctions supportConsumeMessageFunction(ConsumeMessageFunction function) {
-        consumeMessageFunction = function;
         return this;
     }
 
@@ -632,15 +626,12 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
         return exportEventSqlFunction;
     }
 
+
     public FlushOffsetFunction getFlushOffsetFunction() {
         return flushOffsetFunction;
     }
 
     public ProcessControlFunction getProcessControlFunction() {
         return processControlFunction;
-    }
-
-    public ConsumeMessageFunction getConsumeMessageFunction() {
-        return consumeMessageFunction;
     }
 }
