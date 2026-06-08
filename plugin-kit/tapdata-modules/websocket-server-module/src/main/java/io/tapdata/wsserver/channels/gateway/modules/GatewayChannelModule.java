@@ -112,6 +112,7 @@ public class GatewayChannelModule implements MemoryFetcher {
             String nodeId = (String) claims.get("nodeId");
             String userId = (String) claims.get("uid");
             String currentNodeId = CommonUtils.getProperty("tapdata_node_id");
+            TapLogger.info(TAG, "Gateway identity received, service {}, clientId {}, issuedNodeId {}, connectedNodeId {}, uid {}", service, clientId, nodeId, currentNodeId, userId);
 //            if(currentNodeId != null && !currentNodeId.equals(nodeId)) {
 //                identityReceivedEvent.closeChannel(identity.getId(), WSErrors.ERROR_WRONG_NODE, FormatUtils.format("Visited wrong node {}, current node is {}", nodeId, currentNodeId));
 //                return;

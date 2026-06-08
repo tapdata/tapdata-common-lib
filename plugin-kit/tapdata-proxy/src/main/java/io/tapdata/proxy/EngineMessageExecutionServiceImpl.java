@@ -189,23 +189,30 @@ public class EngineMessageExecutionServiceImpl implements EngineMessageExecution
 		}
 
 		Throwable error = null;
-		if(!list.isEmpty()) {
-			RandomDraw randomDraw = new RandomDraw(list.size());
+		List<String> availableNodeIds = availableNodeIds(list);
+		if(!availableNodeIds.isEmpty()) {
+			RandomDraw randomDraw = new RandomDraw(availableNodeIds.size());
 			int index;
 			while ((index = randomDraw.next()) != -1) {
-				String id = list.get(index);
+				String id = availableNodeIds.get(index);
 				NodeConnection nodeConnection = nodeConnectionFactory.getNodeConnection(id);
-				if (nodeConnection != null && nodeConnection.isReady() && nodeHealthManager.getAliveNode(id) != null) {
-					try {
-						engineMessage.setOtherTMIpPort(nodeConnection.getWorkingIpPort());
-						//noinspection unchecked
-						T response = nodeConnection.send(type, engineMessage, tClass);
-						biConsumer.accept(response, null);
-						return;
-					} catch (Throwable ioException) {
-						TapLogger.info(TAG, "Send to nodeId {} failed {} and will try next, command {}", id, ioException.getMessage(), engineMessage);
-						error = ioException;
-					}
+				if(nodeConnection == null) {
+					TapLogger.debug(TAG, "Skip nodeId {} because connection is null", id);
+					continue;
+				}
+				if(!waitConnectionReady(id, nodeConnection)) {
+					error = new CoreException(NetErrors.NO_AVAILABLE_ENGINE, "Node connection is not ready for nodeId " + id);
+					continue;
+				}
+				try {
+					engineMessage.setOtherTMIpPort(nodeConnection.getWorkingIpPort());
+					//noinspection unchecked
+					T response = nodeConnection.send(type, engineMessage, tClass);
+					biConsumer.accept(response, null);
+					return;
+				} catch (Throwable ioException) {
+					TapLogger.info(TAG, "Send to nodeId {} failed {} and will try next, command {}", id, ioException.getMessage(), engineMessage);
+					error = ioException;
 				}
 			}
 		}
@@ -214,6 +221,50 @@ public class EngineMessageExecutionServiceImpl implements EngineMessageExecution
 		} else {
 			biConsumer.accept(null, new CoreException(NetErrors.NO_AVAILABLE_ENGINE, "No available engine"));
 		}
+	}
+
+	private List<String> availableNodeIds(List<String> nodeIds) {
+		List<String> availableNodeIds = new ArrayList<>();
+		if(nodeIds == null)
+			return availableNodeIds;
+		for(String nodeId : nodeIds) {
+			if(nodeId == null)
+				continue;
+			NodeHandler nodeHandler = nodeHealthManager.getAliveNode(nodeId);
+			if(nodeHandler == null || nodeHandler.getNodeHealth() == null) {
+				TapLogger.debug(TAG, "Skip nodeId {} because it is not alive", nodeId);
+				continue;
+			}
+			NodeHealth nodeHealth = nodeHandler.getNodeHealth();
+			if(nodeHealth.getOnline() == null || nodeHealth.getOnline() <= 0) {
+				TapLogger.debug(TAG, "Skip nodeId {} because online count is {}", nodeId, nodeHealth.getOnline());
+				continue;
+			}
+			NodeConnection nodeConnection = nodeConnectionFactory.getNodeConnection(nodeId);
+			if(nodeConnection == null) {
+				TapLogger.debug(TAG, "Skip nodeId {} because connection is null", nodeId);
+				continue;
+			}
+			availableNodeIds.add(nodeId);
+		}
+		return availableNodeIds;
+	}
+
+	private boolean waitConnectionReady(String nodeId, NodeConnection nodeConnection) {
+		int waitMillis = CommonUtils.getPropertyInt("tapdata_node_connection_ready_wait_millis", 5000);
+		long deadline = System.currentTimeMillis() + waitMillis;
+		while(!nodeConnection.isReady() && System.currentTimeMillis() < deadline) {
+			try {
+				Thread.sleep(50L);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return false;
+			}
+		}
+		boolean ready = nodeConnection.isReady();
+		if(!ready)
+			TapLogger.debug(TAG, "Skip nodeId {} because connection is not ready after {} ms, connection {}", nodeId, waitMillis, nodeConnection);
+		return ready;
 	}
 
 	@Override
