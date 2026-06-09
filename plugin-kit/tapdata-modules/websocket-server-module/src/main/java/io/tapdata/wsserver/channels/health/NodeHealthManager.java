@@ -12,6 +12,7 @@ import io.tapdata.modules.api.net.error.NetErrors;
 import io.tapdata.modules.api.net.service.node.NodeHealthService;
 import io.tapdata.modules.api.net.service.node.NodeRegistryService;
 import io.tapdata.modules.api.net.service.ProxySubscriptionService;
+import io.tapdata.modules.api.net.service.node.connection.NodeConnection;
 import io.tapdata.modules.api.net.service.node.connection.NodeConnectionFactory;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -135,6 +136,18 @@ public class NodeHealthManager implements MemoryFetcher {
 					NodeHealth existingNodeHealth = existingNodeHandler.getNodeHealth();
 					if(existingNodeHealth != null)
 						existingNodeHealth.clone(nodeHealth);
+					NodeRegistry latestNodeRegistry = nodeRegistryService.get(nodeHealth.getId());
+					if(latestNodeRegistry != null) {
+						NodeRegistry oldNodeRegistry = existingNodeHandler.getNodeRegistry();
+						existingNodeHandler.setNodeRegistry(latestNodeRegistry);
+						if(registryConnectionInfoChanged(oldNodeRegistry, latestNodeRegistry)) {
+							NodeConnection nodeConnection = nodeConnectionFactory.removeNodeConnection(nodeHealth.getId());
+							if(nodeConnection != null)
+								nodeConnection.close();
+							if(newNodeConsumer != null)
+								newNodeConsumer.accept(latestNodeRegistry);
+						}
+					}
 				}
 				if(newAdded.get() != null && newNodeConsumer != null) {
 					newNodeConsumer.accept(newAdded.get());
@@ -160,6 +173,18 @@ public class NodeHealthManager implements MemoryFetcher {
 				}
 			}
 		}
+	}
+
+	private boolean registryConnectionInfoChanged(NodeRegistry oldNodeRegistry, NodeRegistry latestNodeRegistry) {
+		if(oldNodeRegistry == latestNodeRegistry)
+			return false;
+		if(oldNodeRegistry == null || latestNodeRegistry == null)
+			return true;
+		return !Objects.equals(oldNodeRegistry.getInstanceId(), latestNodeRegistry.getInstanceId())
+				|| !Objects.equals(oldNodeRegistry.getIps(), latestNodeRegistry.getIps())
+				|| !Objects.equals(oldNodeRegistry.getHttpPort(), latestNodeRegistry.getHttpPort())
+				|| !Objects.equals(oldNodeRegistry.getWsPort(), latestNodeRegistry.getWsPort())
+				|| !Objects.equals(oldNodeRegistry.getType(), latestNodeRegistry.getType());
 	}
 
 	public boolean isNodeAlive(String nodeId) {

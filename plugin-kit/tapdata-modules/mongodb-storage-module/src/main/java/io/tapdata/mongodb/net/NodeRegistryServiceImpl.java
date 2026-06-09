@@ -19,7 +19,12 @@ public class NodeRegistryServiceImpl implements NodeRegistryService {
 	private NodeRegistryDAO nodeRegistryDAO;
 	@Override
 	public void save(NodeRegistry nodeRegistry) {
-		nodeRegistryDAO.insertOne(new NodeRegistryEntity(nodeRegistry.id(), nodeRegistry));
+		String nodeId = nodeRegistry.id();
+		nodeRegistryDAO.upsertOne(
+				new Document(FIELD_ID, nodeId),
+				new Document("$set", new Document(NodeRegistryEntity.FIELD_NODE, nodeRegistry))
+						.append("$setOnInsert", new Document(FIELD_ID, nodeId))
+		);
 	}
 
 	@Override

@@ -37,6 +37,11 @@ import org.reflections.Reflections;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ConfigurationBuilder;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -159,7 +164,8 @@ public class GatewaySessionManager implements HealthWeightListener, MemoryFetche
         IPHolder ipHolder = new IPHolder();
         ipHolder.init();
         int httpPort = CommonUtils.getPropertyInt("tapdata_proxy_server_port", 3000); //TODO should read from TM config.
-        nodeRegistry = new NodeRegistry().ips(ipHolder.getIps()).httpPort(httpPort).wsPort(webSocketManager.getWebSocketProperties().getPort()).type("proxy").time(System.currentTimeMillis());
+        String instanceId = resolveProxyInstanceId();
+        nodeRegistry = new NodeRegistry().instanceId(instanceId).ips(ipHolder.getIps()).httpPort(httpPort).wsPort(webSocketManager.getWebSocketProperties().getPort()).type("proxy").time(System.currentTimeMillis());
         CommonUtils.setProperty("tapdata_node_id", nodeRegistry.id());
         nodeRegistryService.save(nodeRegistry);
         
@@ -171,6 +177,48 @@ public class GatewaySessionManager implements HealthWeightListener, MemoryFetche
                 nodeConnection.close();
         });
         nodeHealthManager.start(this);
+    }
+
+    private String resolveProxyInstanceId() {
+        String instanceId = CommonUtils.getProperty("tapdata_proxy_instance_id");
+        if(StringUtils.isNotBlank(instanceId))
+            return instanceId.trim();
+
+        instanceId = System.getenv("POD_NAME");
+        if(StringUtils.isNotBlank(instanceId))
+            return instanceId.trim();
+
+        instanceId = System.getenv("HOSTNAME");
+        if(StringUtils.isNotBlank(instanceId))
+            return instanceId.trim();
+
+        Path path = resolveProxyInstanceIdPath();
+        try {
+            if(Files.exists(path)) {
+                String saved = new String(Files.readAllBytes(path), StandardCharsets.UTF_8).trim();
+                if(StringUtils.isNotBlank(saved))
+                    return saved;
+            }
+            String generated = UUID.randomUUID().toString().replace("-", "");
+            Path parent = path.getParent();
+            if(parent != null)
+                Files.createDirectories(parent);
+            Files.write(path, generated.getBytes(StandardCharsets.UTF_8));
+            return generated;
+        } catch (IOException e) {
+            TapLogger.warn(TAG, "Resolve proxy instance id from {} failed, use process unique id, {}", path, e.getMessage());
+            return CommonUtils.processUniqueId();
+        }
+    }
+
+    private Path resolveProxyInstanceIdPath() {
+        String path = CommonUtils.getProperty("tapdata_proxy_instance_id_file");
+        if(StringUtils.isNotBlank(path))
+            return Paths.get(path);
+        String workDir = System.getenv("TAPDATA_WORK_DIR");
+        if(StringUtils.isBlank(workDir))
+            workDir = System.getProperty("user.dir", ".");
+        return Paths.get(workDir, ".proxy-instance-id");
     }
 
     private void handleScanRoomSessionState(GatewaySessionManager gatewaySessionManager, StateMachine<Integer, GatewaySessionManager> integerGatewaySessionManagerStateMachine) {
