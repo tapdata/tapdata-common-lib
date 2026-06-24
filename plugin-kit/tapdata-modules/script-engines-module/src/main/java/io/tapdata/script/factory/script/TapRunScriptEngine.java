@@ -4,10 +4,7 @@ import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import io.tapdata.entity.script.ScriptOptions;
 import io.tapdata.pdk.apis.exception.NotSupportedException;
 import io.tapdata.pdk.core.utils.CommonUtils;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Engine;
-import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.*;
 
 import javax.script.Bindings;
 import javax.script.Invocable;
@@ -18,10 +15,10 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
@@ -29,6 +26,45 @@ public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
     private final Invocable invocable;
     private final String buildInScript;
     private ClassLoader classLoader;
+
+    public static final HostAccess SANDBOX_HOST_ACCESS = HostAccess.newBuilder()
+            .allowPublicAccess(true)
+            .allowMapAccess(true)
+            .allowListAccess(true)
+            .allowArrayAccess(true)
+            .allowIterableAccess(true)
+            .allowIteratorAccess(true)
+            .denyAccess(Class.class)
+            .denyAccess(ClassLoader.class, true)
+            .denyAccess(File.class, true)
+            .denyAccess(ProcessBuilder.class, true)
+            .denyAccess(Runtime.class, true)
+            .denyAccess(System.class)
+            .targetTypeMapping(Value.class, Object.class,
+                    v -> v.hasArrayElements() && v.hasMembers(), v -> v.as(List.class))
+            .build();
+
+    public static final Set<String> ALLOWED_HOST_CLASSES = new HashSet<>(Arrays.asList(
+            "java.util.HashMap",
+            "java.util.LinkedHashMap",
+            "java.util.ArrayList",
+            "java.util.Collections",
+            "java.lang.Thread",
+            "java.util.Date",
+            "com.tapdata.constant.DateUtil",
+            "com.tapdata.constant.UUIDGenerator",
+            "com.tapdata.constant.JSONUtil",
+            "com.tapdata.constant.HanLPUtil",
+            "com.tapdata.constant.MD5Util",
+            "com.tapdata.constant.MapUtil",
+            "com.tapdata.processor.util.Util",
+            "io.tapdata.entity.schema.value.DateTime",
+            "com.tapdata.constant.NetworkUtil",
+            "com.tapdata.processor.util.CustomRest",
+            "com.tapdata.http.HttpUtil",
+            "com.tapdata.processor.util.CustomTcp",
+            "com.tapdata.processor.util.CustomMongodb"
+    ));
 
     public Invocable invocable() {
         return this.invocable;
@@ -53,13 +89,14 @@ public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
                                         .option("engine.WarnInterpreterOnly", "false")
                                         .build(),
                                 Context.newBuilder("js")
-                                        .allowAllAccess(true)
-                                        .allowHostAccess(HostAccess.newBuilder(HostAccess.ALL)
-                                                .targetTypeMapping(Value.class, Object.class
-                                                        , v -> v.hasArrayElements() && v.hasMembers()
-                                                        , v -> v.as(List.class)
-                                                ).build()
-                                        )
+                                        .allowAllAccess(false)
+                                        .allowHostAccess(SANDBOX_HOST_ACCESS)
+                                        .allowHostClassLookup(TapRunScriptEngine::isAllowedHostClass)
+                                        .hostClassFilter(TapRunScriptEngine::isAllowedHostClass)
+                                        .allowNativeAccess(false)
+                                        .allowCreateProcess(false)
+                                        .allowEnvironmentAccess(EnvironmentAccess.NONE)
+                                        .allowPolyglotAccess(PolyglotAccess.NONE)
                         );
             } else {
                 scriptEngine = new ScriptEngineManager().getEngineByName(jsEngineEnum.engineName());
@@ -70,6 +107,10 @@ public class TapRunScriptEngine implements ScriptEngine, Invocable, Closeable {
             Thread.currentThread().setContextClassLoader(classLoader);
         }
         return scriptEngine;
+    }
+
+    public static boolean isAllowedHostClass(String className) {
+        return ALLOWED_HOST_CLASSES.contains(className);
     }
 
     public Object applyClassLoaderContext(Callable<?> callable) {
