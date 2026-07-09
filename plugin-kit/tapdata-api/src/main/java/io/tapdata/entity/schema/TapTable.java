@@ -544,14 +544,4 @@ public class TapTable extends TapItem<TapField> {
 		this.type = type;
 	}
 
-	private boolean isView;
-
-	public boolean isView() {
-		return isView;
-	}
-
-	public void setView(boolean isView) {
-		this.isView = isView;
-	}
-
 }
