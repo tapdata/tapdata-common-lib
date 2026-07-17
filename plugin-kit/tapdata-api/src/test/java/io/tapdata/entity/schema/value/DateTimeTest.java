@@ -382,6 +382,7 @@ class DateTimeTest {
 		void testToJSON() {
 			DateTime dt = new DateTime(testInstant);
 			assertEquals(dt.toISOString(), dt.toJSON());
+			assertEquals(dt.toISOString(), dt.toJSON("salesDateTime"));
 		}
 
 		@Test

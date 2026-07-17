@@ -1081,6 +1081,15 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     }
 
     /**
+     * JS Date.toJSON(key) - JSON.stringify passes the current property key.
+     *
+     * @param key property key supplied by JSON.stringify, ignored by Date
+     */
+    public String toJSON(String key) {
+        return toJSON();
+    }
+
+    /**
      * JS Date.toLocaleDateString() - returns locale-sensitive date string
      */
     public String toLocaleDateString() {
