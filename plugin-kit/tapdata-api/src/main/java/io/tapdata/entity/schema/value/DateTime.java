@@ -495,6 +495,9 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     }
 
     public Instant toInstant() {
+        if (illegal()) {
+            return null;
+        }
         return Instant.ofEpochSecond(seconds, nano);
     }
 
@@ -502,20 +505,36 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
         TimeZone theTimeZone = timeZone;
         if(theTimeZone == null)
             theTimeZone = TimeZone.getDefault();
+        if (illegal()) {
+            return null;
+        }
         return ZonedDateTime.ofInstant(toInstant(), theTimeZone.toZoneId());
     }
 
+    boolean illegal() {
+        return null == seconds || null == nano;
+    }
+
     public Date toDate() {
+        if (illegal()) {
+            return null;
+        }
         return Date.from(toInstant());
     }
 
     public java.sql.Date toSqlDate() {
+        if (illegal()) {
+            return null;
+        }
         return java.sql.Date.valueOf(toLocalDateTime().toLocalDate());
     }
 
     public Long toLong() {
         if (fraction > 9 || fraction < 0) {
             throw new IllegalArgumentException("Fraction must be 0~9");
+        }
+        if (illegal()) {
+            throw new IllegalArgumentException("Illegal DateTime value for operation");
         }
         long time;
         time = seconds * ((Double) Math.pow(10, fraction)).longValue();
@@ -561,20 +580,29 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
     }
 
     public String toFormatString(String format) {
+        if (illegal()) {
+            return null;
+        }
         return new SimpleDateFormat(format).format(new Date(toTimestamp().getTime() + (timeZone == null ? 0 : timeZone.getRawOffset())));
     }
 
     public String toFormatStringV2(String format) {
+        if (illegal()) {
+            return null;
+        }
         return DateTimeFormatter.ofPattern(format).format(toLocalDateTime());
     }
 
     public LocalDateTime toLocalDateTime() {
+        if (illegal()) {
+            return null;
+        }
         return LocalDateTime.ofEpochSecond(seconds, nano, zoneOffset());
     }
 
     public ZoneOffset zoneOffset() {
         ZoneOffset zoneOffset = ZoneOffset.UTC;
-        if (null != timeZone) {
+        if (null != timeZone && null != seconds) {
             zoneOffset = ZoneOffset.ofTotalSeconds(timeZone.getOffset(seconds) / 1000);
         }
         return zoneOffset;
@@ -767,6 +795,9 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#compareTo(Date)
      */
     public int compareTo(Date anotherDate) {
+        if (illegal()) {
+            throw new IllegalArgumentException("Illegal DateTime value for operation");
+        }
         return toDate().compareTo(anotherDate);
     }
 
@@ -774,28 +805,44 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#getDate()
      */
     public int getDate() {
-        return toZonedDateTime().getDayOfMonth();
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getDayOfMonth();
     }
 
     /**
      * @see Date#getDay()
      */
     public int getDay() {
-        return toZonedDateTime().getDayOfWeek().getValue() % 7;
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getDayOfWeek().getValue() % 7;
     }
 
     /**
      * JS Date.getFullYear() - returns the 4-digit year
      */
     public int getFullYear() {
-        return toZonedDateTime().getYear();
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getYear();
     }
 
     /**
      * @see Date#getHours()
      */
     public int getHours() {
-        return toZonedDateTime().getHour();
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getHour();
     }
 
     /**
@@ -809,28 +856,44 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#getMinutes()
      */
     public int getMinutes() {
-        return toZonedDateTime().getMinute();
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getMinute();
     }
 
     /**
      * @see Date#getMonth()
      */
     public int getMonth() {
-        return toZonedDateTime().getMonthValue() - 1;
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getMonthValue() - 1;
     }
 
     /**
      * JS Date.getSeconds() / java.util.Date.getSeconds() - returns second of minute (0-59)
      */
     public int getDateSeconds() {
-        return toZonedDateTime().getSecond();
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getSecond();
     }
 
     /**
      * @see Date#getTime()
      */
     public long getTime() {
-        return toDate().getTime();
+        Date date = toDate();
+        if (null == date) {
+            return 0;
+        }
+        return date.getTime();
     }
 
     /**
@@ -838,35 +901,55 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * Returns offset in minutes (positive = behind UTC, negative = ahead of UTC, matching JS convention)
      */
     public int getTimezoneOffset() {
-        return -toZonedDateTime().getOffset().getTotalSeconds() / 60;
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return -zonedDateTime.getOffset().getTotalSeconds() / 60;
     }
 
     /**
      * JS Date.getUTCDate() - returns day of month (1-31) in UTC
      */
     public int getUTCDate() {
-        return toInstant().atZone(ZoneOffset.UTC).getDayOfMonth();
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getDayOfMonth();
     }
 
     /**
      * JS Date.getUTCDay() - returns day of week (0=Sunday, 6=Saturday) in UTC
      */
     public int getUTCDay() {
-        return toInstant().atZone(ZoneOffset.UTC).getDayOfWeek().getValue() % 7;
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getDayOfWeek().getValue() % 7;
     }
 
     /**
      * JS Date.getUTCFullYear() - returns 4-digit year in UTC
      */
     public int getUTCFullYear() {
-        return toInstant().atZone(ZoneOffset.UTC).getYear();
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getYear();
     }
 
     /**
      * JS Date.getUTCHours() - returns hours (0-23) in UTC
      */
     public int getUTCHours() {
-        return toInstant().atZone(ZoneOffset.UTC).getHour();
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getHour();
     }
 
     /**
@@ -880,35 +963,55 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.getUTCMinutes() - returns minutes (0-59) in UTC
      */
     public int getUTCMinutes() {
-        return toInstant().atZone(ZoneOffset.UTC).getMinute();
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getMinute();
     }
 
     /**
      * JS Date.getUTCMonth() - returns month (0-11) in UTC
      */
     public int getUTCMonth() {
-        return toInstant().atZone(ZoneOffset.UTC).getMonthValue() - 1;
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getMonthValue() - 1;
     }
 
     /**
      * JS Date.getUTCSeconds() - returns seconds (0-59) in UTC
      */
     public int getUTCSeconds() {
-        return toInstant().atZone(ZoneOffset.UTC).getSecond();
+        Instant instant = toInstant();
+        if (null == instant) {
+            return 0;
+        }
+        return instant.atZone(ZoneOffset.UTC).getSecond();
     }
 
     /**
      * @see Date#getYear()
      */
     public int getYear() {
-        return toZonedDateTime().getYear() - 1900;
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return 0;
+        }
+        return zonedDateTime.getYear() - 1900;
     }
 
     /**
      * @see Date#setDate(int)
      */
     public void setDate(int date) {
-        ZonedDateTime zdt = toZonedDateTime().withDayOfMonth(date);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withDayOfMonth(date);
         updateFromZonedDateTime(zdt);
     }
 
@@ -916,7 +1019,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setSeconds() / java.util.Date.setSeconds() - sets second of minute (0-59)
      */
     public void setDateSeconds(int seconds) {
-        ZonedDateTime zdt = toZonedDateTime().withSecond(seconds);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withSecond(seconds);
         updateFromZonedDateTime(zdt);
     }
 
@@ -925,6 +1032,9 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      */
     public void setFullYear(int year) {
         ZonedDateTime zdt = toZonedDateTime();
+        if (null == zdt) {
+            return;
+        }
         zdt = zdt.withYear(year);
         updateFromZonedDateTime(zdt);
     }
@@ -933,7 +1043,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#setHours(int)
      */
     public void setHours(int hours) {
-        ZonedDateTime zdt = toZonedDateTime().withHour(hours);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withHour(hours);
         updateFromZonedDateTime(zdt);
     }
 
@@ -949,7 +1063,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#setMinutes(int)
      */
     public void setMinutes(int minutes) {
-        ZonedDateTime zdt = toZonedDateTime().withMinute(minutes);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withMinute(minutes);
         updateFromZonedDateTime(zdt);
     }
 
@@ -957,7 +1075,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#setMonth(int)
      */
     public void setMonth(int month) {
-        ZonedDateTime zdt = toZonedDateTime().withMonth(month + 1);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withMonth(month + 1);
         updateFromZonedDateTime(zdt);
     }
 
@@ -977,7 +1099,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCDate() - sets day of month (1-31) in UTC
      */
     public void setUTCDate(int dayOfMonth) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withDayOfMonth(dayOfMonth);
         updateFromInstant(zdt.toInstant());
     }
@@ -986,7 +1112,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCFullYear() - sets the full year in UTC
      */
     public void setUTCFullYear(int year) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withYear(year);
         updateFromInstant(zdt.toInstant());
     }
@@ -995,7 +1125,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCHours() - sets the hours (0-23) in UTC
      */
     public void setUTCHours(int hours) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withHour(hours);
         updateFromInstant(zdt.toInstant());
     }
@@ -1011,7 +1145,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCMinutes() - sets minutes (0-59) in UTC
      */
     public void setUTCMinutes(int minutes) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withMinute(minutes);
         updateFromInstant(zdt.toInstant());
     }
@@ -1020,7 +1158,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCMonth() - sets month (0-11) in UTC
      */
     public void setUTCMonth(int month) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withMonth(month + 1);
         updateFromInstant(zdt.toInstant());
     }
@@ -1029,7 +1171,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.setUTCSeconds() - sets seconds (0-59) in UTC
      */
     public void setUTCSeconds(int seconds) {
-        ZonedDateTime zdt = toInstant().atZone(ZoneOffset.UTC);
+        Instant instant = toInstant();
+        if (null == instant) {
+            return;
+        }
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
         zdt = zdt.withSecond(seconds);
         updateFromInstant(zdt.toInstant());
     }
@@ -1038,7 +1184,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#setYear(int)
      */
     public void setYear(int year) {
-        ZonedDateTime zdt = toZonedDateTime().withYear(year + 1900);
+        ZonedDateTime zonedDateTime = toZonedDateTime();
+        if (null == zonedDateTime) {
+            return;
+        }
+        ZonedDateTime zdt = zonedDateTime.withYear(year + 1900);
         updateFromZonedDateTime(zdt);
     }
 
@@ -1046,14 +1196,22 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * @see Date#toGMTString()
      */
     public String toGMTString() {
-        return toDate().toGMTString();
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        return date.toGMTString();
     }
 
     /**
      * @see Date#toLocaleString()
      */
     public String toLocaleString() {
-        return toDate().toLocaleString();
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        return date.toLocaleString();
     }
 
     /**
@@ -1062,6 +1220,9 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      */
     public String toDateString() {
         ZonedDateTime zdt = toZonedDateTime();
+        if (null == zdt) {
+            return null;
+        }
         return DateTimeFormatter.ofPattern("EEE MMM dd yyyy", java.util.Locale.US).format(zdt);
     }
 
@@ -1069,8 +1230,12 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.toISOString() - returns ISO 8601 format string in UTC
      */
     public String toISOString() {
+        Instant instant = toInstant();
+        if (null == instant) {
+            return null;
+        }
         return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                .format(toInstant().atZone(ZoneOffset.UTC));
+                .format(instant.atZone(ZoneOffset.UTC));
     }
 
     /**
@@ -1093,21 +1258,33 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.toLocaleDateString() - returns locale-sensitive date string
      */
     public String toLocaleDateString() {
-        return java.text.DateFormat.getDateInstance().format(toDate());
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        return java.text.DateFormat.getDateInstance().format(date);
     }
 
     /**
      * JS Date.toLocaleTimeString() - returns locale-sensitive time string
      */
     public String toLocaleTimeString() {
-        return java.text.DateFormat.getTimeInstance().format(toDate());
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        return java.text.DateFormat.getTimeInstance().format(date);
     }
 
     /**
      * JS Date.toTimeString() - returns time portion as human-readable string
      */
     public String toTimeString() {
-        String full = toDate().toString();
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        String full = date.toString();
         // java.util.Date.toString() format: "dow mon dd hh:mm:ss zzz yyyy"
         // time part starts at index 11
         int timeStart = full.indexOf(':') - 2;
@@ -1118,7 +1295,11 @@ public class DateTime implements Serializable, JavaCustomSerializer, Comparable<
      * JS Date.toUTCString() - returns UTC date string
      */
     public String toUTCString() {
-        return toDate().toGMTString();
+        Date date = toDate();
+        if (null == date) {
+            return null;
+        }
+        return date.toGMTString();
     }
 
     /**
