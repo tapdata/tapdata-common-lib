@@ -44,6 +44,7 @@ public abstract class TapRecordEvent extends TapBaseEvent {
 			recordEvent.connector = connector;
             recordEvent.connectorVersion = connectorVersion;
             recordEvent.exactlyOnceId = exactlyOnceId;
+            recordEvent.containsIllegalDate = containsIllegalDate;
         }
     }
 
