@@ -66,4 +66,31 @@ public interface Log {
 
   void fatal(String message, Object... params);
 
+  default void alert(CharSequence message) {
+    alert(String.valueOf(message));
+  }
+
+  default void alert(String message) {
+    alert(message, new Object());
+  }
+
+  default void alert(Object message) {
+    alert(message.toString());
+  }
+
+  /**
+   * Same calling shape as {@link #error(String, Object...)}. Writes an ERROR task log;
+   * the engine may also notify if the task alert is enabled. Default degrades to error().
+   */
+  default void alert(String message, Object... params) {
+    error(message, params);
+  }
+
+  /**
+   * Same calling shape as {@link #error(String, Throwable)}. Default degrades to error().
+   */
+  default void alert(String message, Throwable throwable) {
+    error(message, throwable);
+  }
+
 }

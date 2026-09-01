@@ -42,6 +42,14 @@ public class TapLogger {
         void fatal(String log);
 
         void memory(String memoryLog);
+
+        /**
+         * Same shape as {@link #error(String)}. Default degrades to error() so existing listeners
+         * remain source-compatible.
+         */
+        default void alert(String log) {
+            error(log);
+        }
     }
 
     public static String getClassTag(Class<?> clazz) {
@@ -116,6 +124,32 @@ public class TapLogger {
             logListener.fatal(log);
         else
             System.out.println("[FATAL] " + log);
+    }
+
+    public static void alert(String tag, String msg, Object... params) {
+        if(!enable || level > LEVEL_ERROR) return;
+
+        String log = getLogMsg(tag, FormatUtils.format(msg, params));
+        if (logListener != null)
+            logListener.alert(log);
+        else
+            System.out.println("[ERROR] " + log);
+    }
+
+    public static void alert(String tag, Throwable throwable, String msg, Object... params) {
+        if(!enable || level > LEVEL_ERROR) return;
+
+        String formatted = FormatUtils.format(msg, params);
+        if (throwable != null && formatted != null) {
+            formatted = formatted + ": " + throwable.getMessage();
+        } else if (throwable != null && formatted == null) {
+            formatted = throwable.getMessage();
+        }
+        String log = getLogMsg(tag, formatted);
+        if (logListener != null)
+            logListener.alert(log);
+        else
+            System.out.println("[ERROR] " + log);
     }
 
     public static void memory(String tag, String msg, Object... params) {

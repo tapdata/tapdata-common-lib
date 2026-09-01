@@ -49,4 +49,14 @@ public class TapLog implements Log {
     TapLogger.fatal(TAG, message, params);
   }
 
+  @Override
+  public void alert(String message, Object... params) {
+    TapLogger.alert(TAG, message, params);
+  }
+
+  @Override
+  public void alert(String message, Throwable throwable) {
+    TapLogger.alert(TAG, throwable, message);
+  }
+
 }
