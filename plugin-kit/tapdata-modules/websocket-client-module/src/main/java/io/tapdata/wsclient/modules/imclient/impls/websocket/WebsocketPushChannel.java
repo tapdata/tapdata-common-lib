@@ -217,7 +217,7 @@ public class WebsocketPushChannel extends PushChannel {
         if(imClient.getCachedAccessToken() == null) {
             imClient.setCachedAccessToken(refreshAccessToken(baseUrl));
         }
-        String theUrl = baseUrl + "?access_token=" + imClient.getCachedAccessToken();
+        String theUrl = baseUrl;
         TapEngineUtils tapEngineUtils = InstanceFactory.instance(TapEngineUtils.class);
         if(tapEngineUtils != null) {
             theUrl = tapEngineUtils.signUrl("POST", theUrl, jsonStr);
@@ -225,6 +225,7 @@ public class WebsocketPushChannel extends PushChannel {
 
         try {
             String finalTheUrl = theUrl;
+            headers.put("Authorization", "Bearer " + imClient.getCachedAccessToken());
             if(imClient.getCachedCookie() != null) {
                 headers.put("Cookie", imClient.getCachedCookie());
             }
@@ -233,7 +234,7 @@ public class WebsocketPushChannel extends PushChannel {
                     String newToken = refreshAccessToken(baseUrl);
                     imClient.setCachedAccessToken(newToken);
                 }
-                throw new CoreException(NetErrors.WEBSOCKET_LOGIN_FAILED, "Login failed, accessToken {}, code {} message {} for theUrl {}", imClient.getCachedAccessToken(), code, message, finalTheUrl);
+                throw new CoreException(NetErrors.WEBSOCKET_LOGIN_FAILED, "Login failed, code {} message {} for theUrl {}", code, message, finalTheUrl);
             });
         } catch (IOException e) {
             throw new CoreException(NetErrors.WEBSOCKET_LOGIN_FAILED, "Login url {} loginObj {} headers {} failed, {}", baseUrl, loginObj, headers, e.getMessage());
@@ -357,8 +358,12 @@ public class WebsocketPushChannel extends PushChannel {
 
             TapLogger.info(TAG, "Connect uri {} wsPort {}", uri, wsPort);
             group = new NioEventLoopGroup(20);
+            DefaultHttpHeaders wsHeaders = new DefaultHttpHeaders();
+            if (imClient.getCachedAccessToken() != null) {
+                wsHeaders.add("Authorization", "Bearer " + imClient.getCachedAccessToken());
+            }
             final WebSocketClientHandler handler = new WebSocketClientHandler(null, WebSocketClientHandshakerFactory
-                    .newHandshaker(uri, WebSocketVersion.V13, null, false, new DefaultHttpHeaders(), 50 * 1024 * 1024));
+                    .newHandshaker(uri, WebSocketVersion.V13, null, false, wsHeaders, 50 * 1024 * 1024));
             handler.pushChannel = this;
 
             Bootstrap b = new Bootstrap();
