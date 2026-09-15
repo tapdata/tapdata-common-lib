@@ -601,11 +601,15 @@ public class TapNumberMapping extends TapMapping {
             TapMoney tapMoney = (TapMoney) tapType;
             theFinalExpression = typeExpression;
             Integer precision = tapMoney.getPrecision();
-            if (precision != null){
-                theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
-            }
             Integer scale = tapMoney.getScale();
-            if (scale != null){
+            if (precision != null && scale != null){
+                // The precision/scale group is optional in a type expression.  For
+                // TapMoney, both values must be present before opening that group;
+                // otherwise removeBracketVariables would discard the whole group
+                // after the values had been substituted.
+                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_PRECISION, false);
+                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
+                theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
                 theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
             }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
