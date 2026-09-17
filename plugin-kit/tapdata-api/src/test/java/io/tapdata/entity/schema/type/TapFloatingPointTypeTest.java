@@ -1,5 +1,9 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.impl.FromTapDoubleCodec;
+import io.tapdata.entity.codec.impl.FromTapFloatCodec;
+import io.tapdata.entity.codec.impl.ToTapDoubleCodec;
+import io.tapdata.entity.codec.impl.ToTapFloatCodec;
 import io.tapdata.entity.schema.value.TapDoubleValue;
 import io.tapdata.entity.schema.value.TapFloatValue;
 import org.junit.jupiter.api.Test;
@@ -43,5 +47,26 @@ class TapFloatingPointTypeTest {
         assertEquals(expected, fluentValue.getValue());
         assertEquals(expected, setterValue.getValue());
         assertEquals(source, new TapDoubleValue(source).getValue());
+    }
+
+    @Test
+    void shouldUseDedicatedCodecsForFloatAndDouble() {
+        double source = 1.234567890123d;
+
+        TapFloatValue floatValue = new ToTapFloatCodec().toTapValue(source, new TapFloat());
+        TapDoubleValue doubleValue = new ToTapDoubleCodec().toTapValue(source, new TapDouble());
+
+        assertEquals((double) ((float) source), floatValue.getValue());
+        assertEquals(source, doubleValue.getValue());
+        assertEquals(Float.valueOf(floatValue.getValue().floatValue()), new FromTapFloatCodec().fromTapValue(floatValue));
+        assertEquals(Double.valueOf(source), new FromTapDoubleCodec().fromTapValue(doubleValue));
+    }
+
+    @Test
+    void shouldRejectUnsupportedFloatSpecialValues() {
+        TapFloat type = new TapFloat().supportsNaN(false).supportsInfinity(false);
+
+        assertEquals(null, new ToTapFloatCodec().toTapValue(Double.NaN, type));
+        assertEquals(null, new ToTapFloatCodec().toTapValue(Double.POSITIVE_INFINITY, type));
     }
 }
