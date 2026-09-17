@@ -28,4 +28,20 @@ class TapFloatingPointTypeTest {
         assertEquals(TapFloat.class, tapFloat.cloneTapType().getClass());
         assertEquals(TapDouble.class, tapDouble.cloneTapType().getClass());
     }
+
+    @Test
+    void shouldQuantizeFloatValueAtEveryValueEntryPoint() {
+        double source = 1.234567890123d;
+        double expected = (double) ((float) source);
+
+        TapFloatValue constructorValue = new TapFloatValue(source);
+        TapFloatValue fluentValue = new TapFloatValue().value(source);
+        TapFloatValue setterValue = new TapFloatValue();
+        setterValue.setValue(source);
+
+        assertEquals(expected, constructorValue.getValue());
+        assertEquals(expected, fluentValue.getValue());
+        assertEquals(expected, setterValue.getValue());
+        assertEquals(source, new TapDoubleValue(source).getValue());
+    }
 }

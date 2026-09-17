@@ -9,6 +9,17 @@ public class TapFloatValue extends AbsBasicTapValue<Double, TapFloat> {
     }
 
     public TapFloatValue(Double value) {
+        setValue(value);
+    }
+
+    @Override
+    public TapFloatValue value(Double value) {
+        setValue(value);
+        return this;
+    }
+
+    @Override
+    public void setValue(Double value) {
         this.value = value == null ? null : (double) value.floatValue();
     }
 
