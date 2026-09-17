@@ -5,6 +5,8 @@ import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.utils.DataMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -67,6 +69,20 @@ class LegacyTapTypeResolverTest {
         assertFalse(resolution.isResolved());
         assertEquals(LegacyTapTypeResolver.LEGACY_FLOAT_TYPE_UNRESOLVED, resolution.getCode());
         assertInstanceOf(TapNumber.class, resolution.getTapType());
+    }
+
+    @Test
+    void shouldResolveAgainstAlreadyLoadedExpressionMapWithoutRebuildingSpec() {
+        DataMap floatType = DataMap.create().kv("to", "TapFloat").kv("bit", 32)
+                .kv("storageBytes", 4).kv("effectivePrecision", 7);
+        Map<String, DataMap> entries = new HashMap<>();
+        entries.put("real", floatType);
+
+        LegacyTapTypeResolution resolution = LegacyTapTypeResolver.resolve(
+                "postgres", legacyField("real"), DefaultExpressionMatchingMap.map(entries));
+
+        assertTrue(resolution.isResolved());
+        assertInstanceOf(TapFloat.class, resolution.getTapType());
     }
 
     private TapField legacyField(String dataType) {

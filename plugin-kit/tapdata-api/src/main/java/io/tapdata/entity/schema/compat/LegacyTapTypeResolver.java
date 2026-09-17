@@ -1,11 +1,14 @@
 package io.tapdata.entity.schema.compat;
 
 import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.utils.DataMap;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +31,42 @@ public final class LegacyTapTypeResolver {
     private LegacyTapTypeResolver() {
     }
 
+    /**
+     * Resolve a legacy field against the connector specification that is already
+     * loaded in the running connection node. This overload deliberately accepts
+     * the runtime expression map so callers do not need to reload a connector
+     * specification or query source metadata.
+     */
+    public static LegacyTapTypeResolution resolve(String connectorId, TapField field,
+                                                   DefaultExpressionMatchingMap sourceSpec) {
+        TapType currentType = field == null ? null : field.getTapType();
+        String sourceType = sourceType(field);
+        if (!(currentType instanceof TapNumber)) {
+            return new LegacyTapTypeResolution(connectorId, sourceType, currentType, true, false,
+                    LEGACY_NUMBER_KEPT, "Field is already represented by a dedicated or non-legacy TapType");
+        }
+        if (sourceSpec != null && sourceType != null) {
+            TypeExprResult<DataMap> result = sourceSpec.get(sourceType);
+            if (result != null) {
+                DataMap mappingInfo = result.getValue();
+                TapMapping mapping = mappingInfo == null ? null
+                        : (TapMapping) mappingInfo.get(TapMapping.FIELD_TYPE_MAPPING);
+                LegacyTapTypeResolution resolved = resolveMapping(connectorId, sourceType, currentType, mapping,
+                        result.getParams());
+                if (resolved != null) {
+                    return resolved;
+                }
+            }
+        }
+        if (looksLikeFloatingPoint(sourceType)) {
+            return new LegacyTapTypeResolution(connectorId, sourceType, currentType, false, true,
+                    LEGACY_FLOAT_TYPE_UNRESOLVED,
+                    "Legacy floating-point field has no reliable in-memory source mapping");
+        }
+        return new LegacyTapTypeResolution(connectorId, sourceType, currentType, true, false,
+                LEGACY_NUMBER_KEPT, "Legacy exact numeric field remains TapNumber");
+    }
+
     public static LegacyTapTypeResolution resolve(String connectorId, TapField field, Map<String, Object> sourceSpec) {
         TapType currentType = field == null ? null : field.getTapType();
         String sourceType = sourceType(field);
@@ -41,12 +80,10 @@ public final class LegacyTapTypeResolver {
         if (mappingInfo != null) {
             try {
                 TapMapping mapping = TapMapping.build(mappingInfo);
-                if (mapping != null) {
-                    TapType resolvedType = mapping.toTapType(sourceType, parameters(sourceType));
-                    if (resolvedType instanceof TapFloat || resolvedType instanceof TapDouble) {
-                        return new LegacyTapTypeResolution(connectorId, sourceType, resolvedType, true, true,
-                                FLOAT_TYPE_RESOLVED, "Legacy TapNumber normalized by the loaded source specification");
-                    }
+                LegacyTapTypeResolution resolved = resolveMapping(connectorId, sourceType, currentType, mapping,
+                        parameters(sourceType));
+                if (resolved != null) {
+                    return resolved;
                 }
             } catch (RuntimeException ignored) {
                 // An invalid or incomplete spec must not turn a legacy number into a guessed float.
@@ -66,11 +103,29 @@ public final class LegacyTapTypeResolver {
         if (field == null) {
             return null;
         }
-        String sourceType = field.getPureDataType();
+        String sourceType = field.getDataType();
         if (sourceType == null || sourceType.trim().isEmpty()) {
-            sourceType = field.getDataType();
+            sourceType = field.getPureDataType();
         }
         return sourceType == null ? null : sourceType.trim();
+    }
+
+    private static LegacyTapTypeResolution resolveMapping(String connectorId, String sourceType,
+                                                           TapType currentType, TapMapping mapping,
+                                                           Map<String, String> params) {
+        if (mapping == null) {
+            return null;
+        }
+        try {
+            TapType resolvedType = mapping.toTapType(sourceType, params == null ? Collections.emptyMap() : params);
+            if (resolvedType instanceof TapFloat || resolvedType instanceof TapDouble) {
+                return new LegacyTapTypeResolution(connectorId, sourceType, resolvedType, true, true,
+                        FLOAT_TYPE_RESOLVED, "Legacy TapNumber normalized by the loaded source specification");
+            }
+        } catch (RuntimeException ignored) {
+            // An invalid or incomplete spec must not turn a legacy number into a guessed float.
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
