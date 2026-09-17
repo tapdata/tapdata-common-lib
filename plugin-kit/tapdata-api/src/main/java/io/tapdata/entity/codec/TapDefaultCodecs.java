@@ -25,6 +25,8 @@ public class TapDefaultCodecs {
     public static final String TAP_ARRAY_VALUE = "TapArrayValue";
     public static final String TAP_YEAR_VALUE = "TapYearValue";
     public static final String TAP_NUMBER_VALUE = "TapNumberValue";
+    public static final String TAP_FLOAT_VALUE = "TapFloatValue";
+    public static final String TAP_DOUBLE_VALUE = "TapDoubleValue";
     public static final String TAP_BOOLEAN_VALUE = "TapBooleanValue";
     public static final String TAP_DATE_TIME_VALUE = "TapDateTimeValue";
     public static final String TAP_BINARY_VALUE = "TapBinaryValue";

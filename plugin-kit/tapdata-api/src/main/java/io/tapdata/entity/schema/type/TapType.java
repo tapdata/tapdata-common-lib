@@ -81,6 +81,10 @@ public abstract class TapType implements Serializable {
                 return TapMap.class;
             case "TapNumber":
                 return TapNumber.class;
+            case "TapFloat":
+                return TapFloat.class;
+            case "TapDouble":
+                return TapDouble.class;
             case "TapRaw":
                 return TapRaw.class;
             case "TapString":
@@ -109,6 +113,14 @@ public abstract class TapType implements Serializable {
 
     public byte getType() {
         return type;
+    }
+
+    /**
+     * Stable schema name for versions that need to distinguish types sharing
+     * the historical numeric protocol code.
+     */
+    public String getTypeName() {
+        return getClass().getSimpleName();
     }
 
     public void setType(byte type) {
