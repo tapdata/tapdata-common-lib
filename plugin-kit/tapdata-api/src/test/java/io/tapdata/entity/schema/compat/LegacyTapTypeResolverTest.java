@@ -85,6 +85,25 @@ class LegacyTapTypeResolverTest {
         assertInstanceOf(TapFloat.class, resolution.getTapType());
     }
 
+    @Test
+    void shouldResolveParameterizedTypeAgainstLoadedExpressionMap() {
+        DataMap floatingType = DataMap.create().kv("to", "TapFloat")
+                .kv("mapping", "TapFloatingPoint")
+                .kv("binaryPrecision", Arrays.asList(1, 53))
+                .kv("defaultBinaryPrecision", 53)
+                .kv("singlePrecision", rule(1, 24))
+                .kv("doublePrecision", rule(25, 53));
+        Map<String, DataMap> entries = new HashMap<>();
+        entries.put("float[($precision)]", floatingType);
+
+        LegacyTapTypeResolution resolution = LegacyTapTypeResolver.resolve(
+                "sqlserver", legacyField("float(53)"), DefaultExpressionMatchingMap.map(entries));
+
+        assertTrue(resolution.isResolved());
+        assertInstanceOf(TapDouble.class, resolution.getTapType());
+        assertEquals(53, ((TapDouble) resolution.getTapType()).getBinaryPrecision());
+    }
+
     private TapField legacyField(String dataType) {
         return new TapField("amount", dataType).tapType(new TapNumber());
     }
