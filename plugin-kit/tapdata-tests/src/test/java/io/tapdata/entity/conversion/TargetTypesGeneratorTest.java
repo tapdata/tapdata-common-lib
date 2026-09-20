@@ -9,6 +9,7 @@ import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapMoney;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.value.TapYearValue;
@@ -220,6 +221,28 @@ class TargetTypesGeneratorTest {
         TapField longtext = nameFieldMap.get("longtext");
         assertEquals("string", longtext.getDataType());
         assertEquals(4294967295L, ((TapString)longtext.getTapType()).getBytes());
+    }
+
+    @Test
+    void moneyTypesShouldKeepPrecisionAndScaleInDecimalTarget() {
+        String targetTypeExpression = "{"
+                + "\"decimal[($precision,$scale)]\":{"
+                + "\"precision\":[1,38],\"defaultPrecision\":10,"
+                + "\"scale\":[0,38],\"defaultScale\":0,\"to\":\"TapNumber\"}}";
+
+        TapField moneyField = field("money", "money")
+                .tapType(tapMoney().precision(19).scale(4));
+        TapField smallMoneyField = field("smallmoney", "smallmoney")
+                .tapType(tapMoney().precision(10).scale(4));
+        TapTable sourceTable = table("test").add(moneyField).add(smallMoneyField);
+
+        TapResult<LinkedHashMap<String, TapField>> result = targetTypesGenerator.convert(
+                sourceTable.getNameFieldMap(),
+                DefaultExpressionMatchingMap.map(targetTypeExpression),
+                targetCodecFilterManager);
+
+        assertEquals("decimal(19,4)", result.getData().get("money").getDataType());
+        assertEquals("decimal(10,4)", result.getData().get("smallmoney").getDataType());
     }
 
     @Test
