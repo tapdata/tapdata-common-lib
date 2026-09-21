@@ -5,6 +5,8 @@ import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.type.TapDouble;
+import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapMoney;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
@@ -364,8 +366,8 @@ public class TapNumberMapping extends TapMapping {
 
     @Override
     public BigDecimal matchingScore(TapField field) {
-        if (field.getTapType() instanceof TapNumber) {
-            TapNumber tapNumber = (TapNumber) field.getTapType();
+        TapNumber tapNumber = asTapNumber(field == null ? null : field.getTapType());
+        if (tapNumber != null) {
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
@@ -472,7 +474,7 @@ public class TapNumberMapping extends TapMapping {
 //                score += 1;
 //            }
             return score;
-        }else if(field.getTapType() instanceof TapMoney) {
+        }else if(field != null && field.getTapType() instanceof TapMoney) {
             TapMoney tapMoney = (TapMoney) field.getTapType();
             BigDecimal score = BigDecimal.ZERO;
 
@@ -518,8 +520,9 @@ public class TapNumberMapping extends TapMapping {
     public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
         String theFinalExpression = null;
         TapResult<String> tapResult = new TapResult<>();
-        if (tapType instanceof TapNumber) {
-            TapNumber tapNumber = (TapNumber) tapType;
+        TapNumber tapNumber = asTapNumber(tapType);
+        boolean floatingPoint = tapType instanceof TapFloat || tapType instanceof TapDouble;
+        if (tapNumber != null) {
             theFinalExpression = typeExpression;
             if (tapNumber.getUnsigned() != null && tapNumber.getUnsigned()) {
                 theFinalExpression = clearBrackets(theFinalExpression, unsigned);
@@ -549,12 +552,14 @@ public class TapNumberMapping extends TapMapping {
             int precisionFromNegativeScale = 0;
 
             Integer scale = tapNumber.getScale();
-            if(tapNumber.getPrecision() != null && scale == null)
-                scale = 0;
-            else if(precisionExceeded) //if precision exceeded, remove scale to keep the number as larger as possible.
-                scale = 0;
+            if (!floatingPoint) {
+                if(tapNumber.getPrecision() != null && scale == null)
+                    scale = 0;
+                else if(precisionExceeded) //if precision exceeded, remove scale to keep the number as larger as possible.
+                    scale = 0;
+            }
 
-            if (scale != null) {
+            if (scale != null && !floatingPoint) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
 
                 if(minScale != null && maxScale != null) {
@@ -574,7 +579,7 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
             }
 
-            if (precision != null) {
+            if (precision != null && !floatingPoint) {
                 precision += precisionFromNegativeScale;
 
                 //if scale larger than precision, force precision equal to scale.
@@ -616,6 +621,38 @@ public class TapNumberMapping extends TapMapping {
         else
             tapResult.result(TapResult.RESULT_SUCCESSFULLY);
         return tapResult.data(theFinalExpression);
+    }
+
+    /**
+     * Treat dedicated binary floating-point types as numeric candidates for
+     * the existing score-based mapping algorithm. The target generator keeps
+     * using one score comparison for all mappings; this adapter only exposes
+     * the floating-point range and precision to the existing number scoring
+     * rules.
+     */
+    private TapNumber asTapNumber(TapType tapType) {
+        if (tapType instanceof TapNumber) {
+            return (TapNumber) tapType;
+        }
+        if (tapType instanceof TapFloat) {
+            TapFloat tapFloat = (TapFloat) tapType;
+            return tapNumber()
+                    .bit(tapFloat.getBit())
+                    .precision(tapFloat.getEffectivePrecision())
+                    .fixed(tapFloat.getFixed())
+                    .minValue(tapFloat.getMinValue())
+                    .maxValue(tapFloat.getMaxValue());
+        }
+        if (tapType instanceof TapDouble) {
+            TapDouble tapDouble = (TapDouble) tapType;
+            return tapNumber()
+                    .bit(tapDouble.getBit())
+                    .precision(tapDouble.getEffectivePrecision())
+                    .fixed(tapDouble.getFixed())
+                    .minValue(tapDouble.getMinValue())
+                    .maxValue(tapDouble.getMaxValue());
+        }
+        return null;
     }
 
     public Integer getMinPrecision() {

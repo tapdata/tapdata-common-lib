@@ -3,6 +3,7 @@ package io.tapdata.entity.mapping.type;
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.TapField;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -12,6 +13,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TapFloatingPointMappingTest {
     @Test
@@ -52,14 +55,40 @@ class TapFloatingPointMappingTest {
     }
 
     @Test
-    void shouldKeepNumberMappingAwayFromDedicatedFloatingPointTypes() {
+    void shouldRankDedicatedFloatingPointMappingsAboveNumericFallback() {
         TapNumberMapping mapping = new TapNumberMapping();
         Map<String, Object> info = new HashMap<>();
         info.put("to", "TapNumber");
         mapping.from(info);
 
-        io.tapdata.entity.schema.TapField field = new io.tapdata.entity.schema.TapField("f", "FLOAT").tapType(new TapFloat());
-        assertEquals(TapMapping.MIN_SCORE, mapping.matchingScore(field));
+        TapField field = new TapField("f", "FLOAT").tapType(new TapFloat());
+        TapFloatMapping floatMapping = new TapFloatMapping();
+        TapDoubleMapping doubleMapping = new TapDoubleMapping();
+
+        assertTrue(floatMapping.matchingScore(field).compareTo(doubleMapping.matchingScore(field)) > 0);
+        assertTrue(doubleMapping.matchingScore(field).compareTo(mapping.matchingScore(field)) > 0);
+        assertNotNull(mapping.fromTapType("numeric", field.getTapType()));
+        assertEquals("numeric", mapping.fromTapType("numeric", field.getTapType()).getData());
+    }
+
+    @Test
+    void shouldAcceptFloatAsACompatibleDoubleMapping() {
+        TapDoubleMapping mapping = new TapDoubleMapping();
+
+        assertNotNull(mapping.fromTapType("double precision", new TapFloat()));
+        assertEquals("double precision", mapping.fromTapType("double precision", new TapFloat()).getData());
+    }
+
+    @Test
+    void shouldNotTurnFloatingPointFallbackIntoFixedScaleNumber() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapNumber");
+        info.put("precision", Arrays.asList(1, 1000));
+        info.put("scale", Arrays.asList(0, 1000));
+        info.put("fixed", true);
+
+        TapMapping mapping = TapMapping.build(info);
+        assertEquals("numeric", mapping.fromTapType("numeric[($precision,$scale)]", new TapFloat()).getData());
     }
 
     private Map<String, Object> precisionRule(int min, int max, String to) {

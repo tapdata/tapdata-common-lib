@@ -29,7 +29,7 @@ public class TapDoubleMapping extends TapMapping {
 
     @Override
     public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
-        if (!(tapType instanceof TapDouble)) {
+        if (!(tapType instanceof TapDouble) && !(tapType instanceof TapFloat)) {
             return null;
         }
         return new TapResult<String>().result(TapResult.RESULT_SUCCESSFULLY).data(typeExpression);
