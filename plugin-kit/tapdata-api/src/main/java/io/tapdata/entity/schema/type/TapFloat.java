@@ -14,35 +14,41 @@ import java.math.BigDecimal;
  * <p>The value is exposed as a {@link Double} in the common data model, but
  * is quantized to binary32 at ingress by {@code ToTapFloatCodec}.</p>
  */
-public class TapFloat extends TapType {
+public class TapFloat extends TapNumber {
+    private static final long serialVersionUID = 1L;
+
     private static final int BIT = 32;
     private static final int STORAGE_BYTES = 4;
 
-    private Integer bit = BIT;
     private Integer storageBytes = STORAGE_BYTES;
     private Integer effectivePrecision = 7;
     private Integer binaryPrecision;
-    private BigDecimal minValue = BigDecimal.valueOf(-Float.MAX_VALUE);
-    private BigDecimal maxValue = BigDecimal.valueOf(Float.MAX_VALUE);
-    private Boolean fixed = false;
     private Boolean supportsNaN;
     private Boolean supportsInfinity;
 
     public TapFloat() {
-        type = TYPE_NUMBER;
+        super();
+        bit(BIT);
+        precision(effectivePrecision);
+        fixed(false);
+        minValue(BigDecimal.valueOf(-Float.MAX_VALUE));
+        maxValue(BigDecimal.valueOf(Float.MAX_VALUE));
     }
 
+    @Override
     public Integer getBit() {
-        return bit;
+        return super.getBit();
     }
 
+    @Override
     public void setBit(Integer bit) {
         if (bit != null && bit != BIT) {
             throw new IllegalArgumentException("TapFloat bit must be 32");
         }
-        this.bit = bit;
+        super.setBit(bit);
     }
 
+    @Override
     public TapFloat bit(Integer bit) {
         setBit(bit);
         return this;
@@ -69,7 +75,11 @@ public class TapFloat extends TapType {
     }
 
     public void setEffectivePrecision(Integer effectivePrecision) {
+        Integer previous = this.effectivePrecision;
         this.effectivePrecision = effectivePrecision;
+        if (getPrecision() == null || getPrecision().equals(previous)) {
+            super.setPrecision(effectivePrecision);
+        }
     }
 
     public TapFloat effectivePrecision(Integer effectivePrecision) {
@@ -90,43 +100,51 @@ public class TapFloat extends TapType {
         return this;
     }
 
-    public BigDecimal getMinValue() {
-        return minValue;
+    @Override
+    public TapFloat precision(Integer precision) {
+        super.precision(precision);
+        return this;
     }
 
-    public void setMinValue(BigDecimal minValue) {
-        this.minValue = minValue;
+    @Override
+    public TapFloat scale(Integer scale) {
+        super.scale(scale);
+        return this;
     }
 
+    @Override
+    public TapFloat unsigned(Boolean unsigned) {
+        super.unsigned(unsigned);
+        return this;
+    }
+
+    @Override
+    public TapFloat zerofill(Boolean zerofill) {
+        super.zerofill(zerofill);
+        return this;
+    }
+
+    @Override
     public TapFloat minValue(BigDecimal minValue) {
-        setMinValue(minValue);
+        super.minValue(minValue);
         return this;
     }
 
-    public BigDecimal getMaxValue() {
-        return maxValue;
-    }
-
-    public void setMaxValue(BigDecimal maxValue) {
-        this.maxValue = maxValue;
-    }
-
+    @Override
     public TapFloat maxValue(BigDecimal maxValue) {
-        setMaxValue(maxValue);
+        super.maxValue(maxValue);
         return this;
     }
 
-    public Boolean getFixed() {
-        return fixed;
-    }
-
+    @Override
     public void setFixed(Boolean fixed) {
         if (Boolean.TRUE.equals(fixed)) {
             throw new IllegalArgumentException("TapFloat cannot be fixed-point");
         }
-        this.fixed = fixed;
+        super.setFixed(fixed);
     }
 
+    @Override
     public TapFloat fixed(Boolean fixed) {
         setFixed(fixed);
         return this;
@@ -159,6 +177,12 @@ public class TapFloat extends TapType {
     }
 
     @Override
+    public TapFloat cannotWrite(Boolean cannotWrite) {
+        super.cannotWrite(cannotWrite);
+        return this;
+    }
+
+    @Override
     public void setType(byte type) {
         if (type != TYPE_NUMBER) {
             throw new IllegalArgumentException("TapFloat type must be TYPE_NUMBER");
@@ -169,16 +193,20 @@ public class TapFloat extends TapType {
     @Override
     public TapType cloneTapType() {
         return new TapFloat()
-                .bit(bit)
+                .bit(getBit())
+                .precision(getPrecision())
+                .scale(getScale())
+                .unsigned(getUnsigned())
+                .zerofill(getZerofill())
+                .minValue(getMinValue())
+                .maxValue(getMaxValue())
+                .fixed(getFixed())
+                .cannotWrite(getCannotWrite())
                 .storageBytes(storageBytes)
                 .effectivePrecision(effectivePrecision)
                 .binaryPrecision(binaryPrecision)
-                .minValue(minValue)
-                .maxValue(maxValue)
-                .fixed(fixed)
                 .supportsNaN(supportsNaN)
-                .supportsInfinity(supportsInfinity)
-                .cannotWrite(cannotWrite);
+                .supportsInfinity(supportsInfinity);
     }
 
     @Override

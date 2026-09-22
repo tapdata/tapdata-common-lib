@@ -366,8 +366,16 @@ public class TapNumberMapping extends TapMapping {
 
     @Override
     public BigDecimal matchingScore(TapField field) {
-        TapNumber tapNumber = asTapNumber(field == null ? null : field.getTapType());
+        TapType sourceType = field == null ? null : field.getTapType();
+        TapNumber tapNumber = asTapNumber(sourceType);
         if (tapNumber != null) {
+            boolean floatingPointSource = isFloatingPoint(sourceType);
+
+            // A floating-point source may fall back to a numeric target, but
+            // it must not be selected by an explicitly integral mapping.
+            if (floatingPointSource && isIntegralMapping()) {
+                return TapMapping.MIN_SCORE;
+            }
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
@@ -381,10 +389,17 @@ public class TapNumberMapping extends TapMapping {
             Boolean unsigned = tapNumber.getUnsigned();
 
             BigDecimal comingMaxValue = tapNumber.getMaxValue();
+            BigDecimal[] floatingPointRange = floatingPointRange(sourceType, tapNumber);
+            if (floatingPointRange != null) {
+                comingMaxValue = floatingPointRange[1];
+            }
             if(comingMaxValue.compareTo(valueValue) > 0) {
                 comingMaxValue = theMaxValue;
             }
             BigDecimal comingMinValue = tapNumber.getMinValue();
+            if (floatingPointRange != null) {
+                comingMinValue = floatingPointRange[0];
+            }
             if(comingMinValue.compareTo(valueValue.negate()) < 0) {
                 comingMinValue = theMaxValue.negate();
             }
@@ -395,7 +410,8 @@ public class TapNumberMapping extends TapMapping {
 //            final BigDecimal valueValue = scaleValue.multiply(BigDecimal.TEN);
 
             //scale is minus, still consider as scaled, not as an integer. so use scale != 0 instead of scale > 0
-            if((scale != null && scale != 0 && isScale()) ||
+            if((floatingPointSource && scale == null) ||
+                    (scale != null && scale != 0 && isScale()) ||
                     (scale == null && !isScale())) {
 //                score += scaleValue;
                 score = score.add(scaleValue);
@@ -631,28 +647,45 @@ public class TapNumberMapping extends TapMapping {
      * rules.
      */
     private TapNumber asTapNumber(TapType tapType) {
-        if (tapType instanceof TapNumber) {
-            return (TapNumber) tapType;
+        return tapType instanceof TapNumber ? (TapNumber) tapType : null;
+    }
+
+    private boolean isFloatingPoint(TapType sourceType) {
+        return sourceType instanceof TapFloat || sourceType instanceof TapDouble;
+    }
+
+    /**
+     * A binary floating-point type has a very large exponent range, while the
+     * legacy numeric score is based on decimal precision. When the source does
+     * not carry the legacy scale/range values, score it by effective decimal
+     * precision instead of comparing Float/Double.MAX_VALUE with decimal
+     * target limits.
+     */
+    private BigDecimal[] floatingPointRange(TapType sourceType, TapNumber tapNumber) {
+        if (!isFloatingPoint(sourceType) || tapNumber.getScale() != null) {
+            return null;
         }
-        if (tapType instanceof TapFloat) {
-            TapFloat tapFloat = (TapFloat) tapType;
-            return tapNumber()
-                    .bit(tapFloat.getBit())
-                    .precision(tapFloat.getEffectivePrecision())
-                    .fixed(tapFloat.getFixed())
-                    .minValue(tapFloat.getMinValue())
-                    .maxValue(tapFloat.getMaxValue());
+
+        Integer precision = tapNumber.getPrecision();
+        if (precision == null) {
+            if (sourceType instanceof TapFloat) {
+                precision = ((TapFloat) sourceType).getEffectivePrecision();
+            } else if (sourceType instanceof TapDouble) {
+                precision = ((TapDouble) sourceType).getEffectivePrecision();
+            }
         }
-        if (tapType instanceof TapDouble) {
-            TapDouble tapDouble = (TapDouble) tapType;
-            return tapNumber()
-                    .bit(tapDouble.getBit())
-                    .precision(tapDouble.getEffectivePrecision())
-                    .fixed(tapDouble.getFixed())
-                    .minValue(tapDouble.getMinValue())
-                    .maxValue(tapDouble.getMaxValue());
+        if (precision == null) {
+            return null;
         }
-        return null;
+
+        BigDecimal minValue = Boolean.TRUE.equals(tapNumber.getUnsigned())
+                ? BigDecimal.ZERO : TypeUtils.minValueForPrecision(precision);
+        BigDecimal maxValue = TypeUtils.maxValueForPrecision(precision);
+        return new BigDecimal[]{minValue, maxValue};
+    }
+
+    private boolean isIntegralMapping() {
+        return !isScale() && (bit != null || defaultBit != null || preferBit != null) && !Boolean.FALSE.equals(fixed);
     }
 
     public Integer getMinPrecision() {

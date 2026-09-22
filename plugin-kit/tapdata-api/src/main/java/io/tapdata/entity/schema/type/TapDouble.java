@@ -9,35 +9,41 @@ import io.tapdata.entity.utils.InstanceFactory;
 import java.math.BigDecimal;
 
 /** Binary64 floating-point schema type. */
-public class TapDouble extends TapType {
+public class TapDouble extends TapNumber {
+    private static final long serialVersionUID = 1L;
+
     private static final int BIT = 64;
     private static final int STORAGE_BYTES = 8;
 
-    private Integer bit = BIT;
     private Integer storageBytes = STORAGE_BYTES;
     private Integer effectivePrecision = 15;
     private Integer binaryPrecision;
-    private BigDecimal minValue = BigDecimal.valueOf(-Double.MAX_VALUE);
-    private BigDecimal maxValue = BigDecimal.valueOf(Double.MAX_VALUE);
-    private Boolean fixed = false;
     private Boolean supportsNaN;
     private Boolean supportsInfinity;
 
     public TapDouble() {
-        type = TYPE_NUMBER;
+        super();
+        bit(BIT);
+        precision(effectivePrecision);
+        fixed(false);
+        minValue(BigDecimal.valueOf(-Double.MAX_VALUE));
+        maxValue(BigDecimal.valueOf(Double.MAX_VALUE));
     }
 
+    @Override
     public Integer getBit() {
-        return bit;
+        return super.getBit();
     }
 
+    @Override
     public void setBit(Integer bit) {
         if (bit != null && bit != BIT) {
             throw new IllegalArgumentException("TapDouble bit must be 64");
         }
-        this.bit = bit;
+        super.setBit(bit);
     }
 
+    @Override
     public TapDouble bit(Integer bit) {
         setBit(bit);
         return this;
@@ -64,7 +70,11 @@ public class TapDouble extends TapType {
     }
 
     public void setEffectivePrecision(Integer effectivePrecision) {
+        Integer previous = this.effectivePrecision;
         this.effectivePrecision = effectivePrecision;
+        if (getPrecision() == null || getPrecision().equals(previous)) {
+            super.setPrecision(effectivePrecision);
+        }
     }
 
     public TapDouble effectivePrecision(Integer effectivePrecision) {
@@ -85,43 +95,51 @@ public class TapDouble extends TapType {
         return this;
     }
 
-    public BigDecimal getMinValue() {
-        return minValue;
+    @Override
+    public TapDouble precision(Integer precision) {
+        super.precision(precision);
+        return this;
     }
 
-    public void setMinValue(BigDecimal minValue) {
-        this.minValue = minValue;
+    @Override
+    public TapDouble scale(Integer scale) {
+        super.scale(scale);
+        return this;
     }
 
+    @Override
+    public TapDouble unsigned(Boolean unsigned) {
+        super.unsigned(unsigned);
+        return this;
+    }
+
+    @Override
+    public TapDouble zerofill(Boolean zerofill) {
+        super.zerofill(zerofill);
+        return this;
+    }
+
+    @Override
     public TapDouble minValue(BigDecimal minValue) {
-        setMinValue(minValue);
+        super.minValue(minValue);
         return this;
     }
 
-    public BigDecimal getMaxValue() {
-        return maxValue;
-    }
-
-    public void setMaxValue(BigDecimal maxValue) {
-        this.maxValue = maxValue;
-    }
-
+    @Override
     public TapDouble maxValue(BigDecimal maxValue) {
-        setMaxValue(maxValue);
+        super.maxValue(maxValue);
         return this;
     }
 
-    public Boolean getFixed() {
-        return fixed;
-    }
-
+    @Override
     public void setFixed(Boolean fixed) {
         if (Boolean.TRUE.equals(fixed)) {
             throw new IllegalArgumentException("TapDouble cannot be fixed-point");
         }
-        this.fixed = fixed;
+        super.setFixed(fixed);
     }
 
+    @Override
     public TapDouble fixed(Boolean fixed) {
         setFixed(fixed);
         return this;
@@ -154,6 +172,12 @@ public class TapDouble extends TapType {
     }
 
     @Override
+    public TapDouble cannotWrite(Boolean cannotWrite) {
+        super.cannotWrite(cannotWrite);
+        return this;
+    }
+
+    @Override
     public void setType(byte type) {
         if (type != TYPE_NUMBER) {
             throw new IllegalArgumentException("TapDouble type must be TYPE_NUMBER");
@@ -164,16 +188,20 @@ public class TapDouble extends TapType {
     @Override
     public TapType cloneTapType() {
         return new TapDouble()
-                .bit(bit)
+                .bit(getBit())
+                .precision(getPrecision())
+                .scale(getScale())
+                .unsigned(getUnsigned())
+                .zerofill(getZerofill())
+                .minValue(getMinValue())
+                .maxValue(getMaxValue())
+                .fixed(getFixed())
+                .cannotWrite(getCannotWrite())
                 .storageBytes(storageBytes)
                 .effectivePrecision(effectivePrecision)
                 .binaryPrecision(binaryPrecision)
-                .minValue(minValue)
-                .maxValue(maxValue)
-                .fixed(fixed)
                 .supportsNaN(supportsNaN)
-                .supportsInfinity(supportsInfinity)
-                .cannotWrite(cannotWrite);
+                .supportsInfinity(supportsInfinity);
     }
 
     @Override

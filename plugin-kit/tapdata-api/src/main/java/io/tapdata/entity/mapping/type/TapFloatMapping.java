@@ -21,7 +21,7 @@ public class TapFloatMapping extends TapMapping {
     public TapType toTapType(String dataType, Map<String, String> params) {
         TapFloat type = new TapFloat();
         if (info != null) {
-            FloatingPointMappingSupport.apply(info, type);
+            FloatingPointMappingSupport.apply(info, dataType, params, type);
         }
         return type;
     }

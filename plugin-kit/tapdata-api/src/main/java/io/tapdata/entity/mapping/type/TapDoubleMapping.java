@@ -22,7 +22,7 @@ public class TapDoubleMapping extends TapMapping {
     public TapType toTapType(String dataType, Map<String, String> params) {
         TapDouble type = new TapDouble();
         if (info != null) {
-            FloatingPointMappingSupport.apply(info, type);
+            FloatingPointMappingSupport.apply(info, dataType, params, type);
         }
         return type;
     }

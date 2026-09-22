@@ -8,8 +8,15 @@ import io.tapdata.entity.schema.value.TapDoubleValue;
 import io.tapdata.entity.schema.value.TapFloatValue;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TapFloatingPointTypeTest {
     @Test
@@ -31,6 +38,64 @@ class TapFloatingPointTypeTest {
         assertEquals(TapDoubleValue.class, tapDouble.tapValueClass());
         assertEquals(TapFloat.class, tapFloat.cloneTapType().getClass());
         assertEquals(TapDouble.class, tapDouble.cloneTapType().getClass());
+    }
+
+    @Test
+    void shouldKeepLegacyTapNumberApiUnchanged() {
+        assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("getFloatingPoint"));
+        assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("getBinaryPrecision"));
+        assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("floatingPoint", Boolean.class));
+        assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("binaryPrecision", Integer.class));
+    }
+
+    @Test
+    void floatingPointTypesShouldInheritTapNumberProperties() {
+        TapType floatType = new TapFloat()
+                .bit(32)
+                .precision(7)
+                .scale(null)
+                .fixed(false)
+                .minValue(java.math.BigDecimal.valueOf(-Float.MAX_VALUE))
+                .maxValue(java.math.BigDecimal.valueOf(Float.MAX_VALUE));
+        TapType doubleType = new TapDouble()
+                .bit(64)
+                .precision(15)
+                .scale(null)
+                .fixed(false);
+
+        TapNumber floatNumber = assertInstanceOf(TapNumber.class, floatType);
+        TapNumber doubleNumber = assertInstanceOf(TapNumber.class, doubleType);
+        assertEquals(7, floatNumber.getPrecision());
+        assertEquals(15, doubleNumber.getPrecision());
+        assertEquals(32, floatNumber.getBit());
+        assertEquals(64, doubleNumber.getBit());
+        assertEquals(TapFloat.class, floatNumber.cloneTapType().getClass());
+        assertEquals(TapDouble.class, doubleNumber.cloneTapType().getClass());
+    }
+
+    @Test
+    void floatingPointTypesShouldRoundTripWithJavaSerialization() throws Exception {
+        TapFloat source = new TapFloat()
+                .binaryPrecision(24)
+                .precision(7)
+                .minValue(java.math.BigDecimal.valueOf(-10))
+                .maxValue(java.math.BigDecimal.valueOf(10));
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+            output.writeObject(source);
+        }
+
+        TapFloat restored;
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
+            restored = assertInstanceOf(TapFloat.class, input.readObject());
+        }
+
+        assertEquals(32, restored.getBit());
+        assertEquals(24, restored.getBinaryPrecision());
+        assertEquals(7, restored.getPrecision());
+        assertEquals(java.math.BigDecimal.valueOf(-10), restored.getMinValue());
+        assertEquals(java.math.BigDecimal.valueOf(10), restored.getMaxValue());
     }
 
     @Test

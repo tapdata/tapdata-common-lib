@@ -36,6 +36,25 @@ class TapConstantsFloatingPointTest {
         assertEquals(TapNumber.class, legacyType.getClass());
     }
 
+    @Test
+    void shouldRoundTripInheritedFloatingPointTypesWithFastjson() {
+        TapFloat floatSource = new TapFloat().binaryPrecision(24).precision(7);
+        TapDouble doubleSource = new TapDouble().binaryPrecision(53).precision(15);
+
+        String floatJson = JSON.toJSONString(floatSource);
+        String doubleJson = JSON.toJSONString(doubleSource);
+
+        TapType floatType = JSON.parseObject(floatJson, TapType.class, TapConstants.tapdataParserConfig);
+        TapType doubleType = JSON.parseObject(doubleJson, TapType.class, TapConstants.tapdataParserConfig);
+
+        TapFloat parsedFloat = assertInstanceOf(TapFloat.class, floatType);
+        TapDouble parsedDouble = assertInstanceOf(TapDouble.class, doubleType);
+        assertEquals(24, parsedFloat.getBinaryPrecision());
+        assertEquals(53, parsedDouble.getBinaryPrecision());
+        assertEquals(7, parsedFloat.getPrecision());
+        assertEquals(15, parsedDouble.getPrecision());
+    }
+
     private int detectorIndex(Object value) {
         for (int i = 0; i < TapConstants.abstractClassDetectors.size(); i++) {
             JsonParser.AbstractClassDetector detector = TapConstants.abstractClassDetectors.get(i);

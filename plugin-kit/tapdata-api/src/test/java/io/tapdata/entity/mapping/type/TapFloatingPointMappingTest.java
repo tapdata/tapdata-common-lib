@@ -2,6 +2,7 @@ package io.tapdata.entity.mapping.type;
 
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
+import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.TapField;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,59 @@ class TapFloatingPointMappingTest {
         assertEquals(32, ((TapFloat) type).getBit());
         assertEquals(4, ((TapFloat) type).getStorageBytes());
         assertEquals(7, ((TapFloat) type).getEffectivePrecision());
+    }
+
+    @Test
+    void shouldApplyInheritedNumberPropertiesWhenBuildingFloatingPointType() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapFloat");
+        info.put("precision", 7);
+        info.put("scale", 2);
+        info.put("unsigned", "unsigned");
+        info.put("zerofill", "zerofill");
+
+        TapFloat type = (TapFloat) TapMapping.build(info)
+                .toTapType("FLOAT(7,2) unsigned zerofill", Collections.emptyMap());
+
+        assertEquals(7, type.getPrecision());
+        assertEquals(2, type.getScale());
+        assertTrue(Boolean.TRUE.equals(type.getUnsigned()));
+        assertTrue(Boolean.TRUE.equals(type.getZerofill()));
+    }
+
+    @Test
+    void shouldResolveLegacyPrecisionAndScaleRangesLikeTapNumberMapping() {
+        Map<String, Object> floatInfo = new HashMap<>();
+        floatInfo.put("to", "TapFloat");
+        floatInfo.put("precision", Arrays.asList(1, 6));
+        floatInfo.put("scale", Arrays.asList(0, 6));
+        floatInfo.put("fixed", false);
+
+        TapFloat floatType = (TapFloat) TapMapping.build(floatInfo)
+                .toTapType("float", Collections.emptyMap());
+
+        assertEquals(6, floatType.getPrecision());
+        assertEquals(6, floatType.getScale());
+        assertEquals(java.math.BigDecimal.valueOf(-999999), floatType.getMinValue());
+        assertEquals(java.math.BigDecimal.valueOf(999999), floatType.getMaxValue());
+        assertEquals(false, floatType.getFixed());
+
+        Map<String, Object> doubleInfo = new HashMap<>();
+        doubleInfo.put("to", "TapDouble");
+        doubleInfo.put("precision", Arrays.asList(1, 17));
+        doubleInfo.put("preferPrecision", 11);
+        doubleInfo.put("preferScale", 4);
+        doubleInfo.put("scale", Arrays.asList(0, 17));
+        doubleInfo.put("fixed", false);
+
+        TapDouble doubleType = (TapDouble) TapMapping.build(doubleInfo)
+                .toTapType("double", Collections.emptyMap());
+
+        assertEquals(11, doubleType.getPrecision());
+        assertEquals(4, doubleType.getScale());
+        assertEquals(java.math.BigDecimal.valueOf(-99999999999L), doubleType.getMinValue());
+        assertEquals(java.math.BigDecimal.valueOf(99999999999L), doubleType.getMaxValue());
+        assertEquals(false, doubleType.getFixed());
     }
 
     @Test
@@ -89,6 +143,25 @@ class TapFloatingPointMappingTest {
 
         TapMapping mapping = TapMapping.build(info);
         assertEquals("numeric", mapping.fromTapType("numeric[($precision,$scale)]", new TapFloat()).getData());
+    }
+
+    @Test
+    void shouldRejectIntegralMappingsUsingDefaultOrPreferredBitForFloatingPoint() {
+        TapField field = new TapField("f", "FLOAT").tapType(new TapFloat());
+
+        TapNumberMapping defaultBitMapping = new TapNumberMapping();
+        Map<String, Object> defaultBitInfo = new HashMap<>();
+        defaultBitInfo.put("to", "TapNumber");
+        defaultBitInfo.put("defaultBit", 64);
+        defaultBitMapping.from(defaultBitInfo);
+        assertEquals(TapMapping.MIN_SCORE, defaultBitMapping.matchingScore(field));
+
+        TapNumberMapping preferBitMapping = new TapNumberMapping();
+        Map<String, Object> preferBitInfo = new HashMap<>();
+        preferBitInfo.put("to", "TapNumber");
+        preferBitInfo.put("preferBit", 64);
+        preferBitMapping.from(preferBitInfo);
+        assertEquals(TapMapping.MIN_SCORE, preferBitMapping.matchingScore(field));
     }
 
     private Map<String, Object> precisionRule(int min, int max, String to) {
