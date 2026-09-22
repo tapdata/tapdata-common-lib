@@ -88,6 +88,8 @@ public abstract class TapType implements Serializable {
                 return TapFloat.class;
             case "TapDouble":
                 return TapDouble.class;
+            case "TapCoefficientFloat":
+                return TapCoefficientFloat.class;
             case "TapRaw":
                 return TapRaw.class;
             case "TapString":

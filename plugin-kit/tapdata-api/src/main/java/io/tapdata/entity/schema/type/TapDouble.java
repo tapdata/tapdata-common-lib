@@ -14,9 +14,10 @@ public class TapDouble extends TapNumber {
 
     private static final int BIT = 64;
     private static final int STORAGE_BYTES = 8;
+    private static final int EFFECTIVE_PRECISION = 15;
 
     private Integer storageBytes = STORAGE_BYTES;
-    private Integer effectivePrecision = 15;
+    private Integer effectivePrecision = EFFECTIVE_PRECISION;
     private Integer binaryPrecision;
     private Boolean supportsNaN;
     private Boolean supportsInfinity;
@@ -31,19 +32,6 @@ public class TapDouble extends TapNumber {
     }
 
     @Override
-    public Integer getBit() {
-        return super.getBit();
-    }
-
-    @Override
-    public void setBit(Integer bit) {
-        if (bit != null && bit != BIT) {
-            throw new IllegalArgumentException("TapDouble bit must be 64");
-        }
-        super.setBit(bit);
-    }
-
-    @Override
     public TapDouble bit(Integer bit) {
         setBit(bit);
         return this;
@@ -54,10 +42,7 @@ public class TapDouble extends TapNumber {
     }
 
     public void setStorageBytes(Integer storageBytes) {
-        if (storageBytes != null && storageBytes != STORAGE_BYTES) {
-            throw new IllegalArgumentException("TapDouble storageBytes must be 8");
-        }
-        this.storageBytes = storageBytes;
+        this.storageBytes = storageBytes == null ? STORAGE_BYTES : storageBytes;
     }
 
     public TapDouble storageBytes(Integer storageBytes) {
@@ -70,6 +55,9 @@ public class TapDouble extends TapNumber {
     }
 
     public void setEffectivePrecision(Integer effectivePrecision) {
+        if (effectivePrecision == null) {
+            effectivePrecision = EFFECTIVE_PRECISION;
+        }
         Integer previous = this.effectivePrecision;
         this.effectivePrecision = effectivePrecision;
         if (getPrecision() == null || getPrecision().equals(previous)) {
@@ -132,14 +120,6 @@ public class TapDouble extends TapNumber {
     }
 
     @Override
-    public void setFixed(Boolean fixed) {
-        if (Boolean.TRUE.equals(fixed)) {
-            throw new IllegalArgumentException("TapDouble cannot be fixed-point");
-        }
-        super.setFixed(fixed);
-    }
-
-    @Override
     public TapDouble fixed(Boolean fixed) {
         setFixed(fixed);
         return this;
@@ -179,10 +159,8 @@ public class TapDouble extends TapNumber {
 
     @Override
     public void setType(byte type) {
-        if (type != TYPE_NUMBER) {
-            throw new IllegalArgumentException("TapDouble type must be TYPE_NUMBER");
-        }
-        super.setType(type);
+        // The concrete schema type always remains a numeric type.
+        super.setType(TYPE_NUMBER);
     }
 
     @Override

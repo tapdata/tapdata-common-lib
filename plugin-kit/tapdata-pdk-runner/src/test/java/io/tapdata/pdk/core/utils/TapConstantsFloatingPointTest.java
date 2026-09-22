@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.utils;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
+import io.tapdata.entity.schema.type.TapCoefficientFloat;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.JsonParser;
@@ -34,6 +35,18 @@ class TapConstantsFloatingPointTest {
         assertInstanceOf(TapFloat.class, floatType);
         assertInstanceOf(TapDouble.class, doubleType);
         assertEquals(TapNumber.class, legacyType.getClass());
+    }
+
+    @Test
+    void shouldDeserializeCoefficientFloatBeforeLegacyNumericDetector() {
+        int coefficientDetector = detectorIndex("TapCoefficientFloat");
+        int numberDetector = detectorIndex(TapType.TYPE_NUMBER);
+        TapType type = JSON.parseObject("{\"type\":8,\"typeName\":\"TapCoefficientFloat\"}",
+                TapType.class, TapConstants.tapdataParserConfig);
+
+        assertTrue(coefficientDetector >= 0);
+        assertTrue(coefficientDetector < numberDetector);
+        assertInstanceOf(TapCoefficientFloat.class, type);
     }
 
     @Test

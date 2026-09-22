@@ -19,9 +19,10 @@ public class TapFloat extends TapNumber {
 
     private static final int BIT = 32;
     private static final int STORAGE_BYTES = 4;
+    private static final int EFFECTIVE_PRECISION = 7;
 
     private Integer storageBytes = STORAGE_BYTES;
-    private Integer effectivePrecision = 7;
+    private Integer effectivePrecision = EFFECTIVE_PRECISION;
     private Integer binaryPrecision;
     private Boolean supportsNaN;
     private Boolean supportsInfinity;
@@ -36,19 +37,6 @@ public class TapFloat extends TapNumber {
     }
 
     @Override
-    public Integer getBit() {
-        return super.getBit();
-    }
-
-    @Override
-    public void setBit(Integer bit) {
-        if (bit != null && bit != BIT) {
-            throw new IllegalArgumentException("TapFloat bit must be 32");
-        }
-        super.setBit(bit);
-    }
-
-    @Override
     public TapFloat bit(Integer bit) {
         setBit(bit);
         return this;
@@ -59,10 +47,7 @@ public class TapFloat extends TapNumber {
     }
 
     public void setStorageBytes(Integer storageBytes) {
-        if (storageBytes != null && storageBytes != STORAGE_BYTES) {
-            throw new IllegalArgumentException("TapFloat storageBytes must be 4");
-        }
-        this.storageBytes = storageBytes;
+        this.storageBytes = storageBytes == null ? STORAGE_BYTES : storageBytes;
     }
 
     public TapFloat storageBytes(Integer storageBytes) {
@@ -75,6 +60,9 @@ public class TapFloat extends TapNumber {
     }
 
     public void setEffectivePrecision(Integer effectivePrecision) {
+        if (effectivePrecision == null) {
+            effectivePrecision = EFFECTIVE_PRECISION;
+        }
         Integer previous = this.effectivePrecision;
         this.effectivePrecision = effectivePrecision;
         if (getPrecision() == null || getPrecision().equals(previous)) {
@@ -137,14 +125,6 @@ public class TapFloat extends TapNumber {
     }
 
     @Override
-    public void setFixed(Boolean fixed) {
-        if (Boolean.TRUE.equals(fixed)) {
-            throw new IllegalArgumentException("TapFloat cannot be fixed-point");
-        }
-        super.setFixed(fixed);
-    }
-
-    @Override
     public TapFloat fixed(Boolean fixed) {
         setFixed(fixed);
         return this;
@@ -184,10 +164,8 @@ public class TapFloat extends TapNumber {
 
     @Override
     public void setType(byte type) {
-        if (type != TYPE_NUMBER) {
-            throw new IllegalArgumentException("TapFloat type must be TYPE_NUMBER");
-        }
-        super.setType(type);
+        // The concrete schema type always remains a numeric type.
+        super.setType(TYPE_NUMBER);
     }
 
     @Override

@@ -39,6 +39,23 @@ class TapFloatingPointMappingTest {
     }
 
     @Test
+    void shouldUseSourceBitAndFloatingDefaultsWhenMappingTapFloat() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapFloat");
+        info.put("bit", 4);
+        info.put("defaultPrecision", 24);
+        info.put("defaultScale", 8);
+        info.put("fixed", false);
+
+        TapFloat type = (TapFloat) TapMapping.build(info)
+                .toTapType("REAL", Collections.emptyMap());
+
+        assertEquals(4, type.getBit());
+        assertEquals(4, type.getStorageBytes());
+        assertEquals(false, type.getFixed());
+    }
+
+    @Test
     void shouldApplyInheritedNumberPropertiesWhenBuildingFloatingPointType() {
         Map<String, Object> info = new HashMap<>();
         info.put("to", "TapFloat");

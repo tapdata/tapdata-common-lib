@@ -41,6 +41,49 @@ class TapFloatingPointTypeTest {
     }
 
     @Test
+    void shouldUseSourceMetadataAndDefaultsOnlyWhenValuesAreMissing() {
+        TapFloat tapFloat = new TapFloat()
+                .bit(4)
+                .storageBytes(8)
+                .effectivePrecision(null)
+                .fixed(true);
+
+        TapDouble tapDouble = new TapDouble()
+                .bit(4)
+                .storageBytes(4)
+                .effectivePrecision(null)
+                .fixed(true);
+
+        assertEquals(4, tapFloat.getBit());
+        assertEquals(8, tapFloat.getStorageBytes());
+        assertEquals(7, tapFloat.getEffectivePrecision());
+        assertEquals(true, tapFloat.getFixed());
+        assertEquals(TapType.TYPE_NUMBER, tapFloat.getType());
+
+        assertEquals(4, tapDouble.getBit());
+        assertEquals(4, tapDouble.getStorageBytes());
+        assertEquals(15, tapDouble.getEffectivePrecision());
+        assertEquals(true, tapDouble.getFixed());
+        assertEquals(TapType.TYPE_NUMBER, tapDouble.getType());
+
+        TapFloat defaultFloat = new TapFloat()
+                .bit(null)
+                .storageBytes(null)
+                .fixed(null);
+        TapDouble defaultDouble = new TapDouble()
+                .bit(null)
+                .storageBytes(null)
+                .fixed(null);
+
+        assertEquals(32, defaultFloat.getBit());
+        assertEquals(4, defaultFloat.getStorageBytes());
+        assertEquals(false, defaultFloat.getFixed());
+        assertEquals(64, defaultDouble.getBit());
+        assertEquals(8, defaultDouble.getStorageBytes());
+        assertEquals(false, defaultDouble.getFixed());
+    }
+
+    @Test
     void shouldKeepLegacyTapNumberApiUnchanged() {
         assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("getFloatingPoint"));
         assertThrows(NoSuchMethodException.class, () -> TapNumber.class.getMethod("getBinaryPrecision"));
