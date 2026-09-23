@@ -4,6 +4,8 @@ import io.tapdata.pdk.core.tapnode.TapNodeInstance;
 import io.tapdata.pdk.core.tapnode.TapNodeClassFactory;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.classloader.ExternalJarManager;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.utils.state.StateMachine;
 import org.junit.jupiter.api.AfterEach;
@@ -233,5 +235,44 @@ class TapConnectorManagerJarSelectionTest {
 
         assertFalse(connector.unloadIfIdle(Long.MAX_VALUE));
         verify(stateMachine, never()).gotoState(eq(TapConnector.STATE_TERMINATED), anyString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void failedReloadKeepsJarRetryableAndReportsClassifiedError() throws Exception {
+        String name = TapConnectorManager.downloadedJarName("postgres.jar", "old");
+        File source = Files.createFile(tempDir.resolve(name)).toFile();
+        Field unloadedField = TapConnectorManager.class.getDeclaredField("unloadedJarFiles");
+        unloadedField.setAccessible(true);
+        Map<String, File> unloaded = (Map<String, File>) unloadedField.get(manager);
+        unloaded.put(name, source);
+        ExternalJarManager jarManager = mock(ExternalJarManager.class);
+        IllegalStateException failure = new IllegalStateException("invalid archive");
+        when(jarManager.loadJars(source.getAbsolutePath())).thenThrow(failure);
+        Field jarManagerField = TapConnectorManager.class.getDeclaredField("externalJarManager");
+        jarManagerField.setAccessible(true);
+        jarManagerField.set(manager, jarManager);
+
+        CoreException error = assertThrows(CoreException.class, () -> manager.createConnectorInstance(
+                "test", "postgres", "io.tapdata", "1.0-SNAPSHOT", "postgres.jar", "old"));
+        assertEquals(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, error.getCode());
+        assertSame(failure, error.getCause());
+        assertTrue(error.getMessage().contains(name));
+        assertSame(source, unloaded.get(name));
+    }
+
+    @Test
+    void legacyCreateReturnsNullAfterUnloadingInsteadOfUsingClearedFactory() throws Exception {
+        File jar = Files.createFile(tempDir.resolve("postgres__old__.jar")).toFile();
+        TapConnector connector = new TapConnector();
+        connector.setJarFile(jar);
+        connector.start();
+        connector.startLoadJar();
+        URLClassLoader loader = mock(URLClassLoader.class);
+        connector.loadCompleted(jar, loader, null);
+        assertTrue(connector.unloadIfIdle(System.currentTimeMillis()));
+
+        assertNull(connector.createTapConnector("test", "postgres", "io.tapdata", "1.0-SNAPSHOT"));
+        assertNull(connector.createTapProcessor("test", "postgres", "io.tapdata", "1.0-SNAPSHOT"));
     }
 }

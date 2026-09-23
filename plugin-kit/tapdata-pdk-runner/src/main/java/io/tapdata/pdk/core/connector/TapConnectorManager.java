@@ -1,8 +1,10 @@
 package io.tapdata.pdk.core.connector;
 
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.classloader.ExternalJarManager;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.entity.memory.MemoryFetcher;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
@@ -157,7 +159,9 @@ public class TapConnectorManager implements MemoryFetcher {
                     externalJarManager.loadJars(source.getAbsolutePath());
                 } catch (RuntimeException e) {
                     unloadedJarFiles.putIfAbsent(downloadedName, source);
-                    throw e;
+                    throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, e,
+                            "Failed to reload requested connector jar {} from {}: {}",
+                            downloadedName, source.getAbsolutePath(), e.getMessage());
                 }
             }
         } finally {
