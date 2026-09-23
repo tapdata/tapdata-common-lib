@@ -41,6 +41,14 @@ public class PDKIntegration {
     private PDKIntegration() {}
 
     public abstract static class ConnectionBuilder<T extends Node> {
+        protected String jarFileName;
+        protected String jarResourceId;
+
+        public ConnectionBuilder<T> withJarFile(String fileName, String resourceId) {
+            this.jarFileName = fileName;
+            this.jarResourceId = resourceId;
+            return this;
+        }
         protected String associateId;
         protected DataMap connectionConfig;
         protected DataMap nodeConfig;
@@ -221,6 +229,14 @@ public class PDKIntegration {
     }
 
     public abstract static class ConnectorBuilder<T extends Node> {
+        protected String jarFileName;
+        protected String jarResourceId;
+
+        public ConnectorBuilder<T> withJarFile(String fileName, String resourceId) {
+            this.jarFileName = fileName;
+            this.jarResourceId = resourceId;
+            return this;
+        }
         protected DataMap nodeConfig;
         protected Map<String, DataMap> tableNodeConfig;
         protected String dagId;
@@ -383,7 +399,7 @@ public class PDKIntegration {
     public static class ConnectionConnectorBuilder extends ConnectionBuilder<ConnectionNode> {
         public ConnectionNode build() {
             checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version, jarFileName, jarResourceId);
             if(nodeInstance == null)
                 throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             ConnectionNode connectionNode = new ConnectionNode();
@@ -405,7 +421,7 @@ public class PDKIntegration {
     public static class ConnectorBuilderEx extends ConnectorBuilder<ConnectorNode> {
         public ConnectorNode build() {
             checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version, jarFileName, jarResourceId);
             if(nodeInstance == null)
                 throw new CoreException(PDKRunnerErrorCodes.PDK_CONNECTOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             ConnectorNode connectorNode = new ConnectorNode();

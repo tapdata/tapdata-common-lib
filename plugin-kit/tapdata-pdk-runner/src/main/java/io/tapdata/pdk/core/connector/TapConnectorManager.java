@@ -75,6 +75,26 @@ public class TapConnectorManager implements MemoryFetcher {
         }
         return null;
     }
+
+    public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, String version,
+                                                   String fileName, String resourceId) {
+        if (fileName == null && resourceId == null) {
+            return createConnectorInstance(associateId, pdkId, group, version);
+        }
+        if (fileName == null || resourceId == null) {
+            throw new IllegalArgumentException("Both connector jar file name and resource id are required");
+        }
+        String downloadedName = fileName.split("\\.jar")[0] + "__" + resourceId + "__.jar";
+        TapConnector connector = jarNameTapConnectorMap.get(convertJarFileName(downloadedName));
+        // A download does not guarantee refresh succeeded (the old jar may still be in use).
+        // Never silently execute another build with the same pdkId/group/version.
+        if (connector == null || connector.getJarFile() == null
+                || !downloadedName.equals(connector.getJarFile().getName())
+                || !connector.hasTapConnectorNodeId(pdkId, group, version)) {
+            throw new IllegalStateException("Requested connector jar is not loaded: " + downloadedName);
+        }
+        return connector.createTapConnector(associateId, pdkId, group, version);
+    }
     public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, String version) {
         //TODO can be optimized for performance
         Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
