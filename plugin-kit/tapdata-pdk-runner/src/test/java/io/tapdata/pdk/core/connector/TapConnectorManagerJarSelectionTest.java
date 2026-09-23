@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -36,6 +38,7 @@ class TapConnectorManagerJarSelectionTest {
     void clearProperties() {
         System.clearProperty("pdk_old_jar_idle_millis");
         System.clearProperty("pdk_pinned_jar_wait_millis");
+        System.clearProperty("pdk_pinned_jar_retry_backoff_millis");
     }
 
     @BeforeEach
@@ -185,7 +188,6 @@ class TapConnectorManagerJarSelectionTest {
         when(reloaded.createTapConnector(oldName, "test", "postgres", "io.tapdata", "1.0-SNAPSHOT"))
                 .thenReturn(expected);
         ExternalJarManager jarManager = mock(ExternalJarManager.class);
-        when(jarManager.getPath()).thenReturn(tempDir.toString());
         when(jarManager.loadJars(oldJar.getAbsolutePath())).thenAnswer(invocation -> {
             connectors.put(oldName, reloaded);
             manager.signalJarLoaded();
@@ -259,6 +261,78 @@ class TapConnectorManagerJarSelectionTest {
         assertSame(failure, error.getCause());
         assertTrue(error.getMessage().contains(name));
         assertSame(source, unloaded.get(name));
+        assertSame(error, assertThrows(CoreException.class, () -> manager.createConnectorInstance(
+                "test", "postgres", "io.tapdata", "1.0-SNAPSHOT", "postgres.jar", "old")));
+        verify(jarManager, times(1)).loadJars(source.getAbsolutePath());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void slowReloadDoesNotExtendConfiguredPinnedWait() throws Exception {
+        String name = TapConnectorManager.downloadedJarName("postgres.jar", "slow");
+        File source = Files.createFile(tempDir.resolve(name)).toFile();
+        Field unloadedField = TapConnectorManager.class.getDeclaredField("unloadedJarFiles");
+        unloadedField.setAccessible(true);
+        ((Map<String, File>) unloadedField.get(manager)).put(name, source);
+        CountDownLatch releaseLoad = new CountDownLatch(1);
+        ExternalJarManager jarManager = mock(ExternalJarManager.class);
+        when(jarManager.loadJars(source.getAbsolutePath())).thenAnswer(invocation -> {
+            releaseLoad.await(2, TimeUnit.SECONDS);
+            return true;
+        });
+        Field jarManagerField = TapConnectorManager.class.getDeclaredField("externalJarManager");
+        jarManagerField.setAccessible(true);
+        jarManagerField.set(manager, jarManager);
+        System.setProperty("pdk_pinned_jar_wait_millis", "50");
+
+        try {
+            long started = System.nanoTime();
+            assertNull(manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
+                    "postgres.jar", "slow"));
+            assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 1_000L);
+        } finally {
+            releaseLoad.countDown();
+        }
+    }
+
+    @Test
+    void separateNewJarsCanCoverSeparateNodesOfAnOldJar() throws Exception {
+        File oldJar = Files.createFile(tempDir.resolve("combined__old__.jar")).toFile();
+        TapNodeInfo connectorInfo = new TapNodeInfo();
+        TapNodeSpecification connectorSpec = new TapNodeSpecification();
+        connectorSpec.setId("source");
+        connectorSpec.setGroup("io.tapdata");
+        connectorSpec.setVersion("1");
+        connectorInfo.setTapNodeSpecification(connectorSpec);
+        TapNodeInfo processorInfo = new TapNodeInfo();
+        TapNodeSpecification processorSpec = new TapNodeSpecification();
+        processorSpec.setId("processor");
+        processorSpec.setGroup("io.tapdata");
+        processorSpec.setVersion("1");
+        processorInfo.setTapNodeSpecification(processorSpec);
+        TapNodeClassFactory oldFactory = mock(TapNodeClassFactory.class);
+        when(oldFactory.getConnectorTapNodeInfos()).thenReturn(Collections.singleton(connectorInfo));
+        when(oldFactory.getProcessorTapNodeInfos()).thenReturn(Collections.singleton(processorInfo));
+        TapConnector old = mock(TapConnector.class);
+        when(old.getJarFile()).thenReturn(oldJar);
+        when(old.getModificationTime()).thenReturn(1L);
+        when(old.getTapNodeClassFactory()).thenReturn(oldFactory);
+        when(old.unloadIfIdle(anyLong())).thenReturn(true);
+        connectors.put(oldJar.getName(), old);
+
+        TapConnector newerSource = mock(TapConnector.class);
+        when(newerSource.getModificationTime()).thenReturn(2L);
+        when(newerSource.hasTapConnectorNodeId("source", "io.tapdata", "1")).thenReturn(true);
+        connectors.put("source.jar", newerSource);
+        TapConnector newerProcessor = mock(TapConnector.class);
+        when(newerProcessor.getModificationTime()).thenReturn(3L);
+        when(newerProcessor.hasTapProcessorNodeId("processor", "io.tapdata", "1")).thenReturn(true);
+        connectors.put("processor.jar", newerProcessor);
+
+        manager.unloadIdleJars();
+        assertFalse(connectors.containsKey(oldJar.getName()));
+        assertTrue(connectors.containsKey("source.jar"));
+        assertTrue(connectors.containsKey("processor.jar"));
     }
 
     @Test

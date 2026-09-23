@@ -4,6 +4,7 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.classloader.ExternalJarManager;
+import io.tapdata.pdk.core.classloader.DependencyURLClassLoader;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.entity.memory.MemoryFetcher;
@@ -16,7 +17,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,9 +38,27 @@ public class TapConnectorManager implements MemoryFetcher {
     private final Map<String, TapConnector> jarNameTapConnectorMap = new ConcurrentHashMap<>();
     private final Map<String, File> unloadedJarFiles = new ConcurrentHashMap<>();
     private final Set<String> loadingOnDemand = ConcurrentHashMap.newKeySet();
+    private final Map<String, ReloadFailure> reloadFailures = new ConcurrentHashMap<>();
     private final Set<String> explicitLoads = ConcurrentHashMap.newKeySet();
     private final Object jarLoaded = new Object();
     private final AtomicLong jarLoadVersion = new AtomicLong();
+    // ExternalJarManager serializes scans itself. Keep the queued work bounded and off caller threads.
+    private static final ThreadPoolExecutor RELOAD_EXECUTOR = new ThreadPoolExecutor(1, 1, 0L,
+            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(64), runnable -> {
+        Thread thread = new Thread(runnable, "pdk-pinned-jar-reload");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private static final class ReloadFailure {
+        private final CoreException error;
+        private final long retryAfterNanos;
+
+        private ReloadFailure(CoreException error, long retryAfterNanos) {
+            this.error = error;
+            this.retryAfterNanos = retryAfterNanos;
+        }
+    }
 
     private ExternalJarManager externalJarManager;
 
@@ -115,10 +137,13 @@ public class TapConnectorManager implements MemoryFetcher {
         long timeout = Math.max(0L, CommonUtils.getPropertyLong("pdk_pinned_jar_wait_millis", 30_000L));
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
         do {
+            CoreException reloadError = recentReloadFailure(downloadedName);
+            if (reloadError != null) throw reloadError;
             long versionBeforeLookup = jarLoadVersion.get();
             TapConnector connector = jarNameTapConnectorMap.get(downloadedName);
             if (connector == null && unloadedJarFiles.containsKey(downloadedName)) {
-                reloadUnloadedJar(downloadedName);
+                if (System.nanoTime() >= deadline) return null;
+                scheduleReload(downloadedName);
                 connector = jarNameTapConnectorMap.get(downloadedName);
             }
             if (connector != null) {
@@ -149,22 +174,57 @@ public class TapConnectorManager implements MemoryFetcher {
         } while (true);
     }
 
-    private void reloadUnloadedJar(String downloadedName) {
+    private CoreException recentReloadFailure(String downloadedName) {
+        ReloadFailure failure = reloadFailures.get(downloadedName);
+        if (failure == null) return null;
+        if (System.nanoTime() - failure.retryAfterNanos < 0L) return failure.error;
+        reloadFailures.remove(downloadedName, failure);
+        return null;
+    }
+
+    private void recordReloadFailure(String downloadedName, File source, Throwable cause) {
+        CoreException error = new CoreException(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, cause,
+                "Failed to reload requested connector jar {} from {}: {}",
+                downloadedName, source.getAbsolutePath(), cause.getMessage());
+        long backoff = Math.max(0L, CommonUtils.getPropertyLong("pdk_pinned_jar_retry_backoff_millis", 5_000L));
+        reloadFailures.put(downloadedName, new ReloadFailure(error,
+                System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(backoff)));
+        TapLogger.warn(TapConnectorManager.class.getSimpleName(), "{}", error.getMessage());
+    }
+
+    private void scheduleReload(String downloadedName) {
         if (externalJarManager == null || !loadingOnDemand.add(downloadedName)) return;
         try {
+            RELOAD_EXECUTOR.execute(() -> reloadUnloadedJar(downloadedName));
+        } catch (RejectedExecutionException error) {
+            loadingOnDemand.remove(downloadedName);
             File source = unloadedJarFiles.get(downloadedName);
+            if (source != null) recordReloadFailure(downloadedName, source, error);
+            signalJarLoaded();
+        }
+    }
+
+    private void reloadUnloadedJar(String downloadedName) {
+        File source = unloadedJarFiles.get(downloadedName);
+        try {
             if (source != null && source.isFile()) {
                 unloadedJarFiles.remove(downloadedName);
-                try {
-                    externalJarManager.loadJars(source.getAbsolutePath());
-                } catch (RuntimeException e) {
-                    unloadedJarFiles.putIfAbsent(downloadedName, source);
-                    throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, e,
-                            "Failed to reload requested connector jar {} from {}: {}",
-                            downloadedName, source.getAbsolutePath(), e.getMessage());
+                externalJarManager.loadJars(source.getAbsolutePath());
+                if (!jarNameTapConnectorMap.containsKey(downloadedName)
+                        && !reloadFailures.containsKey(downloadedName)) {
+                    recordReloadFailure(downloadedName, source,
+                            new IllegalStateException("Jar scan completed without loading the requested connector"));
                 }
+            } else if (source != null) {
+                recordReloadFailure(downloadedName, source,
+                        new IllegalStateException("Source jar is no longer available"));
             }
+        } catch (RuntimeException error) {
+            if (source != null) recordReloadFailure(downloadedName, source, error);
         } finally {
+            if (source != null && reloadFailures.containsKey(downloadedName)) {
+                unloadedJarFiles.putIfAbsent(downloadedName, source);
+            }
             loadingOnDemand.remove(downloadedName);
             signalJarLoaded();
         }
@@ -207,6 +267,7 @@ public class TapConnectorManager implements MemoryFetcher {
     }
 
     private List<TapConnector> latestFirstConnectors() {
+        // Legacy callers have no JAR identity; prefer the most recently modified loaded build.
         return jarNameTapConnectorMap.values().stream()
                 .sorted(java.util.Comparator.<TapConnector>comparingLong(connector -> connector.getModificationTime() == null
                         ? 0L : connector.getModificationTime()).reversed())
@@ -225,6 +286,7 @@ public class TapConnectorManager implements MemoryFetcher {
         long idleMillis = Math.max(0L, CommonUtils.getPropertyLong("pdk_old_jar_idle_millis", TimeUnit.MINUTES.toMillis(30)));
         long cutoff = System.currentTimeMillis() - idleMillis;
         unloadedJarFiles.entrySet().removeIf(entry -> !entry.getValue().isFile());
+        reloadFailures.entrySet().removeIf(entry -> System.nanoTime() - entry.getValue().retryAfterNanos >= 0L);
         for (Map.Entry<String, TapConnector> entry : jarNameTapConnectorMap.entrySet()) {
             String name = entry.getKey();
             TapConnector candidate = entry.getValue();
@@ -319,11 +381,24 @@ public class TapConnectorManager implements MemoryFetcher {
                         return false;
                     })
                     .withJarLoadCompletedListener((jarFile, classLoader, throwable) -> {
-                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
-                        if(existingTapConnector != null) {
-                            existingTapConnector.loadCompleted(jarFile, classLoader, throwable);
+                        String name = jarFile.getName();
+                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(name);
+                        try {
+                            if(existingTapConnector != null) {
+                                existingTapConnector.loadCompleted(jarFile, classLoader, throwable);
+                            }
+                            if (throwable != null && loadingOnDemand.contains(name)) {
+                                recordReloadFailure(name, jarFile, throwable);
+                                if (existingTapConnector != null) jarNameTapConnectorMap.remove(name, existingTapConnector);
+                                if (classLoader instanceof DependencyURLClassLoader) {
+                                    ((DependencyURLClassLoader) classLoader).close();
+                                }
+                            } else if (throwable == null) {
+                                reloadFailures.remove(name);
+                            }
+                        } finally {
+                            signalJarLoaded();
                         }
-                        signalJarLoaded();
                     })
                     .withJarAnnotationHandlersListener((jarFile) -> {
                         TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());

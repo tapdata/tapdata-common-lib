@@ -118,11 +118,7 @@ public class TapConnector implements MemoryFetcher {
                     || !hasTapConnectorNodeId(pdkId, group, version)) {
                 return null;
             }
-            try {
-                return tapNodeClassFactory.createTapConnector(associateId, pdkId, group, version);
-            } finally {
-                checkUsedOrNot();
-            }
+            return createTapConnector(associateId, pdkId, group, version);
         }
     }
 
