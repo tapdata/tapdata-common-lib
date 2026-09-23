@@ -88,4 +88,22 @@ class TapConnectorManagerJarSelectionTest {
         manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT", null, null);
         verify(old).createTapConnector("test", "postgres", "io.tapdata", "1.0-SNAPSHOT");
     }
+
+    @Test
+    void partialJarIdentityFallsBackForLegacyDefinitions() {
+        TapConnector old = loaded("postgres.jar", "null");
+        TapNodeInstance instance = mock(TapNodeInstance.class);
+        when(old.createTapConnector("test", "postgres", "io.tapdata", "1.0-SNAPSHOT")).thenReturn(instance);
+
+        assertSame(instance, manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
+                "postgres.jar", null));
+        assertEquals("postgres__null__.jar", TapConnectorManager.downloadedJarName("postgres.jar", null));
+    }
+
+    @Test
+    void downloadedJarNameOnlyRemovesARealJarSuffix() {
+        assertEquals("postgres.backup__rid__.jar", TapConnectorManager.downloadedJarName("postgres.backup", "rid"));
+        assertEquals("postgres__rid__.jar", TapConnectorManager.downloadedJarName("postgres.jar", "rid"));
+        assertEquals("postgres.jar.backup__rid__.jar", TapConnectorManager.downloadedJarName("postgres.jar.backup", "rid"));
+    }
 }

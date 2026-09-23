@@ -85,22 +85,16 @@ public class TapConnectorManager implements MemoryFetcher {
 
     public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, String version,
                                                    String fileName, String resourceId) {
-        if (fileName == null && resourceId == null) {
-            return createConnectorInstance(associateId, pdkId, group, version);
-        }
         if (fileName == null || resourceId == null) {
-            return null;
+            return createConnectorInstance(associateId, pdkId, group, version);
         }
         return createPinnedInstance(associateId, pdkId, group, version, downloadedJarName(fileName, resourceId), true);
     }
 
     public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, String version,
                                                    String fileName, String resourceId) {
-        if (fileName == null && resourceId == null) {
-            return createProcessorInstance(associateId, pdkId, group, version);
-        }
         if (fileName == null || resourceId == null) {
-            return null;
+            return createProcessorInstance(associateId, pdkId, group, version);
         }
         return createPinnedInstance(associateId, pdkId, group, version, downloadedJarName(fileName, resourceId), false);
     }
@@ -137,12 +131,12 @@ public class TapConnectorManager implements MemoryFetcher {
     }
 
     public static String downloadedJarName(String fileName, String resourceId) {
-        if (fileName == null || resourceId == null) {
+        if (fileName == null) {
             return null;
         }
-        int extension = fileName.toLowerCase().lastIndexOf(".jar");
+        int extension = fileName.toLowerCase(java.util.Locale.ROOT).endsWith(".jar") ? fileName.length() - 4 : -1;
         String baseName = extension < 0 ? fileName : fileName.substring(0, extension);
-        return baseName + "__" + resourceId + "__.jar";
+        return baseName + "__" + String.valueOf(resourceId) + "__.jar";
     }
 
     private TapConnector findLatestConnector(String jarName) {
