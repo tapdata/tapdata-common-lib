@@ -1,6 +1,7 @@
 package io.tapdata.pdk.core.connector;
 
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
+import io.tapdata.pdk.core.utils.state.StateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -105,5 +106,19 @@ class TapConnectorManagerJarSelectionTest {
         assertEquals("postgres.backup__rid__.jar", TapConnectorManager.downloadedJarName("postgres.backup", "rid"));
         assertEquals("postgres__rid__.jar", TapConnectorManager.downloadedJarName("postgres.jar", "rid"));
         assertEquals("postgres.jar.backup__rid__.jar", TapConnectorManager.downloadedJarName("postgres.jar.backup", "rid"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void pinnedConnectorWithoutJarFileReturnsNull() throws Exception {
+        TapConnector connector = new TapConnector();
+        StateMachine<String, TapConnector> stateMachine = mock(StateMachine.class);
+        when(stateMachine.getCurrentState()).thenReturn(TapConnector.STATE_IDLE);
+        Field stateMachineField = TapConnector.class.getDeclaredField("stateMachine");
+        stateMachineField.setAccessible(true);
+        stateMachineField.set(connector, stateMachine);
+
+        assertNull(connector.createTapConnector("postgres__rid__.jar", "test", "postgres", "io.tapdata", "1.0-SNAPSHOT"));
+        assertNull(connector.createTapProcessor("postgres__rid__.jar", "test", "postgres", "io.tapdata", "1.0-SNAPSHOT"));
     }
 }

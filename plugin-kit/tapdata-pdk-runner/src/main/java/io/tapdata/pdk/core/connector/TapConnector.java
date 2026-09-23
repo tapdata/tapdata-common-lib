@@ -110,7 +110,8 @@ public class TapConnector implements MemoryFetcher {
         synchronized (stateMachine) {
             String state = stateMachine.getCurrentState();
             if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
-                    || !expectedJarName.equals(jarFile.getName()) || !hasTapConnectorNodeId(pdkId, group, version)) {
+                    || jarFile == null || !expectedJarName.equals(jarFile.getName())
+                    || !hasTapConnectorNodeId(pdkId, group, version)) {
                 return null;
             }
             try {
@@ -135,7 +136,8 @@ public class TapConnector implements MemoryFetcher {
         synchronized (stateMachine) {
             String state = stateMachine.getCurrentState();
             if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
-                    || !expectedJarName.equals(jarFile.getName()) || !hasTapProcessorNodeId(pdkId, group, version)) {
+                    || jarFile == null || !expectedJarName.equals(jarFile.getName())
+                    || !hasTapProcessorNodeId(pdkId, group, version)) {
                 return null;
             }
             return createTapProcessor(associateId, pdkId, group, version);
