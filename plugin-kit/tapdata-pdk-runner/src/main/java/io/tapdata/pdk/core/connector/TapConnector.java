@@ -106,6 +106,21 @@ public class TapConnector implements MemoryFetcher {
         }
     }
 
+    public TapNodeInstance createTapConnector(String expectedJarName, String associateId, String pdkId, String group, String version) {
+        synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
+                    || !expectedJarName.equals(jarFile.getName()) || !hasTapConnectorNodeId(pdkId, group, version)) {
+                return null;
+            }
+            try {
+                return tapNodeClassFactory.createTapConnector(associateId, pdkId, group, version);
+            } finally {
+                checkUsedOrNot();
+            }
+        }
+    }
+
     public TapNodeInstance createTapProcessor(String associateId, String pdkId, String group, String version) {
         synchronized (stateMachine) {
             try {
@@ -113,6 +128,17 @@ public class TapConnector implements MemoryFetcher {
             } finally {
                 checkUsedOrNot();
             }
+        }
+    }
+
+    public TapNodeInstance createTapProcessor(String expectedJarName, String associateId, String pdkId, String group, String version) {
+        synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
+                    || !expectedJarName.equals(jarFile.getName()) || !hasTapProcessorNodeId(pdkId, group, version)) {
+                return null;
+            }
+            return createTapProcessor(associateId, pdkId, group, version);
         }
     }
 

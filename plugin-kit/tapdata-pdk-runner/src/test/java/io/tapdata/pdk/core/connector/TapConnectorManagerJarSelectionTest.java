@@ -30,8 +30,9 @@ class TapConnectorManagerJarSelectionTest {
     private TapConnector loaded(String name, String resourceId) {
         TapConnector connector = mock(TapConnector.class);
         when(connector.getJarFile()).thenReturn(new File(name.replace(".jar", "__" + resourceId + "__.jar")));
+        when(connector.getState()).thenReturn(TapConnector.STATE_IDLE);
         when(connector.hasTapConnectorNodeId("postgres", "io.tapdata", "1.0-SNAPSHOT")).thenReturn(true);
-        connectors.put(name, connector);
+        connectors.put(TapConnectorManager.downloadedJarName(name, resourceId), connector);
         return connector;
     }
 
@@ -40,30 +41,45 @@ class TapConnectorManagerJarSelectionTest {
         TapConnector old = loaded("postgres-202609230902.jar", "old");
         TapConnector current = loaded("postgres-202609230907.jar", "new");
         TapNodeInstance instance = mock(TapNodeInstance.class);
-        when(current.createTapConnector("test", "postgres", "io.tapdata", "1.0-SNAPSHOT")).thenReturn(instance);
+        when(current.createTapConnector(anyString(), eq("test"), eq("postgres"), eq("io.tapdata"), eq("1.0-SNAPSHOT")))
+                .thenReturn(instance);
 
         assertSame(instance, manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
                 "postgres-202609230907.jar", "new"));
-        verify(old, never()).createTapConnector(anyString(), anyString(), anyString(), anyString());
+        verify(old, never()).createTapConnector(anyString(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
-    void rejectsOldResourceWhenRefreshOfSameFileNameWasSkipped() {
+    void keepsOldResourceAvailableWhileNewBuildIsDownloaded() {
         TapConnector old = loaded("postgres.jar", "old");
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
-                        "postgres.jar", "new"));
-        assertTrue(error.getMessage().contains("postgres__new__.jar"));
-        verify(old, never()).createTapConnector(anyString(), anyString(), anyString(), anyString());
+        TapConnector current = mock(TapConnector.class);
+        when(current.getJarFile()).thenReturn(new File("postgres__new__.jar"));
+        when(current.getState()).thenReturn(TapConnector.STATE_IDLE);
+        when(current.hasTapConnectorNodeId("postgres", "io.tapdata", "1.0-SNAPSHOT")).thenReturn(true);
+        TapNodeInstance instance = mock(TapNodeInstance.class);
+        when(current.createTapConnector(anyString(), eq("test"), eq("postgres"), eq("io.tapdata"), eq("1.0-SNAPSHOT")))
+                .thenReturn(instance);
+        Thread loader = new Thread(() -> {
+            try {
+                Thread.sleep(200L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            connectors.put(TapConnectorManager.downloadedJarName("postgres.jar", "new"), current);
+        });
+        loader.start();
+
+        assertSame(instance, manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
+                "postgres.jar", "new"));
+        verify(old, never()).createTapConnector(anyString(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
-    void missingRequestedBuildDoesNotFallBackToOldBuild() {
-        TapConnector old = loaded("postgres-old.jar", "old");
-        assertThrows(IllegalStateException.class,
-                () -> manager.createConnectorInstance("test", "postgres", "io.tapdata", "1.0-SNAPSHOT",
-                        "postgres-new.jar", "new"));
-        verify(old, never()).createTapConnector(anyString(), anyString(), anyString(), anyString());
+    void hasJarDoesNotMistakeOldBuildForRequestedResource() {
+        loaded("postgres.jar", "old");
+
+        assertTrue(manager.checkTapConnectorByJarName("postgres.jar"));
+        assertFalse(manager.checkTapConnectorByJarName(TapConnectorManager.downloadedJarName("postgres.jar", "new")));
     }
 
     @Test

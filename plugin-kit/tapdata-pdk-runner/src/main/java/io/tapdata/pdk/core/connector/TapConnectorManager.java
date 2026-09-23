@@ -57,16 +57,23 @@ public class TapConnectorManager implements MemoryFetcher {
     }
 
     public TapConnector getTapConnectorByJarName(String jarName) {
-        return jarNameTapConnectorMap.get(jarName);
+        TapConnector connector = jarNameTapConnectorMap.get(jarName);
+        if (connector != null) {
+            return connector;
+        }
+        if (isResourceTaggedJarName(jarName)) {
+            return null;
+        }
+        return findLatestConnector(jarName);
     }
 
     public boolean checkTapConnectorByJarName(String jarName) {
-        return jarNameTapConnectorMap.containsKey(convertJarFileName(jarName));
+        return jarNameTapConnectorMap.containsKey(jarName)
+                || (!isResourceTaggedJarName(jarName) && findLatestConnector(jarName) != null);
     }
 
     public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, String version) {
-        Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
-        for(TapConnector connector : connectors) {
+        for (TapConnector connector : latestFirstConnectors()) {
             if(connector.hasTapConnectorNodeId(pdkId, group, version)) {
                 TapNodeInstance nodeInstance = connector.createTapConnector(associateId, pdkId, group, version);
                 if(nodeInstance != null)
@@ -82,30 +89,87 @@ public class TapConnectorManager implements MemoryFetcher {
             return createConnectorInstance(associateId, pdkId, group, version);
         }
         if (fileName == null || resourceId == null) {
-            throw new IllegalArgumentException("Both connector jar file name and resource id are required");
+            return null;
         }
-        String downloadedName = fileName.split("\\.jar")[0] + "__" + resourceId + "__.jar";
-        TapConnector connector = jarNameTapConnectorMap.get(convertJarFileName(downloadedName));
-        // A download does not guarantee refresh succeeded (the old jar may still be in use).
-        // Never silently execute another build with the same pdkId/group/version.
-        if (connector == null || connector.getJarFile() == null
-                || !downloadedName.equals(connector.getJarFile().getName())
-                || !connector.hasTapConnectorNodeId(pdkId, group, version)) {
-            throw new IllegalStateException("Requested connector jar is not loaded: " + downloadedName);
+        return createPinnedInstance(associateId, pdkId, group, version, downloadedJarName(fileName, resourceId), true);
+    }
+
+    public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, String version,
+                                                   String fileName, String resourceId) {
+        if (fileName == null && resourceId == null) {
+            return createProcessorInstance(associateId, pdkId, group, version);
         }
-        return connector.createTapConnector(associateId, pdkId, group, version);
+        if (fileName == null || resourceId == null) {
+            return null;
+        }
+        return createPinnedInstance(associateId, pdkId, group, version, downloadedJarName(fileName, resourceId), false);
+    }
+
+    private TapNodeInstance createPinnedInstance(String associateId, String pdkId, String group, String version,
+                                                 String downloadedName, boolean connectorNode) {
+        long deadline = System.currentTimeMillis() + 30_000L;
+        do {
+            TapConnector connector = jarNameTapConnectorMap.get(downloadedName);
+            if (connector != null) {
+                String state = connector.getState();
+                if (TapConnector.STATE_IDLE.equals(state) || TapConnector.STATE_BEING_USED.equals(state)) {
+                    TapNodeInstance instance = connectorNode
+                            ? connector.createTapConnector(downloadedName, associateId, pdkId, group, version)
+                            : connector.createTapProcessor(downloadedName, associateId, pdkId, group, version);
+                    if (instance != null) {
+                        return instance;
+                    }
+                }
+                if (TapConnector.STATE_TERMINATED.equals(state)) {
+                    return null;
+                }
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                return null;
+            }
+            try {
+                Thread.sleep(100L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        } while (true);
+    }
+
+    public static String downloadedJarName(String fileName, String resourceId) {
+        if (fileName == null || resourceId == null) {
+            return null;
+        }
+        int extension = fileName.toLowerCase().lastIndexOf(".jar");
+        String baseName = extension < 0 ? fileName : fileName.substring(0, extension);
+        return baseName + "__" + resourceId + "__.jar";
+    }
+
+    private TapConnector findLatestConnector(String jarName) {
+        String expectedBaseName = convertJarFileName(jarName);
+        return jarNameTapConnectorMap.values().stream()
+                .filter(connector -> connector.getJarFile() != null
+                        && convertJarFileName(connector.getJarFile().getName()).equals(expectedBaseName))
+                .max(java.util.Comparator.<TapConnector>comparingLong(connector -> connector.getModificationTime() == null
+                        ? 0L : connector.getModificationTime()))
+                .orElse(null);
     }
     public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, String version) {
         //TODO can be optimized for performance
-        Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
-        for(TapConnector connector : connectors) {
-            if(connector.hasTapProcessorNodeId(pdkId, group, version)) {
+        for (TapConnector connector : latestFirstConnectors()) {
+            if (connector.hasTapProcessorNodeId(pdkId, group, version)) {
                 TapNodeInstance nodeInstance = connector.createTapProcessor(associateId, pdkId, group, version);
-                if(nodeInstance != null)
-                    return nodeInstance;
+                if (nodeInstance != null) return nodeInstance;
             }
         }
         return null;
+    }
+
+    private List<TapConnector> latestFirstConnectors() {
+        return jarNameTapConnectorMap.values().stream()
+                .sorted(java.util.Comparator.<TapConnector>comparingLong(connector -> connector.getModificationTime() == null
+                        ? 0L : connector.getModificationTime()).reversed())
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public void releaseAssociateId(String associateId) {
@@ -141,7 +205,7 @@ public class TapConnectorManager implements MemoryFetcher {
             }
 
             externalJarManager.withJarFoundListener((jarFile, firstTime) -> {
-                String realJarFile = convertJarFileName(jarFile.getName());
+                String realJarFile = jarFile.getName();
                         if(firstTime || externalJarManager.isLoadNewJarAtRuntime()) {
                             TapConnector existingTapConnector = jarNameTapConnectorMap.get(realJarFile);
                             if(existingTapConnector == null) {
@@ -171,13 +235,13 @@ public class TapConnectorManager implements MemoryFetcher {
                         return false;
                     })
                     .withJarLoadCompletedListener((jarFile, classLoader, throwable) -> {
-                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
+                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
                         if(existingTapConnector != null) {
                             existingTapConnector.loadCompleted(jarFile, classLoader, throwable);
                         }
                     })
                     .withJarAnnotationHandlersListener((jarFile) -> {
-                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
+                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
                         if(existingTapConnector != null)
                             return existingTapConnector.getTapNodeClassFactory().getClassAnnotationHandlers();
                         return null;
@@ -198,6 +262,10 @@ public class TapConnectorManager implements MemoryFetcher {
             }
         }
         return jarFileName;
+    }
+
+    private boolean isResourceTaggedJarName(String jarFileName) {
+        return jarFileName != null && !jarFileName.equals(convertJarFileName(jarFileName));
     }
 
     /**
