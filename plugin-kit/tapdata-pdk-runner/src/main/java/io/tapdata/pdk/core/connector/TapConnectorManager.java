@@ -134,7 +134,7 @@ public class TapConnectorManager implements MemoryFetcher {
 
     private TapNodeInstance createPinnedInstance(String associateId, String pdkId, String group, String version,
                                                  String downloadedName, boolean connectorNode) {
-        long timeout = Math.max(0L, CommonUtils.getPropertyLong("pdk_pinned_jar_wait_millis", 30_000L));
+        long timeout = Math.max(0L, CommonUtils.getPropertyLong("pdk_pinned_jar_wait_millis", 3_000L));
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
         do {
             CoreException reloadError = recentReloadFailure(downloadedName);
