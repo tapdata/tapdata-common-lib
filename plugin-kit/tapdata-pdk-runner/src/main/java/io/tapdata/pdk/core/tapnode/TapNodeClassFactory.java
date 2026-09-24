@@ -166,6 +166,18 @@ public class TapNodeClassFactory implements MemoryFetcher {
 
     }
 
+    public void unload() {
+        ClassLoader old = classLoader;
+        classLoader = null;
+        releaseClassloader(old);
+        tapConnectorAnnotationHandler.idGroupTapNodeInfoMap.clear();
+        tapConnectorAnnotationHandler.newerIdGroupTapNodeInfoMap = null;
+        tapProcessorAnnotationHandler.idGroupTapNodeInfoMap.clear();
+        tapProcessorAnnotationHandler.newerIdGroupTapNodeInfoMap = null;
+        tapErrorCodeAnnotationHandler.idGroupTapNodeInfoMap.clear();
+        tapErrorCodeAnnotationHandler.newerIdGroupTapNodeInfoMap = null;
+    }
+
     public TapNodeInfo getTapNodeInfoForConnector(String pdkId, String group, String version) {
         return tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, version);
     }

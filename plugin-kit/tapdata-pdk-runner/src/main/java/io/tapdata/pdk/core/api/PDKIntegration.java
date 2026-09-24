@@ -38,9 +38,22 @@ public class PDKIntegration {
     private static MemoryManager memoryManager;
     private static final String TAG = PDKIntegration.class.getSimpleName();
 
+    public static String downloadedJarName(String fileName, String resourceId) {
+        return TapConnectorManager.downloadedJarName(fileName, resourceId);
+    }
+
     private PDKIntegration() {}
 
     public abstract static class ConnectionBuilder<T extends Node> {
+        protected String jarFileName;
+        protected String jarResourceId;
+
+        public ConnectionBuilder<T> withJarFile(String fileName, String resourceId) {
+            this.jarFileName = fileName;
+            this.jarResourceId = resourceId;
+            return this;
+        }
+
         protected String associateId;
         protected DataMap connectionConfig;
         protected DataMap nodeConfig;
@@ -126,6 +139,14 @@ public class PDKIntegration {
     }
 
     public abstract static class ProcessorBuilder<T extends Node> {
+        protected String jarFileName;
+        protected String jarResourceId;
+
+        public ProcessorBuilder<T> withJarFile(String fileName, String resourceId) {
+            this.jarFileName = fileName;
+            this.jarResourceId = resourceId;
+            return this;
+        }
         protected DataMap nodeConfig;
         protected Map<String, DataMap> tableNodeConfig;
         protected String dagId;
@@ -221,6 +242,15 @@ public class PDKIntegration {
     }
 
     public abstract static class ConnectorBuilder<T extends Node> {
+        protected String jarFileName;
+        protected String jarResourceId;
+
+        public ConnectorBuilder<T> withJarFile(String fileName, String resourceId) {
+            this.jarFileName = fileName;
+            this.jarResourceId = resourceId;
+            return this;
+        }
+
         protected DataMap nodeConfig;
         protected Map<String, DataMap> tableNodeConfig;
         protected String dagId;
@@ -383,9 +413,12 @@ public class PDKIntegration {
     public static class ConnectionConnectorBuilder extends ConnectionBuilder<ConnectionNode> {
         public ConnectionNode build() {
             checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version, jarFileName, jarResourceId);
+            if(nodeInstance == null) {
+                String message = MessageFormat.format("Connection not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId);
+                if (jarFileName != null) message += MessageFormat.format(", requested jar {0} ({1})", jarFileName, jarResourceId);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_CONNECTOR_NOTFOUND, message);
+            }
             ConnectionNode connectionNode = new ConnectionNode();
             connectionNode.init((TapConnector) nodeInstance.getTapNode());
             connectionNode.associateId = associateId;
@@ -405,9 +438,12 @@ public class PDKIntegration {
     public static class ConnectorBuilderEx extends ConnectorBuilder<ConnectorNode> {
         public ConnectorNode build() {
             checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_CONNECTOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version, jarFileName, jarResourceId);
+            if(nodeInstance == null) {
+                String message = MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId);
+                if (jarFileName != null) message += MessageFormat.format(", requested jar {0} ({1})", jarFileName, jarResourceId);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_CONNECTOR_NOTFOUND, message);
+            }
             ConnectorNode connectorNode = new ConnectorNode();
             connectorNode.init((TapConnector) nodeInstance.getTapNode());
             connectorNode.dagId = dagId;
@@ -438,9 +474,12 @@ public class PDKIntegration {
     public static class ProcessorConnectorBuilder extends ProcessorBuilder<ProcessorNode> {
         public ProcessorNode build() {
             checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createProcessorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Processor not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createProcessorInstance(associateId, pdkId, group, version, jarFileName, jarResourceId);
+            if(nodeInstance == null) {
+                String message = MessageFormat.format("Processor not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId);
+                if (jarFileName != null) message += MessageFormat.format(", requested jar {0} ({1})", jarFileName, jarResourceId);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, message);
+            }
             ProcessorNode processorNode = new ProcessorNode();
             processorNode.dagId = dagId;
             processorNode.associateId = associateId;

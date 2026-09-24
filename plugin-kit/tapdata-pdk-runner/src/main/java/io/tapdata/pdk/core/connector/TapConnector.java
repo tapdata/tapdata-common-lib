@@ -34,6 +34,7 @@ public class TapConnector implements MemoryFetcher {
     public static final String STATE_LOADING = "Loading";
     public static final String STATE_TERMINATED = "Terminated";
     private volatile StateMachine<String, TapConnector> stateMachine;
+    private volatile long idleSince = System.currentTimeMillis();
 
     private final Object lock = new int[0];
 
@@ -83,6 +84,7 @@ public class TapConnector implements MemoryFetcher {
     private void checkUsedOrNot() {
         if(tapNodeClassFactory.isAssociateIdEmpty() && stateMachine.getCurrentState().equals(STATE_BEING_USED)) {
             stateMachine.gotoState(STATE_IDLE, "Jar " + jarFile + " is idle now");
+            idleSince = System.currentTimeMillis();
         } else if(!tapNodeClassFactory.isAssociateIdEmpty() && stateMachine.getCurrentState().equals(STATE_IDLE)) {
             stateMachine.gotoState(STATE_BEING_USED, "Jar " + jarFile + " is using now");
         }
@@ -98,6 +100,8 @@ public class TapConnector implements MemoryFetcher {
 
     public TapNodeInstance createTapConnector(String associateId, String pdkId, String group, String version) {
         synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if (!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state)) return null;
             try {
                 return tapNodeClassFactory.createTapConnector(associateId, pdkId, group, version);
             } finally {
@@ -106,13 +110,39 @@ public class TapConnector implements MemoryFetcher {
         }
     }
 
+    public TapNodeInstance createTapConnector(String expectedJarName, String associateId, String pdkId, String group, String version) {
+        synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
+                    || jarFile == null || !expectedJarName.equals(jarFile.getName())
+                    || !hasTapConnectorNodeId(pdkId, group, version)) {
+                return null;
+            }
+            return createTapConnector(associateId, pdkId, group, version);
+        }
+    }
+
     public TapNodeInstance createTapProcessor(String associateId, String pdkId, String group, String version) {
         synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if (!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state)) return null;
             try {
                 return tapNodeClassFactory.createTapProcessor(associateId, pdkId, group, version);
             } finally {
                 checkUsedOrNot();
             }
+        }
+    }
+
+    public TapNodeInstance createTapProcessor(String expectedJarName, String associateId, String pdkId, String group, String version) {
+        synchronized (stateMachine) {
+            String state = stateMachine.getCurrentState();
+            if ((!STATE_IDLE.equals(state) && !STATE_BEING_USED.equals(state))
+                    || jarFile == null || !expectedJarName.equals(jarFile.getName())
+                    || !hasTapProcessorNodeId(pdkId, group, version)) {
+                return null;
+            }
+            return createTapProcessor(associateId, pdkId, group, version);
         }
     }
 
@@ -160,6 +190,17 @@ public class TapConnector implements MemoryFetcher {
         return jarFileTime;
     }
 
+    public boolean unloadIfIdle(long idleBefore) {
+        if (stateMachine == null) return false;
+        synchronized (stateMachine) {
+            if (!STATE_IDLE.equals(stateMachine.getCurrentState()) || !tapNodeClassFactory.isAssociateIdEmpty()
+                    || idleSince > idleBefore) return false;
+            stateMachine.gotoState(STATE_TERMINATED, "Unloading idle jar " + jarFile);
+            tapNodeClassFactory.unload();
+            return true;
+        }
+    }
+
     public TapNodeClassFactory getTapNodeClassFactory() {
         return tapNodeClassFactory;
     }
@@ -170,11 +211,13 @@ public class TapConnector implements MemoryFetcher {
         System.out.println("map " + map);
     }
 
-    void willUpdateJar(final File jarFile) {
-        if(stateMachine.getCurrentState().equals(STATE_IDLE)) {
+    boolean willUpdateJar(final File jarFile) {
+        synchronized (stateMachine) {
+            if (!STATE_IDLE.equals(stateMachine.getCurrentState())) return false;
             stateMachine.gotoState(STATE_LOADING, "Will update jar " + jarFile.getAbsolutePath(), (tapConnector, stateMachine1) -> {
                 this.loadingJarFile = jarFile;
             });
+            return true;
         }
     }
 
@@ -185,6 +228,7 @@ public class TapConnector implements MemoryFetcher {
                     setJarFile(this.loadingJarFile);
                     this.loadingJarFile = null;
                     tapNodeClassFactory.applyNewClassloader(classLoader);
+                    idleSince = System.currentTimeMillis();
                     return;
                 }
                 if(throwable != null) {
