@@ -35,13 +35,13 @@ public class JavaTypesToTapTypes {
             case JAVA_Array:
                 return tapArray();
             case JAVA_Float:
-                return tapNumber().maxValue(BigDecimal.valueOf(Float.MAX_VALUE)).minValue(BigDecimal.valueOf(-Float.MAX_VALUE)).fixed(false).scale(8).precision(38);
+                return new TapFloat();
             case JAVA_Date:
                 return tapDateTime().fraction(3);
             case JAVA_BigDecimal:
                 return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE)).precision(10000).scale(100).fixed(true);
             case JAVA_Double:
-                return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE)).scale(17).precision(309).fixed(false);
+                return new TapDouble();
             case JAVA_Long:
                 return tapNumber().maxValue(BigDecimal.valueOf(Long.MAX_VALUE)).minValue(BigDecimal.valueOf(Long.MIN_VALUE));
             case JAVA_Map:
@@ -88,7 +88,7 @@ public class JavaTypesToTapTypes {
         }else if(theValue instanceof Integer) {
             return toTapType(JAVA_Integer);
         } else if(theValue instanceof Number) {
-            return toTapType(JAVA_Double);
+            return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE)).scale(17).precision(309).fixed(false);
         } else if(theValue instanceof Date || theValue instanceof Instant || theValue instanceof DateTime) {
             return toTapType(JAVA_Date);
         } else if(theValue instanceof Collection) {
@@ -123,7 +123,11 @@ public class JavaTypesToTapTypes {
         } else if (aClass == TapMap.class) {
             return toTapType(JAVA_Map);
         } else if (aClass == TapNumber.class) {
-            return toTapType(JAVA_Double);
+            return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE)).scale(17).precision(309).fixed(false);
+        } else if (aClass == TapFloat.class) {
+            return new TapFloat();
+        } else if (aClass == TapDouble.class) {
+            return new TapDouble();
         } else if (aClass == TapRaw.class) {
             return tapRaw();
         } else if (aClass == TapString.class) {

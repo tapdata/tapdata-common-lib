@@ -89,7 +89,15 @@ public abstract class TapMapping {
         if(to == null)
             return null;
 
-        String typeMappingClass = TapMapping.class.getPackage().getName() + "." + to + "Mapping";
+        String mappingName = null;
+        Object mappingObj = info.get("mapping");
+        if (mappingObj instanceof String) {
+            mappingName = (String) mappingObj;
+        }
+        if (mappingName == null || mappingName.trim().isEmpty()) {
+            mappingName = to;
+        }
+        String typeMappingClass = TapMapping.class.getPackage().getName() + "." + mappingName + "Mapping";
         Class<?> mappingClass = classCacheMap.get(typeMappingClass);
         if(mappingClass == null) {
             synchronized (classCacheMap) {
