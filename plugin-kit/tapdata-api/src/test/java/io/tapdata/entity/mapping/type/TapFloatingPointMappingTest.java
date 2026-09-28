@@ -109,6 +109,35 @@ class TapFloatingPointMappingTest {
     }
 
     @Test
+    void shouldMigrateLegacyDefaultBitAndCannotWriteForFloat() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapFloat");
+        info.put("precision", Arrays.asList(1, 6));
+        info.put("defaultBit", 4);
+        info.put("cannotWrite", true);
+
+        TapFloat type = (TapFloat) TapMapping.build(info)
+                .toTapType("FLOAT", Collections.emptyMap());
+
+        assertEquals(4, type.getBit());
+        assertEquals(true, type.getCannotWrite());
+    }
+
+    @Test
+    void shouldMigrateLegacyPreferredBitWithRatioForDouble() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapDouble");
+        info.put("precision", Arrays.asList(1, 17));
+        info.put("preferBit", 4);
+        info.put("bitRatio", 2);
+
+        TapDouble type = (TapDouble) TapMapping.build(info)
+                .toTapType("DOUBLE", Collections.emptyMap());
+
+        assertEquals(8, type.getBit());
+    }
+
+    @Test
     void shouldResolveParameterizedFloatingPointPrecision() {
         Map<String, Object> info = new HashMap<>();
         info.put("to", "TapFloat");

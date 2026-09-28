@@ -12,10 +12,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TapFloatingPointTypeTest {
@@ -176,5 +179,21 @@ class TapFloatingPointTypeTest {
 
         assertEquals(null, new ToTapFloatCodec().toTapValue(Double.NaN, type));
         assertEquals(null, new ToTapFloatCodec().toTapValue(Double.POSITIVE_INFINITY, type));
+    }
+
+    @Test
+    void shouldRejectFiniteNumberOverflowEvenWhenInfinityIsSupported() {
+        BigDecimal source = new BigDecimal("1E+400");
+
+        assertNull(new ToTapFloatCodec().toTapValue(source, new TapFloat().supportsInfinity(true)));
+        assertNull(new ToTapDoubleCodec().toTapValue(source, new TapDouble().supportsInfinity(true)));
+    }
+
+    @Test
+    void shouldTreatFloatAndDoubleInfinityAsSourceSpecialValues() {
+        assertNotNull(new ToTapFloatCodec().toTapValue(Float.POSITIVE_INFINITY,
+                new TapFloat().supportsInfinity(true)));
+        assertNotNull(new ToTapDoubleCodec().toTapValue(Double.POSITIVE_INFINITY,
+                new TapDouble().supportsInfinity(true)));
     }
 }

@@ -135,7 +135,7 @@ final class FloatingPointMappingSupport {
         legacyMapping.from(info);
         TapNumber legacyType = (TapNumber) legacyMapping.toTapType(dataType, params);
 
-        if (info.containsKey(TapNumberMapping.KEY_BIT) && legacyType.getBit() != null) {
+        if (legacyType.getBit() != null) {
             type.bit(legacyType.getBit());
         }
         type.precision(legacyType.getPrecision());
@@ -150,6 +150,10 @@ final class FloatingPointMappingSupport {
         }
         if (info.containsKey(TapNumberMapping.KEY_FIXED) && legacyType.getFixed() != null) {
             type.fixed(legacyType.getFixed());
+        }
+        Boolean cannotWrite = booleanValue(info.get("cannotWrite"));
+        if (cannotWrite != null) {
+            type.setCannotWrite(cannotWrite);
         }
         return true;
     }

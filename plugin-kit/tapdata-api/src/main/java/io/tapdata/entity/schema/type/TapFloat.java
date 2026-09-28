@@ -38,7 +38,9 @@ public class TapFloat extends TapNumber {
 
     @Override
     public TapFloat bit(Integer bit) {
-        setBit(bit);
+        if (null != bit && bit > 0) {
+            setBit(bit);
+        }
         return this;
     }
 
@@ -126,7 +128,9 @@ public class TapFloat extends TapNumber {
 
     @Override
     public TapFloat fixed(Boolean fixed) {
-        setFixed(fixed);
+        if (null != fixed) {
+            setFixed(fixed);
+        }
         return this;
     }
 

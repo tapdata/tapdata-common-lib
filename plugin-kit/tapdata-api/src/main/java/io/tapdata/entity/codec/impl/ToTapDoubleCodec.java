@@ -21,7 +21,8 @@ public class ToTapDoubleCodec implements ToTapValueCodec<TapDoubleValue> {
         if (value instanceof Number) {
             Number number = (Number) value;
             double source = number.doubleValue();
-            sourceSpecial = Double.isNaN(source) || Double.isInfinite(source);
+            sourceSpecial = (number instanceof Float || number instanceof Double)
+                    && (Double.isNaN(source) || Double.isInfinite(source));
             converted = source;
             if (!sourceSpecial && converted.isInfinite()) {
                 return null;

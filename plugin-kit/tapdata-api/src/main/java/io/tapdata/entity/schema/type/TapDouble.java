@@ -33,7 +33,9 @@ public class TapDouble extends TapNumber {
 
     @Override
     public TapDouble bit(Integer bit) {
-        setBit(bit);
+        if (null != bit && bit > 0) {
+            setBit(bit);
+        }
         return this;
     }
 
@@ -121,7 +123,9 @@ public class TapDouble extends TapNumber {
 
     @Override
     public TapDouble fixed(Boolean fixed) {
-        setFixed(fixed);
+        if (null != fixed) {
+            setFixed(fixed);
+        }
         return this;
     }
 
