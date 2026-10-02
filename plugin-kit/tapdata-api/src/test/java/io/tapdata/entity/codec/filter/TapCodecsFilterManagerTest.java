@@ -1,10 +1,15 @@
 package io.tapdata.entity.codec.filter;
 
+import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.schema.type.TapFloat;
+import io.tapdata.entity.schema.type.TapType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author samuel
@@ -46,6 +51,29 @@ class TapCodecsFilterManagerTest {
 		void test5() {
 			String key = "a.b.c";
 			assertSame(key, TapCodecsFilterManager.fieldName(key));
+		}
+	}
+
+	@Test
+	void shouldUseConcreteCodecForAllNumericProtocolTypes() {
+		ToTapValueCodec<?> codec = mock(ToTapValueCodec.class);
+		TapFloat type = new TapFloat() {
+			@Override
+			public ToTapValueCodec<?> toTapValueCodec() {
+				return codec;
+			}
+		};
+
+		assertSame(codec, new ExposedFilterManager().valueCodec(type));
+	}
+
+	private static class ExposedFilterManager extends TapCodecsFilterManager {
+		private ExposedFilterManager() {
+			super(new TapCodecsRegistry());
+		}
+
+		private ToTapValueCodec<?> valueCodec(TapType type) {
+			return getValueCodec(type);
 		}
 	}
 }
