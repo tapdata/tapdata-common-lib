@@ -12,6 +12,8 @@ import io.tapdata.entity.codec.filter.impl.AllLayerMapIteratorFromTapValue;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.type.TapDouble;
+import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
@@ -216,8 +218,17 @@ public class TapCodecsFilterManager {
             case TapType.TYPE_MAP:
             case TapType.TYPE_YEAR:
             case TapType.TYPE_BINARY:
-            case TapType.TYPE_NUMBER:
                 return typeFromSchema.toTapValueCodec();
+            case TapType.TYPE_NUMBER:
+                // TapFloat / TapDouble report TapType.TYPE_NUMBER (they extend TapNumber),
+                // so dispatch to their concrete codecs only for those two types.
+                // Plain TapNumber (and TapCoefficientFloat) must keep the original
+                // pass-through behaviour, otherwise every numeric field is needlessly
+                // routed through ToTapNumberCodec.
+                if (typeFromSchema instanceof TapFloat || typeFromSchema instanceof TapDouble) {
+                    return typeFromSchema.toTapValueCodec();
+                }
+                return null;
         }
         return null;
     }
