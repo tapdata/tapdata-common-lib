@@ -219,16 +219,6 @@ public class TapCodecsFilterManager {
             case TapType.TYPE_YEAR:
             case TapType.TYPE_BINARY:
                 return typeFromSchema.toTapValueCodec();
-            case TapType.TYPE_NUMBER:
-                // TapFloat / TapDouble report TapType.TYPE_NUMBER (they extend TapNumber),
-                // so dispatch to their concrete codecs only for those two types.
-                // Plain TapNumber (and TapCoefficientFloat) must keep the original
-                // pass-through behaviour, otherwise every numeric field is needlessly
-                // routed through ToTapNumberCodec.
-                if (typeFromSchema instanceof TapFloat || typeFromSchema instanceof TapDouble) {
-                    return typeFromSchema.toTapValueCodec();
-                }
-                return null;
         }
         return null;
     }

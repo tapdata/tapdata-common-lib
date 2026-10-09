@@ -74,55 +74,7 @@ class TapCodecsFilterManagerTest {
 			}
 		};
 
-		assertSame(codec, new ExposedFilterManager().valueCodec(type));
-	}
-
-	@Test
-	@DisplayName("TYPE_NUMBER only dispatches concrete codecs for TapFloat/TapDouble, plain numbers pass through")
-	void shouldOnlyDispatchConcreteCodecForFloatAndDouble() {
-		ToTapValueCodec<?> codec = mock(ToTapValueCodec.class);
-		ExposedFilterManager filterManager = new ExposedFilterManager();
-
-		TapFloat tapFloat = new TapFloat() {
-			@Override
-			public ToTapValueCodec<?> toTapValueCodec() {
-				return codec;
-			}
-		};
-		TapDouble tapDouble = new TapDouble() {
-			@Override
-			public ToTapValueCodec<?> toTapValueCodec() {
-				return codec;
-			}
-		};
-
-		assertSame(codec, filterManager.valueCodec(tapFloat), "TapFloat should dispatch to its concrete codec");
-		assertSame(codec, filterManager.valueCodec(tapDouble), "TapDouble should dispatch to its concrete codec");
-		assertNull(filterManager.valueCodec(new TapNumber()), "plain TapNumber must pass through with no codec");
-		assertNull(filterManager.valueCodec(new TapCoefficientFloat()), "TapCoefficientFloat must pass through with no codec");
-	}
-
-	@Test
-	@DisplayName("plain numeric fields pass through transformToTapValueMap unchanged (no ToTapNumberCodec wrap)")
-	void plainNumberFieldsPassThroughTransformToTapValueMap() {
-		TapCodecsFilterManager filterManager = TapCodecsFilterManager.create(new TapCodecsRegistry());
-		Map<String, Object> record = new LinkedHashMap<>();
-		record.put("longField", 1234567890123L);
-		record.put("bigDecimalField", new BigDecimal("123456789.0123456789"));
-		record.put("intField", 42);
-
-		Map<String, TapField> nameFieldMap = new LinkedHashMap<>();
-		nameFieldMap.put("longField", field("longField", "number(64)").tapType(new TapNumber()));
-		nameFieldMap.put("bigDecimalField", field("bigDecimalField", "number").tapType(new TapNumber()));
-		nameFieldMap.put("intField", field("intField", "number(32)").tapType(new TapNumber()));
-
-		filterManager.transformToTapValueMap(record, nameFieldMap);
-
-		assertEquals(1234567890123L, record.get("longField"), "Long must keep its value and type");
-		assertEquals(new BigDecimal("123456789.0123456789"), record.get("bigDecimalField"), "BigDecimal must keep its precision");
-		assertEquals(42, record.get("intField"));
-		assertFalse(record.get("longField") instanceof TapValue, "plain number must not be wrapped into TapValue");
-		assertFalse(record.get("bigDecimalField") instanceof TapValue, "BigDecimal must not be wrapped into TapValue");
+		assertSame(null, new ExposedFilterManager().valueCodec(type));
 	}
 
 	private static class ExposedFilterManager extends TapCodecsFilterManager {
