@@ -1,5 +1,6 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.ToTapRawValueCodec;
 import io.tapdata.entity.codec.impl.FromTapDoubleCodec;
 import io.tapdata.entity.codec.impl.FromTapFloatCodec;
 import io.tapdata.entity.codec.impl.ToTapDoubleCodec;
@@ -171,6 +172,32 @@ class TapFloatingPointTypeTest {
         assertEquals(source, doubleValue.getValue());
         assertEquals(Float.valueOf(floatValue.getValue().floatValue()), new FromTapFloatCodec().fromTapValue(floatValue));
         assertEquals(Double.valueOf(source), new FromTapDoubleCodec().fromTapValue(doubleValue));
+    }
+
+    @Test
+    void shouldNormalizeFloatingPointValuesWithoutCreatingTapValue() {
+        double source = 1.234567890123d;
+
+        Object floatValue = ((ToTapRawValueCodec) new ToTapFloatCodec()).toRawValue(source, new TapFloat());
+        Object doubleValue = ((ToTapRawValueCodec) new ToTapDoubleCodec()).toRawValue(source, new TapDouble());
+
+        assertInstanceOf(Double.class, floatValue);
+        assertInstanceOf(Double.class, doubleValue);
+        assertEquals((double) (float) source, floatValue);
+        assertEquals(source, doubleValue);
+        assertFalse(floatValue instanceof TapFloatValue);
+        assertFalse(doubleValue instanceof TapDoubleValue);
+    }
+
+    @Test
+    void shouldApplyFloatingPointValidationToRawValues() {
+        ToTapRawValueCodec floatCodec = (ToTapRawValueCodec) new ToTapFloatCodec();
+        ToTapRawValueCodec doubleCodec = (ToTapRawValueCodec) new ToTapDoubleCodec();
+
+        assertNull(floatCodec.toRawValue(Double.NaN, new TapFloat().supportsNaN(false)));
+        assertNull(doubleCodec.toRawValue(Double.POSITIVE_INFINITY, new TapDouble().supportsInfinity(false)));
+        assertNull(floatCodec.toRawValue(new BigDecimal("1E+400"), new TapFloat().supportsInfinity(true)));
+        assertNull(doubleCodec.toRawValue(new BigDecimal("1E+400"), new TapDouble().supportsInfinity(true)));
     }
 
     @Test

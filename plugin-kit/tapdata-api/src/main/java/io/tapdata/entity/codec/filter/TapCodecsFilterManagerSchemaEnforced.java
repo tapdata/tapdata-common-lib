@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapRawValueCodec;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.detector.TapDetector;
 import io.tapdata.entity.codec.detector.TapSkipper;
@@ -15,6 +16,8 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.type.TapDouble;
+import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JavaTypesToTapTypes;
@@ -37,7 +40,7 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 	private static final String TAG = TapCodecsFilterManagerSchemaEnforced.class.getSimpleName();
 	public static final String TAPDATA_TRANSFORM_TABLE_FIELD_CACHE_MAXSIZE_PROP_KEY = "TAPDATA_TRANSFORM_TABLE_FIELD_CACHE_MAXSIZE";
 
-	private final Cache<String, TransformToTapValueFieldWrapper> transformToTapValueInsertFieldWrapperCache;
+	private final Cache<SchemaCacheKey, TransformToTapValueFieldWrapper> transformToTapValueInsertFieldWrapperCache;
 
 	public TapCodecsFilterManagerSchemaEnforced(TapCodecsRegistry codecsRegistry) {
 		super(codecsRegistry);
@@ -48,12 +51,23 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				.build();
 	}
 	public Set<String> transformToTapValueMap(Map<String, Object> data, TapTable tapTable, TapDetector... detectors) {
-		return transformToTapValueMap(data, tapTable, null, detectors);
+		return transformToTapValueMap(FloatingPointTransformMode.COMPATIBILITY, data, tapTable, null, detectors);
+	}
+
+	public Set<String> transformToTapValueMap(FloatingPointTransformMode mode, Map<String, Object> data,
+			TapTable tapTable, TapDetector... detectors) {
+		return transformToTapValueMap(mode, data, tapTable, null, detectors);
 	}
 
 	public Set<String> transformToTapValueMap(Map<String, Object> data, TapTable tapTable, Map<String, TapValue<?, ?>> originValueMap, TapDetector... detectors) {
+		return transformToTapValueMap(FloatingPointTransformMode.COMPATIBILITY, data, tapTable, originValueMap, detectors);
+	}
+
+	public Set<String> transformToTapValueMap(FloatingPointTransformMode mode, Map<String, Object> data,
+			TapTable tapTable, Map<String, TapValue<?, ?>> originValueMap, TapDetector... detectors) {
 		if (data == null)
 			return new HashSet<>();
+		FloatingPointTransformMode transformMode = mode == null ? FloatingPointTransformMode.COMPATIBILITY : mode;
 		Set<String> transformedToTapValueFieldNames = new HashSet<>();
 		AtomicReference<ToTapValueCheck> toTapValueCheckRef = new AtomicReference<>();
 		AtomicReference<TapSkipper> skipperRef = new AtomicReference<>();
@@ -79,7 +93,8 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				fieldName = fieldName(key);
 			}
 			TapValue<?, ?> originTapValue = null;
-			TapField field = transformToTapValueFieldWrapper.getField(index.getAndIncrement());
+			TransformToTapValueFieldWrapper.FieldPlan fieldPlan = transformToTapValueFieldWrapper.getFieldPlan(index.getAndIncrement());
+			TapField field = fieldPlan == null ? null : fieldPlan.getTapField();
 			if (value != null && fieldName != null) {
 				if ((value instanceof TapValue)) {
 					TapLogger.debug(TAG, "Value {} for field {} already in TapValue format, no need do ToTapValue conversion. ", value, fieldName);
@@ -89,6 +104,7 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				String dataType = null;
 				TapType typeFromSchema = null;
 				ToTapValueCodec<?> valueCodec = null;
+				boolean customValueCodec = false;
 
 				boolean newField = false;
 
@@ -99,12 +115,19 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 						return null;
 					}
 					valueCodec = this.codecsRegistry.getCustomToTapValueCodec(value.getClass());
+					customValueCodec = valueCodec != null;
 
 					if (field != null) {
 						dataType = field.getDataType();
 						typeFromSchema = field.getTapType();
 						if (typeFromSchema != null && valueCodec == null) {
-							valueCodec = getValueCodec(typeFromSchema);
+							boolean rawFloatingPoint = transformMode == FloatingPointTransformMode.RAW
+									&& originTapValue == null && !customValueCodec
+									&& value instanceof Number
+									&& (typeFromSchema instanceof TapFloat || typeFromSchema instanceof TapDouble);
+							if (!rawFloatingPoint) {
+								valueCodec = fieldPlan == null ? getValueCodec(typeFromSchema) : fieldPlan.getSchemaCodec();
+							}
 							boolean isTypeQualified = true;
 							switch (typeFromSchema.getType()) {
 								case TapType.TYPE_ARRAY:
@@ -140,6 +163,26 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 				if (newField && valueCodec == null) {
 					valueCodec = getTapValueCodec(value);
 					typeFromSchema = JavaTypesToTapTypes.toTapType(value);
+				}
+
+				if (transformMode == FloatingPointTransformMode.RAW && originTapValue == null
+						&& !customValueCodec && typeFromSchema != null) {
+					ToTapRawValueCodec rawValueCodec = getRawValueCodec(typeFromSchema);
+					if (rawValueCodec != null) {
+						Object rawValue = rawValueCodec.toRawValue(value, typeFromSchema);
+						if (rawValue != null) {
+							if (toTapValueCheckRef.get() == null) {
+								return rawValue;
+							}
+							if (!toTapValueCheckRef.get().check(fieldName, rawValue)) {
+								throw new StopFilterException();
+							}
+							return null;
+						}
+						// A null raw result means invalid conversion. Fall through to
+						// the existing compatibility conversion/fallback path.
+						valueCodec = fieldPlan == null ? getValueCodec(typeFromSchema) : fieldPlan.getSchemaCodec();
+					}
 				}
 				if (valueCodec != null) {
 					TapValue tapValue = valueCodec.toTapValue(value, typeFromSchema);
@@ -205,7 +248,7 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 	}
 
 	private TransformToTapValueFieldWrapper getOrInitTransformToTapValueFieldWrapper(Map<String, Object> value, TapTable tapTable) throws ExecutionException {
-		return transformToTapValueInsertFieldWrapperCache.get(tapTable.getId(), () -> {
+		return transformToTapValueInsertFieldWrapperCache.get(schemaCacheKey(tapTable), () -> {
 			LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
 			TransformToTapValueFieldWrapper result = TransformToTapValueFieldWrapper.create(tapTable.getId());
 			mapIteratorToTapValue.iterate(value, (key, value1, recursive) -> {
@@ -214,11 +257,64 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 					fieldName = fieldName(key);
 				}
 				TapField tapField = nameFieldMap.get(fieldName);
-				result.addField(tapField);
+				result.addField(tapField, getSchemaCodec(tapField));
 				return null;
 			});
 			return result;
 		});
+	}
+
+	private ToTapValueCodec<?> getSchemaCodec(TapField field) {
+		if (field == null || field.getTapType() == null) {
+			return null;
+		}
+		TapType tapType = field.getTapType();
+		// The built-in floating-point codecs are stateless. Resolve them directly so
+		// creating a schema plan does not depend on the runtime codec factory.
+		if (tapType.getClass() == TapFloat.class) {
+				return new io.tapdata.entity.codec.impl.ToTapFloatCodec();
+		}
+		if (tapType.getClass() == TapDouble.class) {
+			return new io.tapdata.entity.codec.impl.ToTapDoubleCodec();
+		}
+		return getValueCodec(tapType);
+	}
+
+	private SchemaCacheKey schemaCacheKey(TapTable tapTable) {
+		return new SchemaCacheKey(tapTable, tapTable.getLastUpdate(), tapTable.getNameFieldMap());
+	}
+
+	private static final class SchemaCacheKey {
+		private final TapTable tapTable;
+		private final Long lastUpdate;
+		private final LinkedHashMap<String, TapField> fields;
+
+		private SchemaCacheKey(TapTable tapTable, Long lastUpdate, LinkedHashMap<String, TapField> fields) {
+			this.tapTable = tapTable;
+			this.lastUpdate = lastUpdate;
+			this.fields = fields;
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (this == other) {
+				return true;
+			}
+			if (!(other instanceof SchemaCacheKey)) {
+				return false;
+			}
+			SchemaCacheKey that = (SchemaCacheKey) other;
+			return tapTable == that.tapTable
+					&& Objects.equals(lastUpdate, that.lastUpdate)
+					&& fields == that.fields;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = System.identityHashCode(tapTable);
+			result = 31 * result + Objects.hashCode(lastUpdate);
+			return 31 * result + System.identityHashCode(fields);
+		}
 	}
 
 	public void transformFromTapValueMap(
