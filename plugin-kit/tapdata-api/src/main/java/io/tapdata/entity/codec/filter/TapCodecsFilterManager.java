@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.filter;
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapRawValueCodec;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.detector.TapDetector;
 import io.tapdata.entity.codec.detector.TapSkipper;
@@ -11,6 +12,8 @@ import io.tapdata.entity.codec.filter.impl.AllLayerMapIterator;
 import io.tapdata.entity.codec.filter.impl.AllLayerMapIteratorFromTapValue;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.codec.impl.ToTapFloatCodec;
+import io.tapdata.entity.codec.impl.ToTapDoubleCodec;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
@@ -30,6 +33,8 @@ import static io.tapdata.entity.simplify.TapSimplify.field;
 
 public class TapCodecsFilterManager {
     private static final String TAG = TapCodecsFilterManager.class.getSimpleName();
+    private static final ToTapRawValueCodec RAW_FLOAT_CODEC = new ToTapFloatCodec();
+    private static final ToTapRawValueCodec RAW_DOUBLE_CODEC = new ToTapDoubleCodec();
     protected MapIteratorEx mapIteratorToTapValue;
     protected MapIteratorEx mapIteratorFromTapValue;
     protected final TapCodecsRegistry codecsRegistry;
@@ -46,11 +51,24 @@ public class TapCodecsFilterManager {
     }
 
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap, TapDetector... detectors) {
-        transformToTapValueMap(value, nameFieldMap, null, detectors);
+        transformToTapValueMap(FloatingPointTransformMode.COMPATIBILITY, value, nameFieldMap, null, detectors);
     }
+
+    public void transformToTapValueMap(FloatingPointTransformMode mode, Map<String, Object> value,
+                                       Map<String, TapField> nameFieldMap, TapDetector... detectors) {
+        transformToTapValueMap(mode, value, nameFieldMap, null, detectors);
+    }
+
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap, Map<String, TapValue<?, ?>> valueMap, TapDetector... detectors) {
+        transformToTapValueMap(FloatingPointTransformMode.COMPATIBILITY, value, nameFieldMap, valueMap, detectors);
+    }
+
+    public void transformToTapValueMap(FloatingPointTransformMode mode, Map<String, Object> value,
+                                       Map<String, TapField> nameFieldMap, Map<String, TapValue<?, ?>> valueMap,
+                                       TapDetector... detectors) {
         if(value == null)
             return;
+        FloatingPointTransformMode transformMode = mode == null ? FloatingPointTransformMode.COMPATIBILITY : mode;
         NewFieldDetector newFieldDetector = null;
         ToTapValueCheck toTapValueCheck = null;
         TapSkipper skipper = null;
@@ -81,6 +99,7 @@ public class TapCodecsFilterManager {
                 String dataType = null;
                 TapType typeFromSchema = null;
                 ToTapValueCodec<?> valueCodec = null;
+                boolean customValueCodec = false;
 
                 boolean newField = false;
 
@@ -92,12 +111,19 @@ public class TapCodecsFilterManager {
                         return null;
                     }
                     valueCodec = this.codecsRegistry.getCustomToTapValueCodec(theValue.getClass());
+                    customValueCodec = valueCodec != null;
 
                     if(field != null) {
                         dataType = field.getDataType();
                         typeFromSchema = field.getTapType();
                         if(typeFromSchema != null && valueCodec == null) {
-                            valueCodec = getValueCodec(typeFromSchema);
+                            boolean rawFloatingPoint = transformMode == FloatingPointTransformMode.RAW
+                                    && originTapValue == null && !customValueCodec
+                                    && theValue instanceof Number
+                                    && (typeFromSchema instanceof TapFloat || typeFromSchema instanceof TapDouble);
+                            if (!rawFloatingPoint) {
+                                valueCodec = getValueCodec(typeFromSchema);
+                            }
                             boolean isTypeQualified = true;
                             switch (typeFromSchema.getType()) {
                                 case TapType.TYPE_ARRAY:
@@ -129,6 +155,27 @@ public class TapCodecsFilterManager {
                 if(newField && valueCodec == null) {
                     valueCodec = getTapValueCodec(theValue);
                     typeFromSchema = JavaTypesToTapTypes.toTapType(theValue);
+                }
+
+                if (transformMode == FloatingPointTransformMode.RAW && originTapValue == null
+                        && !customValueCodec && typeFromSchema != null) {
+                    ToTapRawValueCodec rawValueCodec = getRawValueCodec(typeFromSchema);
+                    if (rawValueCodec != null) {
+                        Object rawValue = rawValueCodec.toRawValue(theValue, typeFromSchema);
+                        if (rawValue != null) {
+                            if (toTapValueCheckRef.get() == null) {
+                                return rawValue;
+                            }
+                            if (!toTapValueCheckRef.get().check(name, rawValue)) {
+                                throw new StopFilterException();
+                            }
+                            return null;
+                        }
+                        // A null raw result means invalid conversion. Fall through to
+                        // the existing compatibility conversion/fallback path instead of
+                        // treating it as "no codec".
+                        valueCodec = getValueCodec(typeFromSchema);
+                    }
                 }
 //                if(valueCodec == null)
 //                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
@@ -197,7 +244,6 @@ public class TapCodecsFilterManager {
             }
             if(toTapValueCheckRef.get() == null)
                 return entry;
-            else
                 if(!toTapValueCheckRef.get().check(name, entry))
                     throw new StopFilterException();
 
@@ -229,6 +275,16 @@ public class TapCodecsFilterManager {
                     return typeFromSchema.toTapValueCodec();
                 }
                 return null;
+        }
+        return null;
+    }
+
+    protected ToTapRawValueCodec getRawValueCodec(TapType typeFromSchema) {
+        if (typeFromSchema instanceof TapFloat) {
+            return RAW_FLOAT_CODEC;
+        }
+        if (typeFromSchema instanceof TapDouble) {
+            return RAW_DOUBLE_CODEC;
         }
         return null;
     }
