@@ -17,9 +17,13 @@ public class TapFloatingPointMapping extends TapMapping {
     private int defaultBinaryPrecision = 53;
     private int singlePrecisionMax = 24;
     private int doublePrecisionMin = 25;
+    private boolean declaresTapFloatTarget;
+    private boolean declaresTapDoubleTarget;
 
     @Override
     public void from(Map<String, Object> info) {
+        declaresTapFloatTarget = false;
+        declaresTapDoubleTarget = false;
         if (info == null) {
             return;
         }
@@ -35,10 +39,12 @@ public class TapFloatingPointMapping extends TapMapping {
         int[] singleRange = ruleRange(info.get("singlePrecision"));
         if (singleRange != null) {
             singlePrecisionMax = singleRange[1];
+            declaresTapFloatTarget = true;
         }
         int[] doubleRange = ruleRange(info.get("doublePrecision"));
         if (doubleRange != null) {
             doublePrecisionMin = doubleRange[0];
+            declaresTapDoubleTarget = true;
         }
     }
 
@@ -82,6 +88,14 @@ public class TapFloatingPointMapping extends TapMapping {
     public BigDecimal matchingScore(TapField field) {
         return field != null && (field.getTapType() instanceof TapFloat || field.getTapType() instanceof TapDouble)
                 ? TapMapping.MAX_SCORE : TapMapping.MIN_SCORE;
+    }
+
+    public boolean supportsTapFloatTarget() {
+        return declaresTapFloatTarget;
+    }
+
+    public boolean supportsTapDoubleTarget() {
+        return declaresTapDoubleTarget;
     }
 
     private int[] ruleRange(Object rule) {

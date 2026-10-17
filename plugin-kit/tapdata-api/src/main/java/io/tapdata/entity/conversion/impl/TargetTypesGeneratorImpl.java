@@ -9,17 +9,18 @@ import io.tapdata.entity.error.CoreException;
 import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.mapping.type.TapCoefficientFloatMapping;
-import io.tapdata.entity.mapping.type.TapDoubleMapping;
-import io.tapdata.entity.mapping.type.TapFloatMapping;
 import io.tapdata.entity.mapping.type.TapFloatingPointMapping;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
+import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapString;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 
@@ -62,6 +63,13 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 if (result != null) {
                     dataType = result.getData();
                 }
+            }
+
+            if ((field.getTapType() instanceof TapFloat || field.getTapType() instanceof TapDouble)
+                    && result != null && !result.isSuccessfully()) {
+                finalResult.result(TapResult.RESULT_FAILED);
+                targetFieldMap.put(field.getName(), field.clone().dataType(null));
+                continue;
             }
 
             //User custom codec and the legacy best-codec path.
@@ -116,7 +124,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
         }
-        if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
+        if(finalResult.getResult() != TapResult.RESULT_FAILED
+                && finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
         }
         return finalResult.data(targetFieldMap);
@@ -314,53 +323,193 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                                                                       DefaultExpressionMatchingMap matchingMap,
                                                                       Map<String, PossibleDataTypes> findPossibleDataTypes) {
         if (field.getTapType() instanceof TapFloat) {
-            // A TapFloat candidate always wins over every TapDouble or TapNumber candidate.
-            TapResult<String> result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
-                    mapping -> isTapFloatTargetMapping(mapping, field));
-            if (hasData(result)) {
-                return result;
+            FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
+                    findPossibleDataTypes, FloatingPointTargetTier.TAP_FLOAT);
+            if (selection.exists) {
+                return selection.result;
             }
 
-            // TapDouble is the second choice for a TapFloat source.
-            result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
-                    mapping -> isTapDoubleTargetMapping(mapping, field));
-            if (hasData(result)) {
-                return result;
+            selection = calculateFloatingPointTierMapping(field, matchingMap, findPossibleDataTypes,
+                    FloatingPointTargetTier.TAP_DOUBLE);
+            if (selection.exists) {
+                return selection.result;
             }
         } else if (field.getTapType() instanceof TapDouble) {
-            // A TapDouble source never downgrades to TapFloat; it tries TapDouble first.
-            TapResult<String> result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
-                    mapping -> isTapDoubleTargetMapping(mapping, field));
-            if (hasData(result)) {
-                return result;
+            FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
+                    findPossibleDataTypes, FloatingPointTargetTier.TAP_DOUBLE);
+            if (selection.exists) {
+                return selection.result;
             }
         }
 
-        // TapNumber is the final fallback for both floating-point source types.
-        return calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
-                mapping -> isTapNumberTargetMapping(mapping));
+        FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
+                findPossibleDataTypes, FloatingPointTargetTier.TAP_NUMBER);
+        return selection.exists ? selection.result : null;
     }
 
-    private boolean hasData(TapResult<String> result) {
-        return result != null && result.getData() != null;
+    private FloatingPointTierSelection calculateFloatingPointTierMapping(TapField field,
+                                                                           DefaultExpressionMatchingMap matchingMap,
+                                                                           Map<String, PossibleDataTypes> findPossibleDataTypes,
+                                                                           FloatingPointTargetTier targetTier) {
+        FloatingPointTierSelection selection = new FloatingPointTierSelection();
+        matchingMap.iterateInDefinitionOrder(expressionValueEntry -> {
+            TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+            if (tapMapping == null || Boolean.TRUE.equals(tapMapping.getQueryOnly())
+                    || !isTargetTierMapping(tapMapping, targetTier)) {
+                return false;
+            }
+
+            selection.exists = true;
+            BigDecimal score = tapMapping.matchingScore(field);
+            TapResult<String> result;
+            try {
+                result = tapMapping.fromTapType(expressionValueEntry.getKey(), field.getTapType());
+            } catch (RuntimeException ignored) {
+                return false;
+            }
+            if (isUsableFloatingPointCandidate(result, matchingMap, targetTier)) {
+                selection.candidates.add(new FloatingPointCandidate(score, priorityOf(tapMapping),
+                        selection.definitionOrder++, result));
+            }
+            return false;
+        });
+
+        selection.candidates.sort((left, right) -> {
+            int scoreCompare = right.score.compareTo(left.score);
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            int priorityCompare = Integer.compare(left.priority, right.priority);
+            if (priorityCompare != 0) {
+                return priorityCompare;
+            }
+            return Integer.compare(left.definitionOrder, right.definitionOrder);
+        });
+
+        updateFloatingPointPossibleDataTypes(field, findPossibleDataTypes, selection.candidates);
+        selection.result = selection.candidates.isEmpty()
+                ? TapResult.failed()
+                : selection.candidates.get(0).result;
+        return selection;
     }
 
-    private boolean isTapFloatTargetMapping(TapMapping mapping, TapField field) {
-        if (mapping instanceof TapCoefficientFloatMapping || mapping instanceof TapFloatingPointMapping) {
-            return field.getTapType() instanceof TapFloat;
+    private boolean isUsableFloatingPointCandidate(TapResult<String> result,
+                                                    DefaultExpressionMatchingMap matchingMap,
+                                                    FloatingPointTargetTier targetTier) {
+        if (result == null || !result.isSuccessfully() || result.getData() == null) {
+            return false;
         }
-        return mapping instanceof TapFloatMapping || "TapFloat".equals(mapping.getTo());
-    }
-
-    private boolean isTapDoubleTargetMapping(TapMapping mapping, TapField field) {
-        if (mapping instanceof TapCoefficientFloatMapping || mapping instanceof TapFloatingPointMapping) {
-            return field.getTapType() instanceof TapDouble;
+        String dataType = result.getData().trim();
+        if (dataType.isEmpty() || dataType.indexOf('$') >= 0 || dataType.indexOf('[') >= 0
+                || dataType.indexOf(']') >= 0) {
+            return false;
         }
-        return mapping instanceof TapDoubleMapping || "TapDouble".equals(mapping.getTo());
+
+        TypeExprResult<DataMap> reparsed = matchingMap.get(dataType);
+        if (reparsed == null || reparsed.getValue() == null) {
+            return false;
+        }
+        TapMapping reparsedMapping = (TapMapping) reparsed.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        if (reparsedMapping == null || Boolean.TRUE.equals(reparsedMapping.getQueryOnly())
+                || !isTargetTierMapping(reparsedMapping, targetTier)) {
+            return false;
+        }
+        try {
+            boolean expectedTier = isTargetTierType(reparsedMapping.toTapType(dataType, reparsed.getParams()), targetTier);
+            if (expectedTier) {
+                result.data(dataType);
+            }
+            return expectedTier;
+        } catch (RuntimeException ignored) {
+            return false;
+        }
     }
 
-    private boolean isTapNumberTargetMapping(TapMapping mapping) {
-        return "TapNumber".equals(mapping.getTo());
+    private void updateFloatingPointPossibleDataTypes(TapField field,
+                                                       Map<String, PossibleDataTypes> findPossibleDataTypes,
+                                                       List<FloatingPointCandidate> candidates) {
+        if (findPossibleDataTypes == null || candidates.isEmpty()) {
+            return;
+        }
+        PossibleDataTypes possibleDataTypes = findPossibleDataTypes.computeIfAbsent(field.getName(),
+                name -> new PossibleDataTypes());
+        for (FloatingPointCandidate candidate : candidates) {
+            possibleDataTypes.dataType(candidate.result.getData());
+        }
+        if (possibleDataTypes.getLastMatchedDataType() == null) {
+            possibleDataTypes.setLastMatchedDataType(candidates.get(0).result.getData());
+        }
+    }
+
+    private int priorityOf(TapMapping mapping) {
+        return mapping.getPriority() == null ? Integer.MAX_VALUE : mapping.getPriority();
+    }
+
+    private boolean isTargetTierMapping(TapMapping mapping, FloatingPointTargetTier targetTier) {
+        switch (targetTier) {
+            case TAP_FLOAT:
+                if (mapping instanceof TapCoefficientFloatMapping) {
+                    return ((TapCoefficientFloatMapping) mapping).supportsTapFloatTarget();
+                }
+                if (mapping instanceof TapFloatingPointMapping) {
+                    return ((TapFloatingPointMapping) mapping).supportsTapFloatTarget();
+                }
+                return "TapFloat".equals(mapping.getTo());
+            case TAP_DOUBLE:
+                if (mapping instanceof TapCoefficientFloatMapping) {
+                    return ((TapCoefficientFloatMapping) mapping).supportsTapDoubleTarget();
+                }
+                if (mapping instanceof TapFloatingPointMapping) {
+                    return ((TapFloatingPointMapping) mapping).supportsTapDoubleTarget();
+                }
+                return "TapDouble".equals(mapping.getTo());
+            case TAP_NUMBER:
+                return "TapNumber".equals(mapping.getTo());
+            default:
+                return false;
+        }
+    }
+
+    private boolean isTargetTierType(TapType tapType, FloatingPointTargetTier targetTier) {
+        switch (targetTier) {
+            case TAP_FLOAT:
+                return tapType instanceof TapFloat;
+            case TAP_DOUBLE:
+                return tapType instanceof TapDouble;
+            case TAP_NUMBER:
+                return tapType instanceof TapNumber
+                        && !(tapType instanceof TapFloat)
+                        && !(tapType instanceof TapDouble);
+            default:
+                return false;
+        }
+    }
+
+    private enum FloatingPointTargetTier {
+        TAP_FLOAT,
+        TAP_DOUBLE,
+        TAP_NUMBER
+    }
+
+    private static class FloatingPointTierSelection {
+        boolean exists;
+        int definitionOrder;
+        List<FloatingPointCandidate> candidates = new ArrayList<>();
+        TapResult<String> result;
+    }
+
+    private static class FloatingPointCandidate {
+        final BigDecimal score;
+        final int priority;
+        final int definitionOrder;
+        final TapResult<String> result;
+
+        FloatingPointCandidate(BigDecimal score, int priority, int definitionOrder, TapResult<String> result) {
+            this.score = score == null ? TapMapping.MIN_SCORE : score;
+            this.priority = priority;
+            this.definitionOrder = definitionOrder;
+            this.result = result;
+        }
     }
 
 
