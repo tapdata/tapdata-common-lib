@@ -10,15 +10,22 @@ import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.mapping.type.TapCoefficientFloatMapping;
+import io.tapdata.entity.mapping.type.TapDoubleMapping;
+import io.tapdata.entity.mapping.type.TapFloatMapping;
+import io.tapdata.entity.mapping.type.TapFloatingPointMapping;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.type.TapDouble;
+import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Predicate;
 
 
 @Implementation(value = TargetTypesGenerator.class, buildNumber = 0)
@@ -43,7 +50,21 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 throw new CoreException(TapAPIErrorCodes.ERROR_TAP_TYPE_MISSING_ON_FIELD, "Tap type is missing for field {}", field);
 
             String dataType = null;
-            //User custom codec
+            TapResult<String> result = null;
+            if (field.getTapType() instanceof TapFloat || field.getTapType() instanceof TapDouble) {
+                /*
+                 * Floating-point mappings use a strict target hierarchy: TapFloat selects
+                 * TapFloat, then TapDouble, then TapNumber; TapDouble selects TapDouble,
+                 * then TapNumber.  This branch is isolated so other source types keep
+                 * the legacy global score-based selection unchanged.
+                 */
+                result = calculateFloatingPointBestTypeMapping(field, targetMatchingMap, findPossibleDataTypes);
+                if (result != null) {
+                    dataType = result.getData();
+                }
+            }
+
+            //User custom codec and the legacy best-codec path.
             if(dataType == null && field.getTapType() != null) {
                 dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
 //                if(dataType != null)
@@ -52,14 +73,16 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
             //Find best codec
             if(dataType == null) {
-                TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap, findPossibleDataTypes);
+                result = calculateBestTypeMapping(field, targetMatchingMap, findPossibleDataTypes);
                 if(result != null) {
                     dataType = result.getData();
-                    List<ResultItem> resultItems = result.getResultItems();
-                    if(resultItems != null) {
-                        for(ResultItem resultItem : resultItems) {
-                            finalResult.addItem(resultItem);
-                        }
+                }
+            }
+            if(result != null) {
+                List<ResultItem> resultItems = result.getResultItems();
+                if(resultItems != null) {
+                    for(ResultItem resultItem : resultItems) {
+                        finalResult.addItem(resultItem);
                     }
                 }
             }
@@ -180,6 +203,12 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     }
 
     TapResult<String> calculateBestTypeMapping(TapField field, DefaultExpressionMatchingMap matchingMap, Map<String, PossibleDataTypes> findPossibleDataTypes) {
+        return calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes, null);
+    }
+
+    private TapResult<String> calculateBestTypeMapping(TapField field, DefaultExpressionMatchingMap matchingMap,
+                                                       Map<String, PossibleDataTypes> findPossibleDataTypes,
+                                                       Predicate<TapMapping> mappingFilter) {
         HitTapMappingContainer bestTapMapping = new HitTapMappingContainer();
         HitTapMappingContainer bestNotHitTapMapping = new HitTapMappingContainer();
 
@@ -195,6 +224,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         matchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping != null) {
+                if(mappingFilter != null && !mappingFilter.test(tapMapping)) {
+                    return false;
+                }
                 if(tapMapping.getQueryOnly() != null && tapMapping.getQueryOnly()) {
                     return false;
                 }
@@ -276,6 +308,59 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             return tapResult;
         }
         return null;
+    }
+
+    private TapResult<String> calculateFloatingPointBestTypeMapping(TapField field,
+                                                                      DefaultExpressionMatchingMap matchingMap,
+                                                                      Map<String, PossibleDataTypes> findPossibleDataTypes) {
+        if (field.getTapType() instanceof TapFloat) {
+            // A TapFloat candidate always wins over every TapDouble or TapNumber candidate.
+            TapResult<String> result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
+                    mapping -> isTapFloatTargetMapping(mapping, field));
+            if (hasData(result)) {
+                return result;
+            }
+
+            // TapDouble is the second choice for a TapFloat source.
+            result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
+                    mapping -> isTapDoubleTargetMapping(mapping, field));
+            if (hasData(result)) {
+                return result;
+            }
+        } else if (field.getTapType() instanceof TapDouble) {
+            // A TapDouble source never downgrades to TapFloat; it tries TapDouble first.
+            TapResult<String> result = calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
+                    mapping -> isTapDoubleTargetMapping(mapping, field));
+            if (hasData(result)) {
+                return result;
+            }
+        }
+
+        // TapNumber is the final fallback for both floating-point source types.
+        return calculateBestTypeMapping(field, matchingMap, findPossibleDataTypes,
+                mapping -> isTapNumberTargetMapping(mapping));
+    }
+
+    private boolean hasData(TapResult<String> result) {
+        return result != null && result.getData() != null;
+    }
+
+    private boolean isTapFloatTargetMapping(TapMapping mapping, TapField field) {
+        if (mapping instanceof TapCoefficientFloatMapping || mapping instanceof TapFloatingPointMapping) {
+            return field.getTapType() instanceof TapFloat;
+        }
+        return mapping instanceof TapFloatMapping || "TapFloat".equals(mapping.getTo());
+    }
+
+    private boolean isTapDoubleTargetMapping(TapMapping mapping, TapField field) {
+        if (mapping instanceof TapCoefficientFloatMapping || mapping instanceof TapFloatingPointMapping) {
+            return field.getTapType() instanceof TapDouble;
+        }
+        return mapping instanceof TapDoubleMapping || "TapDouble".equals(mapping.getTo());
+    }
+
+    private boolean isTapNumberTargetMapping(TapMapping mapping) {
+        return "TapNumber".equals(mapping.getTo());
     }
 
 
