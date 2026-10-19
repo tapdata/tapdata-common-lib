@@ -25,7 +25,7 @@ public abstract class TapType implements Serializable {
     public static final byte TYPE_JSON = 14;
     public static final byte TYPE_INPUT_STREAM = 15;
     protected byte type;
-    protected Boolean cannotWrite;
+    protected Boolean cannotWrite = false;
 
     public TapType cannotWrite(Boolean cannotWrite) {
         this.cannotWrite = cannotWrite;

@@ -68,6 +68,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             if ((field.getTapType() instanceof TapFloat || field.getTapType() instanceof TapDouble)
                     && result != null && !result.isSuccessfully()) {
                 finalResult.result(TapResult.RESULT_FAILED);
+                if (findPossibleDataTypes != null) {
+                    findPossibleDataTypes.computeIfAbsent(field.getName(), name -> new PossibleDataTypes());
+                }
                 targetFieldMap.put(field.getName(), field.clone().dataType(null));
                 continue;
             }
@@ -81,7 +84,11 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
             //Find best codec
             if(dataType == null) {
-                result = calculateBestTypeMapping(field, targetMatchingMap, findPossibleDataTypes);
+                Predicate<TapMapping> mappingFilter = null;
+                if (field.getTapType() instanceof TapFloat || field.getTapType() instanceof TapDouble) {
+                    mappingFilter = this::isSelectableFloatingPointMapping;
+                }
+                result = calculateBestTypeMapping(field, targetMatchingMap, findPossibleDataTypes, mappingFilter);
                 if(result != null) {
                     dataType = result.getData();
                 }
@@ -322,29 +329,50 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     private TapResult<String> calculateFloatingPointBestTypeMapping(TapField field,
                                                                       DefaultExpressionMatchingMap matchingMap,
                                                                       Map<String, PossibleDataTypes> findPossibleDataTypes) {
+        boolean declaredTierExists = false;
         if (field.getTapType() instanceof TapFloat) {
             FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
                     findPossibleDataTypes, FloatingPointTargetTier.TAP_FLOAT);
-            if (selection.exists) {
+            declaredTierExists = selection.exists;
+            if (!selection.candidates.isEmpty()) {
                 return selection.result;
+            }
+            if (selection.exists) {
+                TapLogger.warn(TAG, "No usable TapFloat target candidate for field " + field.getName() + ", try TapDouble.");
             }
 
             selection = calculateFloatingPointTierMapping(field, matchingMap, findPossibleDataTypes,
                     FloatingPointTargetTier.TAP_DOUBLE);
-            if (selection.exists) {
+            declaredTierExists = declaredTierExists || selection.exists;
+            if (!selection.candidates.isEmpty()) {
                 return selection.result;
+            }
+            if (selection.exists) {
+                TapLogger.warn(TAG, "No usable TapDouble target candidate for field " + field.getName() + ", try TapNumber.");
             }
         } else if (field.getTapType() instanceof TapDouble) {
             FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
                     findPossibleDataTypes, FloatingPointTargetTier.TAP_DOUBLE);
-            if (selection.exists) {
+            declaredTierExists = selection.exists;
+            if (!selection.candidates.isEmpty()) {
                 return selection.result;
+            }
+            if (selection.exists) {
+                TapLogger.warn(TAG, "No usable TapDouble target candidate for field " + field.getName() + ", try TapNumber.");
             }
         }
 
         FloatingPointTierSelection selection = calculateFloatingPointTierMapping(field, matchingMap,
                 findPossibleDataTypes, FloatingPointTargetTier.TAP_NUMBER);
-        return selection.exists ? selection.result : null;
+        declaredTierExists = declaredTierExists || selection.exists;
+        if (!selection.candidates.isEmpty()) {
+            return selection.result;
+        }
+        if (selection.exists) {
+            TapLogger.warn(TAG, "No usable TapNumber target candidate for field " + field.getName() + ".");
+            return selection.result;
+        }
+        return declaredTierExists ? TapResult.failed() : null;
     }
 
     private FloatingPointTierSelection calculateFloatingPointTierMapping(TapField field,
@@ -354,7 +382,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         FloatingPointTierSelection selection = new FloatingPointTierSelection();
         matchingMap.iterateInDefinitionOrder(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
-            if (tapMapping == null || Boolean.TRUE.equals(tapMapping.getQueryOnly())
+            if (!isSelectableFloatingPointMapping(tapMapping)
                     || !isTargetTierMapping(tapMapping, targetTier)) {
                 return false;
             }
@@ -364,7 +392,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             TapResult<String> result;
             try {
                 result = tapMapping.fromTapType(expressionValueEntry.getKey(), field.getTapType());
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException exception) {
+                TapLogger.warn(TAG, "Find tapType failed: " + expressionValueEntry.getKey() + ", field TapType is " + field.getTapType().getTypeName() + ", message: " + exception.getMessage());
                 return false;
             }
             if (isUsableFloatingPointCandidate(result, matchingMap, targetTier)) {
@@ -410,7 +439,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             return false;
         }
         TapMapping reparsedMapping = (TapMapping) reparsed.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
-        if (reparsedMapping == null || Boolean.TRUE.equals(reparsedMapping.getQueryOnly())
+        if (!isSelectableFloatingPointMapping(reparsedMapping)
                 || !isTargetTierMapping(reparsedMapping, targetTier)) {
             return false;
         }
@@ -443,6 +472,12 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
     private int priorityOf(TapMapping mapping) {
         return mapping.getPriority() == null ? Integer.MAX_VALUE : mapping.getPriority();
+    }
+
+    private boolean isSelectableFloatingPointMapping(TapMapping mapping) {
+        return mapping != null
+                && !Boolean.TRUE.equals(mapping.getQueryOnly())
+                && !Boolean.TRUE.equals(mapping.getCannotWrite());
     }
 
     private boolean isTargetTierMapping(TapMapping mapping, FloatingPointTargetTier targetTier) {

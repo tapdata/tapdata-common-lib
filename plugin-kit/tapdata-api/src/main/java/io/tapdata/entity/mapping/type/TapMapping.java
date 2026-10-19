@@ -82,7 +82,7 @@ public abstract class TapMapping {
         if(priorityObj instanceof Integer)
             priority = (Integer) priorityObj;
 
-        Boolean cannotWrite = null;
+        Boolean cannotWrite = false;
         Object cannotWriteObj = info.get("cannotWrite");
         if(cannotWriteObj instanceof Boolean)
             cannotWrite = (Boolean) cannotWriteObj;
@@ -215,32 +215,44 @@ public abstract class TapMapping {
         Integer precision = sourceNumber.getPrecision();
         Integer scale = sourceNumber.getScale();
 
-        // No source attributes means that the whole optional parameter group is absent.
-        if (precision == null && scale == null) {
-            return removeBracketVariables(typeExpression, 0);
-        }
-
         TapNumberMapping targetNumber = new TapNumberMapping();
         if (targetInfo != null) {
             targetNumber.from(targetInfo);
         }
-        if (precision == null) {
-            precision = firstNonNull(targetNumber.getPreferPrecision(),
-                    targetNumber.getDefaultPrecision(), targetNumber.getMaxPrecision());
-        }
-        if (scale == null) {
-            scale = firstNonNull(targetNumber.getPreferScale(),
-                    targetNumber.getDefaultScale(), targetNumber.getMaxScale());
-        }
 
         String expression = typeExpression;
-        if (precision != null) {
-            expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_PRECISION, false);
-            expression = expression.replace("$" + TapNumberMapping.KEY_PRECISION, String.valueOf(precision));
+        // No source attributes means that the whole optional parameter group is absent.
+        if (precision != null || scale != null) {
+            if (precision == null) {
+                precision = firstNonNull(targetNumber.getPreferPrecision(),
+                        targetNumber.getDefaultPrecision(), targetNumber.getMaxPrecision());
+            }
+            if (scale == null) {
+                scale = firstNonNull(targetNumber.getPreferScale(),
+                        targetNumber.getDefaultScale(), targetNumber.getMaxScale());
+            }
+            boolean canExpandParameters =
+                    (!typeExpression.contains("$" + TapNumberMapping.KEY_PRECISION)
+                            || precision != null)
+                    && (!typeExpression.contains("$" + TapNumberMapping.KEY_SCALE)
+                            || scale != null);
+            if (!canExpandParameters) {
+                TapLogger.warn(TAG, "Floating-point parameter group cannot be fully resolved, remove it: " + typeExpression);
+            }
+            if (canExpandParameters && precision != null) {
+                expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_PRECISION, false);
+                expression = expression.replace("$" + TapNumberMapping.KEY_PRECISION, String.valueOf(precision));
+            }
+            if (canExpandParameters && scale != null) {
+                expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_SCALE, false);
+                expression = expression.replace("$" + TapNumberMapping.KEY_SCALE, String.valueOf(scale));
+            }
         }
-        if (scale != null) {
-            expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_SCALE, false);
-            expression = expression.replace("$" + TapNumberMapping.KEY_SCALE, String.valueOf(scale));
+        if (Boolean.TRUE.equals(sourceNumber.getUnsigned()) && targetNumber.getUnsigned() != null) {
+            expression = clearBrackets(expression, targetNumber.getUnsigned());
+        }
+        if (Boolean.TRUE.equals(sourceNumber.getZerofill()) && targetNumber.getZerofill() != null) {
+            expression = clearBrackets(expression, targetNumber.getZerofill());
         }
         return removeBracketVariables(expression, 0);
     }
@@ -260,6 +272,10 @@ public abstract class TapMapping {
 
     public void setQueryOnly(Boolean queryOnly) {
         this.queryOnly = queryOnly;
+    }
+
+    public Boolean getCannotWrite() {
+        return cannotWrite;
     }
 
     public Integer getPriority() {

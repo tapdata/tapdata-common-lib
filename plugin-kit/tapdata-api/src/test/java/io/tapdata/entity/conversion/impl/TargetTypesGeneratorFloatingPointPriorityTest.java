@@ -2,6 +2,7 @@ package io.tapdata.entity.conversion.impl;
 
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
+import io.tapdata.entity.conversion.PossibleDataTypes;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.TapMapping;
@@ -22,7 +23,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TargetTypesGeneratorFloatingPointPriorityTest {
     @Test
@@ -115,7 +118,7 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
     }
 
     @Test
-    void declaredFloatingPointTierDoesNotDowngradeWhenAllCandidatesAreUnusable() {
+    void unusableFloatingPointTierUpgradesToNextTier() {
         Map<String, DataMap> mappings = new LinkedHashMap<>();
         mappings.put("invalid_float", mapped("TapFloat", new FailingFloatMapping()));
         mappings.put("double precision", mapping("to", "TapDouble"));
@@ -125,7 +128,62 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
         TapResult<LinkedHashMap<String, TapField>> result = convertResult(new TapFloat(),
                 DefaultExpressionMatchingMap.map(mappings), Map.of());
 
+        assertEquals(TapResult.RESULT_SUCCESSFULLY, result.getResult());
+        assertEquals("double precision", result.getData().get("f").getDataType());
+    }
+
+    @Test
+    void unusableDoubleTierUpgradesToNumberTier() {
+        Map<String, DataMap> mappings = new LinkedHashMap<>();
+        mappings.put("invalid_double", mapped("TapDouble", new FailingFloatMapping()));
+        mappings.put("numeric", mapping("to", "TapNumber", "precision", Arrays.asList(1, 1000),
+                "scale", Arrays.asList(0, 1000), "fixed", true));
+
+        TapResult<LinkedHashMap<String, TapField>> result = convertResult(new TapDouble(),
+                DefaultExpressionMatchingMap.map(mappings), Map.of());
+
+        assertEquals(TapResult.RESULT_SUCCESSFULLY, result.getResult());
+        assertEquals("numeric", result.getData().get("f").getDataType());
+    }
+
+    @Test
+    void floatingPointFailureKeepsEmptyPossibleDataTypeEntry() {
+        Map<String, DataMap> mappings = new LinkedHashMap<>();
+        mappings.put("invalid_float", mapped("TapFloat", new FailingFloatMapping()));
+        Map<String, PossibleDataTypes> possibleDataTypes = new LinkedHashMap<>();
+
+        TapResult<LinkedHashMap<String, TapField>> result = convertResult(new TapFloat(),
+                DefaultExpressionMatchingMap.map(mappings), Map.of(), possibleDataTypes);
+
         assertEquals(TapResult.RESULT_FAILED, result.getResult());
+        assertNull(result.getData().get("f").getDataType());
+        assertNotNull(possibleDataTypes.get("f"));
+        assertTrue(possibleDataTypes.get("f").getDataTypes() == null
+                || possibleDataTypes.get("f").getDataTypes().isEmpty());
+    }
+
+    @Test
+    void cannotWriteFloatingPointMappingDoesNotLockTheTargetTier() {
+        Map<String, DataMap> mappings = new LinkedHashMap<>();
+        mappings.put("read_only_real", mapping("to", "TapFloat", "cannotWrite", true));
+        mappings.put("double precision", mapping("to", "TapDouble"));
+        mappings.put("numeric", mapping("to", "TapNumber", "precision", Arrays.asList(1, 1000),
+                "scale", Arrays.asList(0, 1000), "fixed", true));
+
+        TapField target = convert(new TapFloat(), DefaultExpressionMatchingMap.map(mappings),
+                codecMap(TapFloat.class, "numeric"));
+
+        assertEquals("double precision", target.getDataType());
+    }
+
+    @Test
+    void cannotWriteFloatingPointMappingIsNotRecoveredByLegacyFallback() {
+        Map<String, DataMap> mappings = new LinkedHashMap<>();
+        mappings.put("read_only_real", mapping("to", "TapFloat", "cannotWrite", true));
+
+        TapResult<LinkedHashMap<String, TapField>> result = convertResult(new TapFloat(),
+                DefaultExpressionMatchingMap.map(mappings), Map.of());
+
         assertNull(result.getData().get("f").getDataType());
     }
 
@@ -175,7 +233,7 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
     }
 
     @Test
-    void sourceFloatingPointDefaultsAreRenderedIntoOptionalAttributes() {
+    void sourceEffectivePrecisionAndTargetDefaultScaleAreRenderedByFallbackExpansion() {
         Map<String, DataMap> mappings = new LinkedHashMap<>();
         mappings.put("Float32[($precision,$scale)]", mapping("to", "TapFloat",
                 "precision", Arrays.asList(1, 30), "scale", Arrays.asList(0, 30),
@@ -186,6 +244,7 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
 
         TapField target = convert(new TapFloat(), DefaultExpressionMatchingMap.map(mappings), Map.of());
 
+        // This verifies fallback expansion and target-tier reparsing only, not target DDL legality.
         assertEquals("Float32(7,8)", target.getDataType());
         assertInstanceOf(TapFloat.class, resolveTargetType(DefaultExpressionMatchingMap.map(mappings), target.getDataType()));
     }
@@ -198,12 +257,20 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
     private TapResult<LinkedHashMap<String, TapField>> convertResult(TapType sourceType,
                                                                        DefaultExpressionMatchingMap targetMap,
                                                                        Map<Class<?>, String> codecMap) {
+        return convertResult(sourceType, targetMap, codecMap, null);
+    }
+
+    private TapResult<LinkedHashMap<String, TapField>> convertResult(TapType sourceType,
+                                                                       DefaultExpressionMatchingMap targetMap,
+                                                                       Map<Class<?>, String> codecMap,
+                                                                       Map<String, PossibleDataTypes> possibleDataTypes) {
         LinkedHashMap<String, TapField> sourceFields = new LinkedHashMap<>();
         sourceFields.put("f", new TapField("f", "source").tapType(sourceType));
 
         return new TargetTypesGeneratorImpl()
                 .convert(sourceFields, targetMap,
-                        TapCodecsFilterManager.create(TapCodecsRegistry.create().withTapTypeDataTypeMap(codecMap)));
+                        TapCodecsFilterManager.create(TapCodecsRegistry.create().withTapTypeDataTypeMap(codecMap)),
+                        possibleDataTypes);
     }
 
     private DataMap mapped(String to, TapMapping tapMapping) {
