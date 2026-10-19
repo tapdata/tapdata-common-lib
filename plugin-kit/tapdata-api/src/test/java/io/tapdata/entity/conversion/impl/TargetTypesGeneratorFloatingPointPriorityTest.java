@@ -117,7 +117,7 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
     @Test
     void declaredFloatingPointTierDoesNotDowngradeWhenAllCandidatesAreUnusable() {
         Map<String, DataMap> mappings = new LinkedHashMap<>();
-        mappings.put("float($precision)", mapping("to", "TapFloat"));
+        mappings.put("invalid_float", mapped("TapFloat", new FailingFloatMapping()));
         mappings.put("double precision", mapping("to", "TapDouble"));
         mappings.put("numeric", mapping("to", "TapNumber", "precision", Arrays.asList(1, 1000),
                 "scale", Arrays.asList(0, 1000), "fixed", true));
@@ -172,6 +172,22 @@ class TargetTypesGeneratorFloatingPointPriorityTest {
 
         assertEquals(TapResult.RESULT_FAILED, result.getResult());
         assertNull(result.getData().get("f").getDataType());
+    }
+
+    @Test
+    void sourceFloatingPointDefaultsAreRenderedIntoOptionalAttributes() {
+        Map<String, DataMap> mappings = new LinkedHashMap<>();
+        mappings.put("Float32[($precision,$scale)]", mapping("to", "TapFloat",
+                "precision", Arrays.asList(1, 30), "scale", Arrays.asList(0, 30),
+                "defaultPrecision", 24, "defaultScale", 8, "fixed", false));
+        mappings.put("Float64", mapping("to", "TapDouble"));
+        mappings.put("numeric", mapping("to", "TapNumber", "precision", Arrays.asList(1, 1000),
+                "scale", Arrays.asList(0, 1000), "fixed", true));
+
+        TapField target = convert(new TapFloat(), DefaultExpressionMatchingMap.map(mappings), Map.of());
+
+        assertEquals("Float32(7,8)", target.getDataType());
+        assertInstanceOf(TapFloat.class, resolveTargetType(DefaultExpressionMatchingMap.map(mappings), target.getDataType()));
     }
 
     private TapField convert(TapType sourceType, DefaultExpressionMatchingMap targetMap,

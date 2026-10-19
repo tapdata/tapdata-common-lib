@@ -180,6 +180,62 @@ class TapFloatingPointMappingTest {
     }
 
     @Test
+    void shouldUseFloatingPointDefaultsWhenSourceHasNoExplicitAttributes() {
+        TapFloatMapping mapping = clickHouseFloatMapping();
+
+        assertEquals("Float32(7,8)", mapping.fromTapType("Float32[($precision,$scale)]", new TapFloat()).getData());
+    }
+
+    @Test
+    void shouldFillMissingScaleFromTargetDefaultWhenSourceOnlyHasPrecision() {
+        TapFloatMapping mapping = clickHouseFloatMapping();
+
+        TapFloat source = new TapFloat().precision(6);
+
+        assertEquals("Float32(6,8)", mapping.fromTapType("Float32[($precision,$scale)]", source).getData());
+    }
+
+    @Test
+    void shouldPreserveSourcePrecisionWhenSourceOnlyHasScale() {
+        TapFloatMapping mapping = clickHouseFloatMapping();
+
+        TapFloat source = new TapFloat().scale(6);
+
+        assertEquals("Float32(7,6)", mapping.fromTapType("Float32[($precision,$scale)]", source).getData());
+    }
+
+    @Test
+    void shouldUseBothSourceFloatingPointAttributesWhenPresent() {
+        TapFloatMapping mapping = clickHouseFloatMapping();
+
+        TapFloat source = new TapFloat().precision(6).scale(6);
+
+        assertEquals("Float32(6,6)", mapping.fromTapType("Float32[($precision,$scale)]", source).getData());
+    }
+
+    @Test
+    void shouldPreserveExplicitDefaultPrecisionWhenSourceProvidesIt() {
+        TapFloatMapping mapping = clickHouseFloatMapping();
+
+        TapFloat source = new TapFloat().precision(7).scale(2);
+
+        assertEquals("Float32(7,2)", mapping.fromTapType("Float32[($precision,$scale)]", source).getData());
+    }
+
+    @Test
+    void shouldPreserveDoublePrecisionWhenSourceOnlyHasScale() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapDouble");
+        info.put("defaultPrecision", 53);
+        info.put("defaultScale", 8);
+        TapDoubleMapping mapping = (TapDoubleMapping) TapMapping.build(info);
+
+        TapDouble source = new TapDouble().scale(6);
+
+        assertEquals("Float64(15,6)", mapping.fromTapType("Float64[($precision,$scale)]", source).getData());
+    }
+
+    @Test
     void shouldNotTurnFloatingPointFallbackIntoFixedScaleNumber() {
         Map<String, Object> info = new HashMap<>();
         info.put("to", "TapNumber");
@@ -189,6 +245,14 @@ class TapFloatingPointMappingTest {
 
         TapMapping mapping = TapMapping.build(info);
         assertEquals("numeric", mapping.fromTapType("numeric[($precision,$scale)]", new TapFloat()).getData());
+    }
+
+    private TapFloatMapping clickHouseFloatMapping() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("to", "TapFloat");
+        info.put("defaultPrecision", 24);
+        info.put("defaultScale", 8);
+        return (TapFloatMapping) TapMapping.build(info);
     }
 
     @Test

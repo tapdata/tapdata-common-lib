@@ -72,6 +72,15 @@
 
 不能通过校验的候选必须从本档候选排序中排除。排除候选不会改变档位是否存在，也就不会授权降到下一档。
 
+### 5.1 浮点目标表达式中的 `precision`/`scale`
+
+目标映射项可以使用带可选参数组的表达式，例如 `Float32[($precision,$scale)]`。对 `TapFloat` 或 `TapDouble` 生成此类目标表达式时，参数按以下规则处理：
+
+1. 源字段完全没有实际的 `precision`、`scale` 属性时，按无属性处理，移除整个可选参数组，结果为 `Float32` 等无参数表达式。`TapFloat`/`TapDouble` 自带的模型有效精度默认值不视为源字段实际属性。
+2. 源字段只提供其中一个属性时，保留已有属性，并为缺失属性补值。补值沿用现有数值映射规则，优先级为 `preferPrecision`/`preferScale`、`defaultPrecision`/`defaultScale`，最后使用对应范围上限。
+3. 源字段同时提供两个属性时，两个属性都按源字段值展开。
+4. 展开或移除参数组后，结果仍必须满足本节的完整表达式校验，并重新解析为当前目标档位；不能保留 `$precision`、`$scale` 或可选片段标记。
+
 ## 6. SQL Server 到 MySQL 示例
 
 假设源字段 `real` 已由 SQL Server 源规格推演为 `TapFloat`，目标 MySQL 规格中同时定义了：
@@ -99,5 +108,6 @@
 - `TapFloat` 只会按 `TapFloat → TapDouble → TapNumber` 的档位顺序选择；`TapDouble` 只会按 `TapDouble → TapNumber` 的顺序选择。
 - 只要更高档存在声明映射，低档就不能因评分、优先级、候选渲染失败或遍历顺序而胜出。
 - 返回的目标表达式可被目标规格重新解析为预期档位，不包含未展开模板。
+- 浮点目标表达式无源属性时移除可选参数组；部分属性缺失时按既有默认值规则补齐，不能生成带未展开参数的表达式。
 - priority 未配置时，同档候选按 `datatypes` 定义顺序稳定决胜。
 - 非 `TapFloat`/`TapDouble` 源类型的推演结果保持原有行为。

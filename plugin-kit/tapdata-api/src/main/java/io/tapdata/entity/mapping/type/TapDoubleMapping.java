@@ -32,7 +32,8 @@ public class TapDoubleMapping extends TapMapping {
         if (!(tapType instanceof TapDouble) && !(tapType instanceof TapFloat)) {
             return null;
         }
-        return new TapResult<String>().result(TapResult.RESULT_SUCCESSFULLY).data(typeExpression);
+        String resolvedExpression = resolveFloatingPointParameters(typeExpression, tapType, info);
+        return new TapResult<String>().result(TapResult.RESULT_SUCCESSFULLY).data(resolvedExpression);
     }
 
     @Override
