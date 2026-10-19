@@ -74,6 +74,14 @@ public class TapCoefficientFloatMapping extends TapMapping {
                 ? TapMapping.MAX_SCORE : TapMapping.MIN_SCORE;
     }
 
+    public boolean supportsTapFloatTarget() {
+        return coefficientRanges.containsKey(TAP_FLOAT);
+    }
+
+    public boolean supportsTapDoubleTarget() {
+        return coefficientRanges.containsKey(TAP_DOUBLE);
+    }
+
     private Integer resolvePrecision(String dataType, Map<String, String> params) {
         TapNumberMapping numberMapping = new TapNumberMapping();
         numberMapping.from(info);

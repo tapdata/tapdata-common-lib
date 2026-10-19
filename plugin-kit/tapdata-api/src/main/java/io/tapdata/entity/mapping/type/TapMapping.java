@@ -3,6 +3,7 @@ package io.tapdata.entity.mapping.type;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 
@@ -81,7 +82,7 @@ public abstract class TapMapping {
         if(priorityObj instanceof Integer)
             priority = (Integer) priorityObj;
 
-        Boolean cannotWrite = null;
+        Boolean cannotWrite = false;
         Object cannotWriteObj = info.get("cannotWrite");
         if(cannotWriteObj instanceof Boolean)
             cannotWrite = (Boolean) cannotWriteObj;
@@ -197,12 +198,84 @@ public abstract class TapMapping {
         return typeExpression;
     }
 
+    /**
+     * Resolve optional precision/scale variables used by a floating-point target expression.
+     *
+     * <p>Source precision and scale values are authoritative. When either source
+     * attribute is absent, the missing value is completed using the same
+     * preference/default/range fallback as {@link TapNumberMapping}.</p>
+     */
+    protected String resolveFloatingPointParameters(String typeExpression, TapType tapType,
+                                                    Map<String, Object> targetInfo) {
+        if (!(tapType instanceof TapNumber)) {
+            return typeExpression;
+        }
+
+        TapNumber sourceNumber = (TapNumber) tapType;
+        Integer precision = sourceNumber.getPrecision();
+        Integer scale = sourceNumber.getScale();
+
+        TapNumberMapping targetNumber = new TapNumberMapping();
+        if (targetInfo != null) {
+            targetNumber.from(targetInfo);
+        }
+
+        String expression = typeExpression;
+        // No source attributes means that the whole optional parameter group is absent.
+        if (precision != null || scale != null) {
+            if (precision == null) {
+                precision = firstNonNull(targetNumber.getPreferPrecision(),
+                        targetNumber.getDefaultPrecision(), targetNumber.getMaxPrecision());
+            }
+            if (scale == null) {
+                scale = firstNonNull(targetNumber.getPreferScale(),
+                        targetNumber.getDefaultScale(), targetNumber.getMaxScale());
+            }
+            boolean canExpandParameters =
+                    (!typeExpression.contains("$" + TapNumberMapping.KEY_PRECISION)
+                            || precision != null)
+                    && (!typeExpression.contains("$" + TapNumberMapping.KEY_SCALE)
+                            || scale != null);
+            if (!canExpandParameters) {
+                TapLogger.warn(TAG, "Floating-point parameter group cannot be fully resolved, remove it: " + typeExpression);
+            }
+            if (canExpandParameters && precision != null) {
+                expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_PRECISION, false);
+                expression = expression.replace("$" + TapNumberMapping.KEY_PRECISION, String.valueOf(precision));
+            }
+            if (canExpandParameters && scale != null) {
+                expression = clearBrackets(expression, "$" + TapNumberMapping.KEY_SCALE, false);
+                expression = expression.replace("$" + TapNumberMapping.KEY_SCALE, String.valueOf(scale));
+            }
+        }
+        if (Boolean.TRUE.equals(sourceNumber.getUnsigned()) && targetNumber.getUnsigned() != null) {
+            expression = clearBrackets(expression, targetNumber.getUnsigned());
+        }
+        if (Boolean.TRUE.equals(sourceNumber.getZerofill()) && targetNumber.getZerofill() != null) {
+            expression = clearBrackets(expression, targetNumber.getZerofill());
+        }
+        return removeBracketVariables(expression, 0);
+    }
+
+    private Integer firstNonNull(Integer... values) {
+        for (Integer value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     public Boolean getQueryOnly() {
         return queryOnly;
     }
 
     public void setQueryOnly(Boolean queryOnly) {
         this.queryOnly = queryOnly;
+    }
+
+    public Boolean getCannotWrite() {
+        return cannotWrite;
     }
 
     public Integer getPriority() {

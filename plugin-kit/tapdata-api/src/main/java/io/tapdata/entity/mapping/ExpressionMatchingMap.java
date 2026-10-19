@@ -53,6 +53,7 @@ public class ExpressionMatchingMap<T> {
     private Map<String, T> exactlyMatchMap = new LinkedHashMap<>();
     private Map<String, String> exactlyOriginalNameMap = new LinkedHashMap<>();
     private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new LinkedHashMap<>();
+    private List<Map.Entry<String, T>> definitionOrderEntries = new ArrayList<>();
 
     public static <T> ExpressionMatchingMap<T> map(String json, TypeHolder<Map<String, T>> typeHolder) {
         return new ExpressionMatchingMap<>(json, typeHolder);
@@ -75,6 +76,7 @@ public class ExpressionMatchingMap<T> {
             exactlyOriginalNameMap.put(matchingKey, key);
             typeExpr.setValue(entry.getValue());
             int prefixMatchType = typeExpr.getPrefixMatchType();
+            boolean accepted = true;
 
             switch (prefixMatchType) {
                 case TypeExpr.PREFIX_MATCH_ALL:
@@ -82,15 +84,23 @@ public class ExpressionMatchingMap<T> {
                     break;
                 case TypeExpr.PREFIX_MATCH_START:
                     String prefix = typeExpr.getPrefix();
-                    if(prefix == null)
+                    if(prefix == null) {
+                        accepted = false;
                         break;
+                    }
                     List<TypeExpr<T>> typeExprList = prefixTypeExprListMap.computeIfAbsent(prefix, k -> new ArrayList<>());
-                    if(typeExprList.contains(typeExpr))
-                        continue;
+                    if(typeExprList.contains(typeExpr)) {
+                        accepted = false;
+                        break;
+                    }
                     typeExprList.add(typeExpr);
                     break;
                 default:
+                    accepted = false;
                     break;
+            }
+            if (accepted) {
+                definitionOrderEntries.add(new AbstractMap.SimpleImmutableEntry<>(key, entry.getValue()));
             }
         }
     }
@@ -136,6 +146,25 @@ public class ExpressionMatchingMap<T> {
                         return;
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Iterate entries in the order in which their definitions were supplied.
+     *
+     * The original iterate method intentionally keeps its historical exact-then-prefix
+     * traversal order.  Floating-point target inference needs the definition order for
+     * deterministic tie-breaking, so it uses this separate traversal instead.
+     */
+    public void iterateInDefinitionOrder(TapIterator<Map.Entry<String, T>> iterator) {
+        if (definitionOrderEntries == null) {
+            return;
+        }
+        for (Map.Entry<String, T> entry : definitionOrderEntries) {
+            valueFilter(entry.getValue());
+            if (iterator.iterate(new TapEntry<>(entry.getKey(), entry.getValue()))) {
+                return;
             }
         }
     }
