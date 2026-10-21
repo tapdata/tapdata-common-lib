@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TapCodecsRegistry {
     private final Map<String, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<String, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
+    private final Map<String, FromTapValueCodecV2<? extends TapValue<?, ?>>> classFromTapValueCodecV2Map = new ConcurrentHashMap<>();
     private final Map<Class<?>, String> tapTypeDataTypeMap = new ConcurrentHashMap<>();
 
 //    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
@@ -53,6 +54,26 @@ public class TapCodecsRegistry {
 
     public void unregisterFromTapValue(Class<? extends TapValue<?, ?>> tapTypeClass) {
         classFromTapValueCodecMap.remove(tapTypeClass.getName());
+        classFromTapValueCodecV2Map.remove(tapTypeClass.getName());
+    }
+
+    public <T extends TapValue<?, ?>> TapCodecsRegistry registerFromTapValueV2(
+            Class<T> tapValueClass,
+            FromTapValueCodecV2<T> fromTapValueCodec
+    ) {
+        if (fromTapValueCodec != null) {
+            classFromTapValueCodecV2Map.put(tapValueClass.getName(), fromTapValueCodec);
+        }
+        return this;
+    }
+
+    public void unregisterFromTapValueV2(Class<? extends TapValue<?, ?>> tapValueClass) {
+        classFromTapValueCodecV2Map.remove(tapValueClass.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends TapValue<?, ?>> FromTapValueCodecV2<T> getCustomFromTapValueCodecV2(Class<T> clazz) {
+        return (FromTapValueCodecV2<T>) classFromTapValueCodecV2Map.get(clazz.getName());
     }
 
 //    public <T extends TapValue<?, ?>> TapCodecRegistry registerFieldToTapValue(String fieldName, ToTapValueCodec<T> toTapValueCodec) {
