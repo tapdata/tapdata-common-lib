@@ -4,13 +4,16 @@ import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.detector.TapSkipper;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapDateValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,9 +96,81 @@ class TapCodecsFilterManagerV2Test {
         assertEquals("legacy", ((Map<?, ?>) values.get("payload")).get("birth_date"));
     }
 
+    @Test
+    void customMapCodecUsesNestedFieldInsteadOfSameNamedTopLevelField() {
+        TapCodecsRegistry registry = TapCodecsRegistry.create();
+        registry.registerFromTapValue(TapMapValue.class, TapMapValue::getValue);
+        registry.registerFromTapValueV2(TapDateValue.class,
+                (value, targetField) -> targetField.getName() + ":" + targetField.getDataType());
+        TapCodecsFilterManager manager = TapCodecsFilterManager.create(registry);
+        Map<String, TapField> targetFields = new LinkedHashMap<>();
+        targetFields.put("profile", new TapField("profile", "MAP"));
+        targetFields.put("profile.created", new TapField("profile.created", "TIMESTAMP"));
+        targetFields.put("created", new TapField("created", "DATE"));
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("profile", new TapMapValue(createdValue()));
+
+        manager.transformFromTapValueMap(values, null, targetFields);
+
+        assertEquals("profile.created:TIMESTAMP", ((Map<?, ?>) values.get("profile")).get("created"));
+    }
+
+    @Test
+    void customMapCodecInsideArrayUsesNestedField() {
+        TapCodecsRegistry registry = TapCodecsRegistry.create();
+        registry.registerFromTapValue(TapArrayValue.class, TapArrayValue::getValue);
+        registry.registerFromTapValue(TapMapValue.class, TapMapValue::getValue);
+        registry.registerFromTapValueV2(TapDateValue.class,
+                (value, targetField) -> targetField.getName() + ":" + targetField.getDataType());
+        TapCodecsFilterManager manager = TapCodecsFilterManager.create(registry);
+        Map<String, TapField> targetFields = new LinkedHashMap<>();
+        targetFields.put("items", new TapField("items", "ARRAY"));
+        targetFields.put("items.created", new TapField("items.created", "DATE"));
+        targetFields.put("created", new TapField("created", "CHAR"));
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("items", new TapArrayValue(Arrays.<Object>asList(new TapMapValue(createdValue()))));
+
+        manager.transformFromTapValueMap(values, null, targetFields);
+
+        List<?> items = (List<?>) values.get("items");
+        assertEquals("items.created:DATE", ((Map<?, ?>) items.get(0)).get("created"));
+    }
+
+    @Test
+    void nestedArrayIndexesSelectLeafTargetField() {
+        TapCodecsRegistry registry = TapCodecsRegistry.create();
+        registry.registerFromTapValue(TapArrayValue.class, TapArrayValue::getValue);
+        registry.registerFromTapValue(TapMapValue.class, TapMapValue::getValue);
+        registry.registerFromTapValueV2(TapDateValue.class,
+                (value, targetField) -> targetField.getName() + ":" + targetField.getDataType());
+        TapCodecsFilterManager manager = TapCodecsFilterManager.create(registry);
+        Map<String, TapField> targetFields = new LinkedHashMap<>();
+        targetFields.put("items", new TapField("items", "ARRAY"));
+        targetFields.put("items.created", new TapField("items.created", "DATE"));
+        assertEquals(targetFields.get("items.created"),
+                manager.targetField(targetFields, "items.#0.created"));
+        assertEquals(targetFields.get("items.created"),
+                manager.targetField(targetFields, "items.#0.#0.created"));
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("items", new TapArrayValue(Arrays.<Object>asList(
+                new TapArrayValue(Arrays.<Object>asList(new TapMapValue(createdValue()))))));
+
+        manager.transformFromTapValueMap(values, null, targetFields);
+
+        List<?> outerItems = (List<?>) values.get("items");
+        List<?> innerItems = (List<?>) outerItems.get(0);
+        assertEquals("items.created:DATE", ((Map<?, ?>) innerItems.get(0)).get("created"));
+    }
+
     private static Map<String, Object> dateValue() {
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("birth_date", new TapDateValue(new DateTime(LocalDateTime.of(2026, 10, 21, 0, 0))));
+        return values;
+    }
+
+    private static Map<String, Object> createdValue() {
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("created", new TapDateValue(new DateTime(LocalDateTime.of(2026, 10, 21, 0, 0))));
         return values;
     }
 

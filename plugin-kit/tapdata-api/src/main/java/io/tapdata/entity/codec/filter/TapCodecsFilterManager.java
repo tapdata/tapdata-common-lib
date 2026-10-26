@@ -330,9 +330,11 @@ public class TapCodecsFilterManager {
                     FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodecV2 != null || fromTapValueCodec != null) {
                         if(theValue instanceof TapMapValue) {
-                            transformFromTapValueMap(((TapMapValue) theValue).getValue());
+                            transformFromTapValueMap(((TapMapValue) theValue).getValue(), null,
+                                    nestedTargetFields(targetNameFieldMap, fieldName));
                         } else if(theValue instanceof TapArrayValue) {
-                            transformFromTapValueMap(fieldName, (TapArrayValue) theValue, sourceNameFieldMap);
+                            transformFromTapValueMap(fieldName, (TapArrayValue) theValue,
+                                    sourceNameFieldMap, targetNameFieldMap, detectors);
                         }
                     } else {
                         fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
@@ -391,9 +393,11 @@ public class TapCodecsFilterManager {
                     FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodecV2 != null || fromTapValueCodec != null) {
                         if(theValue instanceof TapMapValue) {
-                            transformFromTapValueMap(((TapMapValue) theValue).getValue());
+                            transformFromTapValueMap(((TapMapValue) theValue).getValue(), null,
+                                    nestedTargetFields(targetNameFieldMap, theFieldName));
                         } else if(theValue instanceof TapArrayValue) {
-                            transformFromTapValueMap(theFieldName, (TapArrayValue) theValue, sourceNameFieldMap);
+                            transformFromTapValueMap(theFieldName, (TapArrayValue) theValue,
+                                    sourceNameFieldMap, targetNameFieldMap, detectors);
                         } else {
 
                         }
@@ -419,11 +423,13 @@ public class TapCodecsFilterManager {
         List<Object> newList = new ArrayList<>();
         for(Object obj : tapValueArray.getValue()) {
             if(obj instanceof TapMapValue) {
-                transformFromTapValueMap(((TapMapValue) obj).getValue(), nameFieldMap, detectors);
+                transformFromTapValueMap(((TapMapValue) obj).getValue(), nameFieldMap,
+                        nestedTargetFields(targetNameFieldMap, theFieldName), detectors);
                 newList.add(((TapMapValue) obj).getValue());
 //                mapIteratorFromTapValue.iterate(((TapMapValue) obj).getValue(), entryFilter);
             } else if(obj instanceof TapArrayValue){
-                transformFromTapValueMap(theFieldName, (TapArrayValue) obj, nameFieldMap, detectors);
+                transformFromTapValueMap(theFieldName, (TapArrayValue) obj,
+                        nameFieldMap, targetNameFieldMap, detectors);
                 newList.add(((TapArrayValue) obj).getValue());
             } else {
                 TapField field = nameFieldMap.get(theFieldName);
@@ -453,8 +459,28 @@ public class TapCodecsFilterManager {
         if (field != null) {
             return field;
         }
-        int nestedSeparator = fieldName.indexOf('.');
-        return nestedSeparator < 0 ? null : targetNameFieldMap.get(fieldName.substring(0, nestedSeparator));
+        String normalizedName = fieldName(fieldName);
+        field = targetNameFieldMap.get(normalizedName);
+        if (field != null) {
+            return field;
+        }
+        int nestedSeparator = normalizedName.indexOf('.');
+        return nestedSeparator < 0 ? null : targetNameFieldMap.get(normalizedName.substring(0, nestedSeparator));
+    }
+
+    private Map<String, TapField> nestedTargetFields(Map<String, TapField> targetNameFieldMap,
+                                                      String parentFieldName) {
+        if (targetNameFieldMap == null || parentFieldName == null) {
+            return null;
+        }
+        String prefix = fieldName(parentFieldName) + ".";
+        Map<String, TapField> nestedFields = new LinkedHashMap<>();
+        targetNameFieldMap.forEach((name, field) -> {
+            if (name.startsWith(prefix)) {
+                nestedFields.put(name.substring(prefix.length()), field);
+            }
+        });
+        return nestedFields;
     }
 
     public String getDataTypeByTapType(Class<? extends TapType> tapTypeClass) {
