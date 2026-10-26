@@ -1,9 +1,11 @@
 package io.tapdata.entity.codec.filter;
 
 import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.codec.detector.TapSkipper;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.schema.value.TapDateValue;
+import io.tapdata.entity.schema.value.TapMapValue;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -68,6 +70,27 @@ class TapCodecsFilterManagerV2Test {
                 Collections.singleton("birth_date"));
 
         assertEquals("DATE", values.get("birth_date"));
+    }
+
+    @Test
+    void legacyNestedMapConversionDoesNotApplyTopLevelSkipperToInnerFields() {
+        TapCodecsRegistry registry = TapCodecsRegistry.create();
+        registry.registerFromTapValue(TapMapValue.class, TapMapValue::getValue);
+        registry.registerFromTapValue(TapDateValue.class, value -> "legacy");
+        TapCodecsFilterManager manager = TapCodecsFilterManager.create(registry);
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("payload", new TapMapValue(dateValue()));
+        TapSkipper skipUnknownFields = new TapSkipper() {
+            @Override
+            public boolean skip(TapField field) {
+                return field == null;
+            }
+        };
+
+        manager.transformFromTapValueMap(values,
+                fields(new TapField("payload", "MAP")), skipUnknownFields);
+
+        assertEquals("legacy", ((Map<?, ?>) values.get("payload")).get("birth_date"));
     }
 
     private static Map<String, Object> dateValue() {

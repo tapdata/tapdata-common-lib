@@ -330,9 +330,9 @@ public class TapCodecsFilterManager {
                     FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodecV2 != null || fromTapValueCodec != null) {
                         if(theValue instanceof TapMapValue) {
-                            transformFromTapValueMap(((TapMapValue) theValue).getValue(), sourceNameFieldMap, targetNameFieldMap, detectors);
+                            transformFromTapValueMap(((TapMapValue) theValue).getValue());
                         } else if(theValue instanceof TapArrayValue) {
-                            transformFromTapValueMap(fieldName, (TapArrayValue) theValue, sourceNameFieldMap, targetNameFieldMap, detectors);
+                            transformFromTapValueMap(fieldName, (TapArrayValue) theValue, sourceNameFieldMap);
                         }
                     } else {
                         fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
@@ -391,9 +391,9 @@ public class TapCodecsFilterManager {
                     FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodecV2 != null || fromTapValueCodec != null) {
                         if(theValue instanceof TapMapValue) {
-                            transformFromTapValueMap(((TapMapValue) theValue).getValue(), sourceNameFieldMap, targetNameFieldMap, detectors);
+                            transformFromTapValueMap(((TapMapValue) theValue).getValue());
                         } else if(theValue instanceof TapArrayValue) {
-                            transformFromTapValueMap(theFieldName, (TapArrayValue) theValue, sourceNameFieldMap, targetNameFieldMap, detectors);
+                            transformFromTapValueMap(theFieldName, (TapArrayValue) theValue, sourceNameFieldMap);
                         } else {
 
                         }
@@ -419,11 +419,11 @@ public class TapCodecsFilterManager {
         List<Object> newList = new ArrayList<>();
         for(Object obj : tapValueArray.getValue()) {
             if(obj instanceof TapMapValue) {
-                transformFromTapValueMap(((TapMapValue) obj).getValue(), nameFieldMap, targetNameFieldMap, detectors);
+                transformFromTapValueMap(((TapMapValue) obj).getValue(), nameFieldMap, detectors);
                 newList.add(((TapMapValue) obj).getValue());
 //                mapIteratorFromTapValue.iterate(((TapMapValue) obj).getValue(), entryFilter);
             } else if(obj instanceof TapArrayValue){
-                transformFromTapValueMap(theFieldName, (TapArrayValue) obj, nameFieldMap, targetNameFieldMap, detectors);
+                transformFromTapValueMap(theFieldName, (TapArrayValue) obj, nameFieldMap, detectors);
                 newList.add(((TapArrayValue) obj).getValue());
             } else {
                 TapField field = nameFieldMap.get(theFieldName);
