@@ -333,8 +333,11 @@ public class TapCodecsFilterManager {
                             transformFromTapValueMap(((TapMapValue) theValue).getValue(), null,
                                     nestedTargetFields(targetNameFieldMap, fieldName));
                         } else if(theValue instanceof TapArrayValue) {
+                            // Keep the legacy skipper boundary for array elements. Their Map
+                            // values are traversed with local keys, while the detector's source
+                            // field map still contains full paths such as items.created.
                             transformFromTapValueMap(fieldName, (TapArrayValue) theValue,
-                                    sourceNameFieldMap, targetNameFieldMap, detectors);
+                                    sourceNameFieldMap, targetNameFieldMap);
                         }
                     } else {
                         fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
