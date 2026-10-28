@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.filter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.tapdata.entity.codec.FromTapValueCodec;
+import io.tapdata.entity.codec.FromTapValueCodecV2;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapRawValueCodec;
@@ -322,6 +323,15 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 			Map<String, TapField> sourceNameFieldMap,
 			Set<String> transformedToTapValueFieldNames
 	) {
+		transformFromTapValueMap(tapValueMap, sourceNameFieldMap, sourceNameFieldMap, transformedToTapValueFieldNames);
+	}
+
+	public void transformFromTapValueMap(
+			Map<String, Object> tapValueMap,
+			Map<String, TapField> sourceNameFieldMap,
+			Map<String, TapField> targetNameFieldMap,
+			Set<String> transformedToTapValueFieldNames
+	) {
 		if (null == transformedToTapValueFieldNames || transformedToTapValueFieldNames.isEmpty()) {
 			return;
 		}
@@ -331,13 +341,20 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 			if (object instanceof TapValue) {
 				TapValue<?, ?> theValue = (TapValue<?, ?>) object;
 				if (transformedToTapValueFieldName != null && null != theValue) {
+					FromTapValueCodecV2<TapValue<?, ?>> fromTapValueCodecV2 = this.codecsRegistry.getCustomFromTapValueCodecV2((Class<TapValue<?, ?>>) theValue.getClass());
 					FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getCustomFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
-					if (fromTapValueCodec == null) {
+					if (fromTapValueCodecV2 == null && fromTapValueCodec == null) {
 						fromTapValueCodec = this.codecsRegistry.getDefaultFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
 					}
-					if (fromTapValueCodec == null)
+					if (fromTapValueCodecV2 == null && fromTapValueCodec == null)
 						throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
-					Object value = fromTapValueCodec.fromTapValue(theValue);
+					Object value;
+					if (fromTapValueCodecV2 != null) {
+						TapField targetField = targetField(targetNameFieldMap, fieldName);
+						value = fromTapValueCodecV2.fromTapValue(theValue, targetField);
+					} else {
+						value = fromTapValueCodec.fromTapValue(theValue);
+					}
 					tapValueMap.put(fieldName, value);
 				}
 			}

@@ -2,6 +2,7 @@ package io.tapdata.entity.codec.filter;
 
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.detector.TapSkipper;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapCoefficientFloat;
@@ -9,14 +10,19 @@ import io.tapdata.entity.schema.type.TapDouble;
 import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
-import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.schema.value.TapArrayValue;
+import io.tapdata.entity.schema.value.TapDateValue;
 import io.tapdata.entity.schema.value.TapFloatValue;
+import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
+import io.tapdata.entity.schema.value.TapValue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -258,6 +264,34 @@ class TapCodecsFilterManagerTest {
 		assertEquals(1, type.getCodecLookups());
 		assertInstanceOf(TapFloatValue.class, firstRecord.get("floatField"));
 		assertInstanceOf(TapFloatValue.class, secondRecord.get("floatField"));
+	}
+
+	@Test
+	@DisplayName("custom array codec keeps legacy skipper boundary for dates in array maps")
+	void customArrayCodecPreservesDateConversionWithUnknownFieldSkipper() {
+		TapCodecsRegistry registry = new TapCodecsRegistry();
+		registry.registerFromTapValue(TapArrayValue.class, TapArrayValue::getValue);
+		registry.registerFromTapValue(TapDateValue.class, value -> "legacy-date");
+		TapCodecsFilterManager manager = TapCodecsFilterManager.create(registry);
+
+		Map<String, Object> nested = new LinkedHashMap<>();
+		nested.put("created", new TapDateValue(new DateTime(172800000L)));
+		Map<String, Object> record = new LinkedHashMap<>();
+		record.put("items", new TapArrayValue(Arrays.asList(new TapMapValue(nested))));
+		Map<String, TapField> fields = new LinkedHashMap<>();
+		fields.put("items", field("items", "array"));
+		fields.put("items.created", field("items.created", "date"));
+		TapSkipper skipper = new TapSkipper() {
+			@Override
+			public boolean skip(TapField field) {
+				return field == null;
+			}
+		};
+
+		manager.transformFromTapValueMap(record, fields, skipper);
+
+		Object actual = ((Map<?, ?>) ((java.util.List<?>) record.get("items")).get(0)).get("created");
+		assertEquals("legacy-date", actual);
 	}
 
 	private static class CountingTapFloat extends TapFloat {
