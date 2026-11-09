@@ -8,6 +8,16 @@ Maintain a business error in its owning repository and module. Search existing d
 
 `@TapExClass.code` is module metadata. Existing practice commonly uses two digits, but the current implementation does not concatenate this number into the field value. A field annotated with `@TapExCode` contains the entire numeric portion, not a module-local suffix. `ErrorCodeEntity.fullErrorCode()` prepends the uppercased prefix to that field value. For example, prefix `EXERCISE`, module metadata `43` and field `430001` produce `EXERCISE430001`, not `EXERCISE43430001`.
 
+**Example values do not specify a numbering format.** `430001` and `430002` are literal test inputs, not an approved split into a two-digit module and a four-digit sequence. Module metadata `43` neither pads nor truncates the field and does not determine its width. With the same prefix `EXAMPLE` and module metadata `43`, the existing calculation gives:
+
+| Literal field value | Full code |
+|---|---|
+| `430001` | `EXAMPLE430001` |
+| `043001` | `EXAMPLE043001` |
+| `43001` | `EXAMPLE43001` |
+
+These are three distinct existing-interface inputs, not interchangeable spellings or newly allocated codes. Preserve leading zeroes and the entire original field. The examples do not authorize a new product numbering policy; concrete widths for product-owned new definitions require a separate explicit decision before use. This does not add restrictions to connector-defined inputs.
+
 Connector module `43` is connector-defined, not a newly allocated universal reserved number. This verification adds no special module, numeric-width or prefix/module-combination restriction to connector inputs. Connectors may share module metadata and use their own definitions. Preserve existing complete codes, including historical inconsistencies and different widths; do not pad, reinterpret or renumber them. Module metadata alone is not globally unique identity.
 
 A product consuming definitions must resolve them in the appropriate trusted source domain. Within one catalog domain, different declarations with the same full code are ambiguous and must be detected before insertion overwrites either declaration. Distinct prefixes may distinguish full codes. A prefix or self-reported PDK ID alone does not prove connector provenance. Existing `Scanner.getErrorCodeMap()` keys by the raw field and uses `Map.put`; it does not implement this stricter product contract. No existing global scanner behavior is changed here.
@@ -105,7 +115,7 @@ A catalog called "complete" must state its coverage: product revision, resolved 
 
 ### Concrete source change example
 
-This is an illustrative declaration, not a new namespace allocation or code to ship. The numeric field is the entire value used by the existing library.
+This is an illustrative declaration, not a new namespace allocation or code to ship. The numeric field is the entire value used by the existing library. Its six characters are a fixture choice, not a required width; see the three input/output examples above.
 
 ```java
 @TapExClass(code = 43, module = "example-connector", prefix = "EXAMPLE")
