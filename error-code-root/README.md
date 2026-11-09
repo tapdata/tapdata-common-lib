@@ -90,3 +90,80 @@ Record the following alongside the run logs, outside the product checkout:
 | Human acceptance (explicit, separate from test success) | |
 
 Retain existing baseline manifests and evidence. Refresh only entries affected by a source/artifact change after reviewing why they changed; never regenerate a golden to hide a new violation. Missing source identity, unavailable environments or unrun runtime cases remain explicitly unverified.
+
+## Definition source, generated catalog and runtime diagnostics
+
+The exercise TSV is deliberately small. It is neither an editable registry of all errors nor the final product catalog. Do not edit exported rows to change an error. The maintained source is the declaration in the owning module, together with its documented parameter contract and focused tests. Generated catalogs are reproducible read models; runtime diagnostics contain occurrence-specific values and must not be copied into definition resources.
+
+| Surface | Maintainer action | Consumer action |
+|---|---|---|
+| Source declaration and use sites | Review and edit in the owning repository | Build-time extraction reads the declaration |
+| Generated definition catalog | Regenerate from pinned inputs; never hand-edit rows | Lookup, review and runtime resource loading |
+| Diagnostic occurrence | Capture through the owning product adapter | Render the original code and safe contextual values |
+
+A catalog called "complete" must state its coverage: product revision, resolved library artifacts, explicit definition inputs, included connector artifacts and unresolved inputs. It is not a list of every private or historical connector. Missing declarations or a dynamically supplied unknown code stay explicitly unresolved; preserve the raw code rather than invent a definition.
+
+### Concrete source change example
+
+This is an illustrative declaration, not a new namespace allocation or code to ship. The numeric field is the entire value used by the existing library.
+
+```java
+@TapExClass(code = 43, module = "example-connector", prefix = "EXAMPLE")
+public final class ExampleErrors {
+    @TapExCode(
+        describe = "Authentication was rejected",
+        dynamicDescription = "Authentication was rejected by {}",
+        solution = "Verify the configured credentials and authentication method",
+        recoverable = false,
+        skippable = false)
+    public static final String AUTHENTICATION_REJECTED = "430001";
+}
+```
+
+Before adding it, search the owning source tree for `430001`, authentication failures, and equivalent credential errors. For a repository that has `rg`, these are executable read-only searches:
+
+```sh
+rg -n --glob '*.java' '@TapExClass|@TapExCode' .
+rg -n -i --glob '*.java' '430001|authentication|credential' .
+```
+
+These searches discover candidates; they do not establish cross-repository uniqueness. Review the existing use sites. If an existing declaration has the same trigger, meaning and parameter contract, reuse it. If the new failure is a timeout rather than rejection, explain that distinction rather than giving the same error a second code. Do not pass credentials as parameters. For the example, document parameter 0 as a sanitized endpoint label and test that order at the throw/capture boundary. Existing positional `{}` templates and positional values remain authoritative; a prose name does not introduce a new named-parameter API.
+
+To change wording, retain meaning and parameter semantics, update available localized descriptions and test formatting. A material change of meaning requires a distinct reviewed definition; do not silently reinterpret an old code. To deprecate, mark the declaration and retain it for old diagnostics. A replacement relationship or first-version claim must come from reviewed metadata/history; it must not be guessed from `@Deprecated` or Git's current tip.
+
+### Intended catalog reading view
+
+The following fields describe the product-maintenance reading view. They are not a published JSON schema, a wire-format commitment or a command already delivered by this library.
+
+| Information | Example | Evidence and missing-value rule |
+|---|---|---|
+| Full code and raw field | `EXAMPLE430001`, `430001` | Existing full-code calculation; preserve observed bytes |
+| Prefix and module metadata | `EXAMPLE`, `43`, `example-connector` | Read the class annotation; do not infer ownership from these values |
+| Declaration | `ExampleErrors.AUTHENTICATION_REJECTED` | Source or explicit artifact declaration; include its location when known |
+| Descriptions and solutions | Authentication rejected; verify credentials | Extract available annotation text; absent locale is missing, not a translation |
+| Parameter contract | Positional template plus documented position 0 | The template alone does not prove a semantic name or type; mark undocumented positions |
+| Recovery and skip metadata | `false`, `false` | Preserve declared values; metadata is not permission to introduce automatic retry/skip |
+| Severity, type and related exception | `NORMAL`, `RUNTIME`, `RuntimeException` defaults in this example | Extract explicitly; do not assume the old scanner copies every annotation member |
+| Deprecation and replacement | Not marked deprecated; no replacement record in this example | Read the actual field annotation; retain deprecated codes; replacement requires separate evidence |
+| Build provenance | Product revision, resolved GAV and content hash | Generate from the exact inputs; unknown hash is unverified, not trusted provenance |
+| Resolution domain | A product catalog or a registered plugin domain | Bind to trusted registration/artifact context; a prefix or self-reported ID is insufficient |
+| Coverage and unresolved inputs | Listed inputs and missing declarations | Report the gap; never label a partial catalog as globally complete |
+
+The existing explicit scanner omits class-level module metadata, field deprecation and some annotation members from its output. A consuming build tool must read the required declarations explicitly instead of fabricating those values from an incomplete `ErrorCodeEntity`. Runtime reflection-based scanning is not required by this guide.
+
+A useful query result shows one resolved definition with its source, parameter contract and compatibility status. If two independently isolated plugin domains contain the same full code, a query must include a verified domain. If that identity is absent, return ambiguity with the raw code; do not choose the first definition. Within one domain, conflicting full-code declarations are rejected before overwrite. These are consuming-product responsibilities, not new restrictions on connector numbering.
+
+### Pull request review and activation
+
+| Check | Mechanical evidence | Human decision |
+|---|---|---|
+| Exact identity conflicts | Pre-overwrite full-code checks within the actual resolution domain | Confirm any isolated-domain explanation is real |
+| Equivalent meanings | Search results and nearby definitions | Explain reuse or why the new trigger/recovery semantics differ |
+| Parameter compatibility | Formatting and use-site tests | Confirm positions, meaning and safe values |
+| Existing-code preservation | Reviewed baseline diff tied to input revisions | Approve each change; never refresh the entire baseline to hide violations |
+| Definition completeness | Required metadata and catalog/input matching | Resolve genuinely missing source facts without guessing |
+| Deprecation | Old code still present in the generated view | Confirm replacement/migration guidance and backward readability |
+
+Suggested PR evidence: changed declarations and use sites; reuse search and rationale; catalog diff with coverage/provenance; positive/negative tests; compatibility impact; and reviewer conclusion. A text-similarity check cannot replace the meaning review.
+
+The current library contribution provides contract tests and this guide. It does not deliver a production-wide catalog command, a semantic duplicate detector, or repository-wide admission gates. Consuming products activate their own generated catalog and strict checks with the actual migrated paths. Unmigrated paths and unrelated feature/bug-fix work retain their existing contracts. Changes in business definitions do not automatically require a shared-library release; changing a definition owned by the library itself still follows that library's ordinary release process.
