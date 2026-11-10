@@ -26,7 +26,7 @@ A product consuming definitions must resolve them in the appropriate trusted sou
 
 1. Search for both the proposed code and its meaning, including equivalent errors in related operations. Read parameter order and recovery/skip behavior before reuse.
 2. Add the declaration, its required descriptions, the throw/use site and focused tests in the owning change. Use a stable prefix and preserve the entire field value. The exercise prefix below is temporary and must not be shipped.
-3. Review semantics: can an existing code express this same error? If not, explain the differing trigger, affected object or recovery behavior. Automated text similarity is only a review hint; it cannot prove semantic uniqueness.
+3. Review semantics: can an existing code express this same error? If not, explain the differing responsibility, proven failure, parameter contract or actual recovery branch. A different object value, call site, language or log level alone does not justify another code. Automated text similarity is only a review hint; it cannot prove semantic uniqueness.
 4. Check exact full-code conflicts in the actual catalog domain before overwrite, required metadata, parameter compatibility and preservation of existing codes. Product-side strict checks apply when that consuming path is delivered; these tests do not activate gates in other repositories.
 5. Deprecate a definition without removing it, changing its meaning or reusing its code. Keep old diagnostics readable. Migration or a breaking compatibility change requires a separate explicit decision.
 
@@ -97,7 +97,7 @@ Record the following alongside the run logs, outside the product checkout:
 | Conflict exit and previous-file comparison | |
 | Semantic reuse decision and reviewer | |
 | Questions / unsupported cases | |
-| Human acceptance (explicit, separate from test success) | |
+| Human specification review (clarity, consistency and unresolved decisions, separate from execution success) | |
 
 Retain existing baseline manifests and evidence. Refresh only entries affected by a source/artifact change after reviewing why they changed; never regenerate a golden to hide a new violation. Missing source identity, unavailable environments or unrun runtime cases remain explicitly unverified.
 
@@ -172,8 +172,24 @@ A useful query result shows one resolved definition with its source, parameter c
 | Parameter compatibility | Formatting and use-site tests | Confirm positions, meaning and safe values |
 | Existing-code preservation | Reviewed baseline diff tied to input revisions | Approve each change; never refresh the entire baseline to hide violations |
 | Definition completeness | Required metadata and catalog/input matching | Resolve genuinely missing source facts without guessing |
-| Deprecation | Old code still present in the generated view | Confirm replacement/migration guidance and backward readability |
+| Deprecation | Deprecated declarations remain visible while included in the inputs; removed inputs still require trusted published-baseline non-reuse checks | Confirm replacement/migration guidance and backward readability |
 
-Suggested PR evidence: changed declarations and use sites; reuse search and rationale; catalog diff with coverage/provenance; positive/negative tests; compatibility impact; and reviewer conclusion. A text-similarity check cannot replace the meaning review.
+Suggested PR evidence: changed declarations and use sites; reuse search and rationale; catalog diff with coverage/provenance where the product catalog is active; positive/negative tests; compatibility impact; and reviewer conclusion. A text-similarity check cannot replace the meaning review.
 
 The current library contribution provides contract tests and this guide. It does not deliver a production-wide catalog command, a semantic duplicate detector, or repository-wide admission gates. Consuming products activate their own generated catalog and strict checks with the actual migrated paths. Unmigrated paths and unrelated feature/bug-fix work retain their existing contracts. Changes in business definitions do not automatically require a shared-library release; changing a definition owned by the library itself still follows that library's ordinary release process.
+
+
+## Counterexamples to review before accepting the specification
+
+The implementer runs commands and supplies real, revision-bound evidence. Human review judges the rules and counterexamples: clear terminology, complete responsibility boundaries, compatibility and consistent failure handling. A human need not operate the command line, and passing commands does not approve a specification. Earlier user-run evidence stays valid. The present contribution does not require approval of the usability of future product catalog tools.
+
+| Counterexample | Required interpretation |
+|---|---|
+| Identical declaration and artifact, different JVM default locales | The old library uppercases prefixes using the default locale. Record the catalog generation environment and test matching against supported runtime environments. Preserve an observed raw code; do not rewrite it using a new normalization algorithm. An unmatched definition remains unresolved. |
+| Two positional parameters are swapped but counts still match | For managed definitions document semantics, type and requiredness at each position. Use distinct sentinel values to test call sites and all language templates. Missing legacy documentation is unknown, not inferred from text. This requires no new typed-parameter API. |
+| An old diagnostic is read after a connector upgrade with the same ID or GAV | Resolve against the verified source/artifact binding at occurrence time, not the latest registration. If that binding cannot be verified or the matching definition is unavailable, retain the raw code and available safe facts, marking provenance unverified or ambiguous. This does not require a new history store. |
+| A deprecated code vanishes from the current build inputs | Current catalog absence does not free a published identity in the same resolution domain. Compare with trusted supported-release baselines; an unavailable baseline means unverified compatibility. A replacement hint must not rewrite old occurrences. |
+| Two branches independently add the same full code | Revalidate against the current merge target under the existing review and integration procedure. An old green check is not evidence about the combined catalog; no allocation service is introduced. |
+| An old external definition lacks metadata required for a new managed definition | Apply strict new-definition rules to the activated managed scope. Report missing external information without renumbering or inventing it. This does not permit conflicting definitions in one domain or guessing a source. |
+
+The PR evidence is stage-specific: this contribution supplies specification review and existing-interface witnesses. The consuming product later supplies its actual generated catalog, checks and usability evidence. Future tools are not a prerequisite for accepting the present specification and existing-interface evidence. None of these clarifications changes the shared-library implementation or automatically expands supported environments.
