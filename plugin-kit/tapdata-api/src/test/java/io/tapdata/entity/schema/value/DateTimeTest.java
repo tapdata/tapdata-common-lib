@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -52,7 +53,7 @@ class DateTimeTest {
 		@Test
 		@DisplayName("test to format yyyyMMdd")
 		void testToFormatyyyyMMdd() {
-			Instant instant = Instant.parse("2024-05-08T16:00:00.000Z");
+			Instant instant = LocalDate.of(2024, 5, 9).atStartOfDay(ZoneId.systemDefault()).toInstant();
 			DateTime dateTime = new DateTime(instant);
 			String yyyyMMdd = dateTime.toFormatString("yyyyMMdd");
 			assertEquals("20240509", yyyyMMdd);
