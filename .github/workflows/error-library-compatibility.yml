@@ -1,0 +1,30 @@
+name: Existing error contracts
+on:
+  pull_request:
+    paths:
+      - 'pom.xml'
+      - 'error-code-root/**'
+      - 'plugin-kit/**'
+      - '.github/workflows/error-library-compatibility.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build unchanged libraries and verify standalone contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$RUNNER_TEMP/existing-error-contract-repository"
+          mvn -B -ntp -Dmaven.repo.local="$repo" -Pjdk-17 \
+            -pl error-code-root/error-code-bom,error-code-root/error-code-scanner,error-code-root/pdk-error-code,plugin-kit/tapdata-api \
+            -am clean install
+          mvn -B -ntp -Dmaven.repo.local="$repo" \
+            -f error-code-root/contract-tests/pom.xml clean verify
