@@ -10,6 +10,7 @@ import io.tapdata.pdk.apis.functions.connection.GetTableNamesFunction;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.common.QueryHashByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
+import io.tapdata.pdk.apis.functions.connector.triggercdc.*;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.pdk.apis.partition.FieldMinMaxValue;
@@ -87,6 +88,15 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected FlushOffsetFunction flushOffsetFunction;
     protected ProcessControlFunction processControlFunction;
 
+    protected TriggerCdcCapabilitiesFunction triggerCdcCapabilitiesFunction;
+    protected TriggerCdcPlanFunction triggerCdcPlanFunction;
+    protected TriggerCdcEnsureFunction triggerCdcEnsureFunction;
+    protected TriggerCdcReadFunction triggerCdcReadFunction;
+    protected TriggerCdcAcknowledgeFunction triggerCdcAcknowledgeFunction;
+    protected TriggerCdcInspectFunction triggerCdcInspectFunction;
+    protected TriggerCdcCleanupFunction triggerCdcCleanupFunction;
+    protected TriggerCdcReleaseFunction triggerCdcReleaseFunction;
+
     public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
         flushOffsetFunction = function;
         return this;
@@ -94,6 +104,46 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ConnectorFunctions supportProcessControlFunction(ProcessControlFunction function) {
         processControlFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcCapabilitiesFunction(TriggerCdcCapabilitiesFunction function) {
+        triggerCdcCapabilitiesFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcPlanFunction(TriggerCdcPlanFunction function) {
+        triggerCdcPlanFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcEnsureFunction(TriggerCdcEnsureFunction function) {
+        triggerCdcEnsureFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcReadFunction(TriggerCdcReadFunction function) {
+        triggerCdcReadFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcAcknowledgeFunction(TriggerCdcAcknowledgeFunction function) {
+        triggerCdcAcknowledgeFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcInspectFunction(TriggerCdcInspectFunction function) {
+        triggerCdcInspectFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcCleanupFunction(TriggerCdcCleanupFunction function) {
+        triggerCdcCleanupFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcReleaseFunction(TriggerCdcReleaseFunction function) {
+        triggerCdcReleaseFunction = function;
         return this;
     }
 
@@ -219,6 +269,12 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
                     fieldArray.add(Capability.create(fieldNameBuilder.toString()).type(Capability.TYPE_FUNCTION));
                 }
             } catch (Throwable ignored) {}
+        }
+        if (triggerCdcCapabilitiesFunction != null && triggerCdcPlanFunction != null
+                && triggerCdcEnsureFunction != null && triggerCdcReadFunction != null
+                && triggerCdcAcknowledgeFunction != null) {
+            fieldArray.add(Capability.create(io.tapdata.pdk.apis.entity.triggercdc.TriggerCdcConstants.CAPABILITY_TRIGGER_CDC)
+                    .type(Capability.TYPE_OTHER));
         }
         return fieldArray;
     }
@@ -489,6 +545,38 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ControlFunction getControlFunction() {
         return controlFunction;
+    }
+
+    public TriggerCdcCapabilitiesFunction getTriggerCdcCapabilitiesFunction() {
+        return triggerCdcCapabilitiesFunction;
+    }
+
+    public TriggerCdcPlanFunction getTriggerCdcPlanFunction() {
+        return triggerCdcPlanFunction;
+    }
+
+    public TriggerCdcEnsureFunction getTriggerCdcEnsureFunction() {
+        return triggerCdcEnsureFunction;
+    }
+
+    public TriggerCdcReadFunction getTriggerCdcReadFunction() {
+        return triggerCdcReadFunction;
+    }
+
+    public TriggerCdcAcknowledgeFunction getTriggerCdcAcknowledgeFunction() {
+        return triggerCdcAcknowledgeFunction;
+    }
+
+    public TriggerCdcInspectFunction getTriggerCdcInspectFunction() {
+        return triggerCdcInspectFunction;
+    }
+
+    public TriggerCdcCleanupFunction getTriggerCdcCleanupFunction() {
+        return triggerCdcCleanupFunction;
+    }
+
+    public TriggerCdcReleaseFunction getTriggerCdcReleaseFunction() {
+        return triggerCdcReleaseFunction;
     }
 
     public CreateIndexFunction getCreateIndexFunction() {
