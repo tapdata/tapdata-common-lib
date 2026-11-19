@@ -22,8 +22,7 @@ public class TriggerCdcConfig implements Serializable {
     /** Schema (or database / keyspace) that holds the CDC objects. */
     protected String schema;
 
-    protected TriggerCdcInstallMode installMode;
-    /** How often the framework polls the journal. */
+    /** How often the connector stream reader polls the journal. */
     protected Long pollIntervalMs;
     /** How many change records a single read returns at most. */
     protected Integer batchSize;
@@ -79,9 +78,6 @@ public class TriggerCdcConfig implements Serializable {
         if (schema == null) {
             schema = TriggerCdcConstants.DEFAULT_STORAGE_SCHEMA;
         }
-        if (installMode == null) {
-            installMode = TriggerCdcInstallMode.AUTO;
-        }
         if (pollIntervalMs == null) {
             pollIntervalMs = TriggerCdcConstants.DEFAULT_POLL_INTERVAL_MS;
         }
@@ -132,19 +128,6 @@ public class TriggerCdcConfig implements Serializable {
 
     public TriggerCdcConfig schema(String schema) {
         this.schema = schema;
-        return this;
-    }
-
-    public TriggerCdcInstallMode getInstallMode() {
-        return installMode;
-    }
-
-    public void setInstallMode(TriggerCdcInstallMode installMode) {
-        this.installMode = installMode;
-    }
-
-    public TriggerCdcConfig installMode(TriggerCdcInstallMode installMode) {
-        this.installMode = installMode;
         return this;
     }
 

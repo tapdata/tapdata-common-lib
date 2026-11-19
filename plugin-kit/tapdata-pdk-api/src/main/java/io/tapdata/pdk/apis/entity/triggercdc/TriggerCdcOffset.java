@@ -3,53 +3,39 @@ package io.tapdata.pdk.apis.entity.triggercdc;
 import java.io.Serializable;
 
 /**
- * Reader position of one consumer <b>on one capture</b>.
+ * Delivered position of one consumer on one capture, carried through the existing stream API.
  *
- * <p>Scope: the framework stores one offset per {@code (consumerId, captureId)} pair, never one
- * offset per task. One source table is one capture and owns its own journal, so a task that
- * captures several tables has several independent positions, and each
- * {@link io.tapdata.pdk.apis.functions.connector.triggercdc.TriggerCdcReadFunction read} call is
- * given the offset of the capture it reads. There is no cross capture offset: comparing two
- * captures' tokens or reusing one capture's offset for another is meaningless and must be
- * rejected.</p>
+ * <p>StreamReadFunction receives/emits a {@code Map<String, TriggerCdcOffset>} keyed by capture id,
+ * even for a one-table task. The map contains the latest delivered token for every subscribed
+ * capture. Each callback emits a fresh snapshot (map and values) that must not subsequently be
+ * mutated. Events use the existing TapEvent types; no parallel event/batch protocol is needed.</p>
  *
- * <p>Important: {@code lastEventId} is informational only. A database sequence gives unique
- * values, not commit order, so {@code event_id > lastEventId} is <b>not</b> a safe cursor:</p>
+ * <p>A token identifies the cumulative set of events delivered on that capture, including previous
+ * unacknowledged batches. It is bound to the consumer, capture and generation. The engine persists
+ * the whole map as its normal checkpoint and acknowledges its entries only after all downstream
+ * writes and that checkpoint are durable. Delivery alone never permits journal deletion. On
+ * restart, unacknowledged records may replay; targets must tolerate at-least-once delivery.</p>
  *
- * <pre>
- * tx A allocates event_id=100, not yet committed
- * tx B allocates event_id=101, commits first
- * reader sees 101, advances the cursor to 101
- * tx A commits 100 -&gt; 100 is now permanently skipped
- * </pre>
+ * <p>Before reading, validate the map against the captures registered by ensure: reject unknown
+ * keys, a key/captureId mismatch, missing identities or generations, stale generations, and
+ * foreign tokens. A null start offset starts from the registered subscription's beginning;
+ * a non-null checkpoint must cover the exact registered capture set, including fresh entries.
+ * Do not infer journal routing from a token alone.</p>
  *
- * <p>The safe cursor is {@code batchToken}: the connector returns it with a delivered batch and
- * the framework only advances it through
- * {@link io.tapdata.pdk.apis.functions.connector.triggercdc.TriggerCdcAcknowledgeFunction} after
- * the downstream sink is durable. A connector must therefore treat an unacknowledged batch as
- * still pending on every read, even when a larger event id is already visible.</p>
+ * <p>Sequence allocation is not commit order. For example, transaction A allocates 100, B allocates
+ * and commits 101, then A commits 100. Never use {@code event_id > lastEventId} as a permanent
+ * cursor. Recheck the committed unacknowledged set, tracking delivered rows during a running
+ * session without deleting them. Acknowledge membership in the token's set, never a numeric high
+ * watermark. Check capture integrity while polling and fail on drift or disabled triggers.</p>
  */
 public class TriggerCdcOffset implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Capture this offset belongs to; also the key under which it is persisted. It must equal the
-     * {@code captureId} passed to a read call - a mismatch means the checkpoint of another capture
-     * was restored and must be rejected instead of resumed.
-     */
+    /** Capture identity; must equal the key under which this offset is checkpointed. */
     protected String captureId;
-    /**
-     * Generation of the capture. A connector must reject an offset whose generation does not
-     * match the installed capture, instead of resuming from a stale position.
-     */
+    /** Installed generation; a mismatch must fail instead of resuming a stale checkpoint. */
     protected Long generation;
-    /**
-     * Opaque token of the last <b>acknowledged</b> batch. A token that was delivered but not yet
-     * acknowledged is never stored here: it lives only in the returned
-     * {@link TriggerCdcBatch}, so the connector re-delivers that batch until
-     * {@link io.tapdata.pdk.apis.functions.connector.triggercdc.TriggerCdcAcknowledgeFunction}
-     * reports the downstream write as durable.
-     */
+    /** Cumulative delivered-set token; only a durable checkpoint authorizes acknowledgement. */
     protected String batchToken;
     /** Informational only. Never use it as a safe cursor, see the class javadoc. */
     protected String lastEventId;
@@ -60,7 +46,7 @@ public class TriggerCdcOffset implements Serializable {
         return new TriggerCdcOffset();
     }
 
-    /** True when nothing has been acknowledged yet, so the connector starts from the beginning. */
+    /** True when no batch has been delivered for this position yet. */
     public boolean isFresh() {
         return batchToken == null || batchToken.isEmpty();
     }

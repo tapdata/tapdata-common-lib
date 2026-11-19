@@ -31,6 +31,8 @@ import java.util.Map;
 public class TriggerCdcInstallResult implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    /** Database/version-specific guarantees verified during ensure; required even on failure. */
+    protected TriggerCdcCapabilities capabilities;
     protected TriggerCdcStatus status;
     protected String catalog;
     protected String schema;
@@ -44,6 +46,19 @@ public class TriggerCdcInstallResult implements Serializable {
     protected List<TriggerCdcTable> requestedTables;
     /** Non blocking remarks raised during installation. */
     protected List<String> warnings;
+
+    public TriggerCdcCapabilities getCapabilities() {
+        return capabilities;
+    }
+
+    public void setCapabilities(TriggerCdcCapabilities capabilities) {
+        this.capabilities = capabilities;
+    }
+
+    public TriggerCdcInstallResult capabilities(TriggerCdcCapabilities capabilities) {
+        this.capabilities = capabilities;
+        return this;
+    }
 
     public static TriggerCdcInstallResult create() {
         return new TriggerCdcInstallResult();
@@ -156,6 +171,9 @@ public class TriggerCdcInstallResult implements Serializable {
      */
     public List<String> validate(Collection<TriggerCdcTable> requestedTables) {
         List<String> violations = new ArrayList<>();
+        if (capabilities == null) {
+            violations.add("ensure must report the verified database capabilities");
+        }
         Map<String, String> requested = indexRequested(requestedTables, violations);
         if (tableResults == null || tableResults.isEmpty()) {
             violations.add("ensure reported no per table result; at least one table outcome is "
@@ -196,6 +214,9 @@ public class TriggerCdcInstallResult implements Serializable {
                 violations.add(owner + " is reported successful but has no captureId: its journal "
                         + "cannot be addressed, so it would be installed and never read");
                 continue;
+            }
+            if (tableResult.getGeneration() == null) {
+                violations.add(owner + " is reported successful but has no generation");
             }
             String captureId = tableResult.getCaptureId().trim();
             String previousOwner = captureOwners.put(captureId, owner);

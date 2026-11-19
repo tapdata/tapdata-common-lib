@@ -14,7 +14,7 @@ import java.io.Serializable;
  * generation so that old offsets are rejected instead of silently resumed.</p>
  *
  * <p>Granularity: one source table is one capture. Each capture owns its own journal, and
- * {@code read} / {@code acknowledge} are called once per capture, so a table list is also the
+ * stream checkpoints and acknowledgements keep independent entries per capture, so a table list is the
  * list of independent read positions a task has to keep.</p>
  */
 public class TriggerCdcTable implements Serializable {

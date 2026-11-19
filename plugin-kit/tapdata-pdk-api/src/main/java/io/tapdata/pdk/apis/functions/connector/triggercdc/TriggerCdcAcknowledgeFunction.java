@@ -2,35 +2,31 @@ package io.tapdata.pdk.apis.functions.connector.triggercdc;
 
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.triggercdc.TriggerCdcConfig;
+import io.tapdata.pdk.apis.entity.triggercdc.TriggerCdcOffset;
 import io.tapdata.pdk.apis.functions.connector.TapConnectorFunction;
 
 /**
- * Marks a delivered batch of <b>one capture</b> as safely processed by one consumer.
+ * Confirms a recoverable checkpoint of one consumer on one capture. Idempotent.
  *
- * <p>The framework calls this only after the downstream write and the recoverable checkpoint are
- * both durable. Connectors must treat the acknowledgement as the single source of truth for the
- * consumer position on that capture, and must keep the referenced records visible until every
- * live consumer has acknowledged them.</p>
+ * <p>The engine calls this only after every downstream destination has durably written the
+ * covered events and the corresponding checkpoint is durably recoverable. Returning from
+ * StreamReadConsumer.accept means delivery to the engine, not durable acknowledgement. Until
+ * that durable engine integration exists, cleanup must not treat delivered events as consumed.</p>
  *
- * <p>Acknowledgement is per capture, mirroring {@link TriggerCdcReadFunction}: a task that
- * captures several tables acknowledges each capture separately, so one capture can never appear
- * consumed because a sibling capture advanced. A token belongs to exactly one capture and may
- * only be acknowledged against it.</p>
- *
- * <p>Acknowledgement is the reason the mode can be called reliable: a crash between "written" and
- * "acknowledged" replays the batch (at least once), and the target side must be idempotent.</p>
+ * <p>Reject null/blank consumer ids, missing capture id/generation/token, unknown subscriptions,
+ * and tokens not issued to that consumer, capture and generation. A token covers the cumulative
+ * delivered set of its capture, including earlier unacknowledged batches. Acknowledge exactly
+ * that set, never every row with a smaller event id: allocation order is not commit order. A
+ * delayed/repeated acknowledgement must not regress progress. Persist acknowledgement before
+ * returning; a crash between checkpoint persistence and this call safely causes replay.</p>
  */
 public interface TriggerCdcAcknowledgeFunction extends TapConnectorFunction {
     /**
-     * @param connectorContext the connection / node context
-     * @param config           connection level trigger CDC configuration
-     * @param consumerId       stable id of the subscribing task / channel
-     * @param captureId        capture the token belongs to, the same value that was passed to
-     *                         {@link TriggerCdcReadFunction}. A token that does not belong to this
-     *                         capture must be rejected instead of acknowledged.
-     * @param batchToken       token returned by {@link TriggerCdcReadFunction} for the batch of
-     *                         this capture
+     * @param connectorContext the node context
+     * @param config effective connection-level trigger CDC configuration
+     * @param consumerId stable subscription identity passed to ensure
+     * @param offset one capture's offset from a durable checkpoint, never a delivery-only offset
      */
     void acknowledge(TapConnectorContext connectorContext, TriggerCdcConfig config, String consumerId,
-                     String captureId, String batchToken) throws Throwable;
+                     TriggerCdcOffset offset) throws Throwable;
 }

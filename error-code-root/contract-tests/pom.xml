@@ -12,9 +12,9 @@
   </properties>
   <!-- Standalone tests: never added to the production reactor or BOM. -->
   <dependencies>
-    <dependency><groupId>io.tapdata</groupId><artifactId>error-code-scanner</artifactId><version>2.11-SNAPSHOT</version><scope>test</scope></dependency>
-    <dependency><groupId>io.tapdata</groupId><artifactId>pdk-error-code</artifactId><version>2.11-SNAPSHOT</version><scope>test</scope></dependency>
-    <dependency><groupId>io.tapdata</groupId><artifactId>tapdata-api</artifactId><version>2.0.11-SNAPSHOT</version><scope>test</scope></dependency>
+    <dependency><groupId>io.tapdata</groupId><artifactId>error-code-scanner</artifactId><version>2.12-SNAPSHOT</version><scope>test</scope></dependency>
+    <dependency><groupId>io.tapdata</groupId><artifactId>pdk-error-code</artifactId><version>2.12-SNAPSHOT</version><scope>test</scope></dependency>
+    <dependency><groupId>io.tapdata</groupId><artifactId>tapdata-api</artifactId><version>2.0.12-SNAPSHOT</version><scope>test</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.8.1</version><scope>test</scope></dependency>
   </dependencies>
   <build><plugins>

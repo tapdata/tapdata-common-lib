@@ -9,50 +9,38 @@ import io.tapdata.pdk.apis.functions.connector.TapConnectorFunction;
 import java.util.List;
 
 /**
- * Creates the CDC objects and triggers, then verifies them. Idempotent.
+ * Installs and verifies capture objects and registers a durable consumer before snapshot/read.
  *
- * <p>Requirements:</p>
- * <ul>
- *   <li>Running it twice returns the same capture ids and the same generation. Only a real
- *       reinstall increments the generation, so a stale offset can be rejected instead of
- *       silently resumed.</li>
- *   <li>Never overwrite an object Tapdata does not own. Report a conflict instead.</li>
- *   <li>Creating or replacing a trigger may lock the source table: use a short lock timeout,
- *       fail fast and stay retryable instead of waiting on customer traffic.</li>
- *   <li>Success must include the verification that the trigger is really enabled and that the
- *       installed capture set covers everything the caller asked for.</li>
- *   <li>Each successful table result must carry a non blank {@code captureId} that is unique
- *       within the result: that id is the only address of the journal. A success without an id, or
- *       two tables sharing an id, is rejected as an invalid result (see
- *       {@code TriggerCdcInstallResult#validate()}) instead of shrinking the capture list —
- *       dropping either would mean an installed table that is never read.</li>
- *   <li>Every requested table needs its own outcome, success <b>or</b> failure: a table that is
- *       simply absent from the result is neither readable nor retryable, so it is the worst
- *       outcome of all. Report it through {@code TriggerCdcInstallResult#requestedTables(...)}
- *       (or let the framework pass {@code tables} to {@code validate(tables)}) so the check can
- *       tell an omitted table from an unrequested one. Three shapes are rejected: a requested
- *       table with no outcome, one table with several outcomes, and an outcome for a table that
- *       was never requested.</li>
- * </ul>
+ * <p>Idempotent for the same consumer and tables: reuse capture ids and generations. Increment
+ * the generation only on a real reinstall and reject old checkpoints afterwards. Never overwrite
+ * objects Tapdata does not own. Bound installation lock waits and report each table's outcome,
+ * including failures. Each success needs a unique nonblank capture id and a generation.</p>
  *
- * <p>Whether installation forms a valid capture boundary is declared through
- * {@code TriggerCdcCapabilities.captureBoundarySupported}. "CREATE TRIGGER returned" alone is
- * never proof that no concurrent transaction was missed.</p>
+ * <p>Database/version-specific capabilities are returned in the install result rather than
+ * obtained through a separate function. Validate requested options and unsupported types before
+ * changing objects. A capture boundary must be verified, not inferred from CREATE TRIGGER
+ * returning. Without a verified boundary, do not offer automatic full-to-incremental handover.</p>
+ *
+ * <p>Call again before resume to verify triggers, journal and schema versions. The registered
+ * {@link io.tapdata.pdk.apis.functions.connector.source.StreamReadFunction} polls those captures,
+ * emits ordinary TapEvents, and must stop on missing/disabled triggers, schema drift or a broken
+ * consumer. There is no separate read, plan, inspect or release function in this version.
+ * Subscriptions survive stop, crash and task deletion until explicitly retired outside this API;
+ * they must never expire based on time alone.</p>
+ *
+ * <p>The connector retains this consumer/config/capture mapping in its node-scoped runtime for
+ * streamRead; do not put task-specific state in a shared connection. The engine must validate the
+ * result against its original table list and persist the capture identities before starting reads.
+ * A partial installation must not silently shrink the requested task.</p>
  */
 public interface TriggerCdcEnsureFunction extends TapConnectorFunction {
     /**
-     * @param connectorContext the connection / node context
-     * @param config           connection level trigger CDC configuration
-     * @param tables           source tables to capture; capture ids and generations are filled in
-     *                         by the connector. One table yields one capture, and that capture is
-     *                         the unit of {@link TriggerCdcReadFunction} and
-     *                         {@link TriggerCdcAcknowledgeFunction}
-     * @return per table outcome, never null, with exactly one outcome per requested table (a
-     *         failure is a valid outcome; silence is not) and the request retained through
-     *         {@code TriggerCdcInstallResult#requestedTables(Collection)}. The framework passes
-     *         {@code tables} to {@code validate(tables)} / {@code getCaptureIds(tables)}, so a
-     *         result that does not account for every requested table is rejected rather than read
-     *         as a smaller capture set
+     * @param connectorContext node-scoped connection context used for the subsequent streamRead
+     * @param config effective connection-level storage and capture configuration
+     * @param consumerId stable, nonblank subscription identity, preserved across task restarts
+     * @param tables source tables; exactly one outcome per requested table, retained in the result
+     * @return installation and verified capabilities; never null
      */
-    TriggerCdcInstallResult ensure(TapConnectorContext connectorContext, TriggerCdcConfig config, List<TriggerCdcTable> tables) throws Throwable;
+    TriggerCdcInstallResult ensure(TapConnectorContext connectorContext, TriggerCdcConfig config,
+                                  String consumerId, List<TriggerCdcTable> tables) throws Throwable;
 }

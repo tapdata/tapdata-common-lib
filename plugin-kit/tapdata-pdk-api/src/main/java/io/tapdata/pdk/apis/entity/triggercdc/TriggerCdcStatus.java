@@ -4,14 +4,12 @@ package io.tapdata.pdk.apis.entity.triggercdc;
  * Lifecycle state of one capture (one source table, one generation).
  *
  * <pre>
- * PLANNED -&gt; INSTALLING -&gt; CAPTURING -&gt; SNAPSHOTTING -&gt; STREAMING
+ * INSTALLING -&gt; CAPTURING -&gt; SNAPSHOTTING -&gt; STREAMING
  *                                |                              |
  *                                +---------&gt; DEGRADED / REPAIR_REQUIRED
  * </pre>
  */
 public enum TriggerCdcStatus {
-    /** Plan generated, nothing created yet. */
-    PLANNED,
     /** Objects / triggers are being created. Failure is retryable and reported per object. */
     INSTALLING,
     /** Triggers are live and journaling changes, no consumer is reading yet. */
@@ -37,7 +35,5 @@ public enum TriggerCdcStatus {
      */
     REPAIR_REQUIRED,
     /** Installation or a later verification failed. */
-    FAILED,
-    /** Objects released, no longer capturing. */
-    RELEASED
+    FAILED
 }

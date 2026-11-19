@@ -3,7 +3,7 @@ package io.tapdata.pdk.apis.entity.triggercdc;
 import java.io.Serializable;
 
 /**
- * Per table outcome of a plan / install / release operation.
+ * Per table outcome of an installation or verification.
  *
  * <p>Installation is reported per object, not as one boolean, because a partial install must be
  * retried idempotently and the operator needs to know which table is missing its trigger.</p>
@@ -44,12 +44,7 @@ public class TriggerCdcTableResult implements Serializable {
      * {@link #failure(TriggerCdcTable, String, String)} for anything that did not become a usable
      * capture.</p>
      *
-     * <p>This factory is for {@code ensure} outcomes only. A read only plan reports accepted tables
-     * through {@link TriggerCdcInstallPlan#supportedTable(TriggerCdcTable)} and refusals through
-     * {@link #failure(TriggerCdcTable, String, String)}; plan time tables have no capture id yet,
-     * so calling this there would rightly fail.</p>
-     *
-     * @throws IllegalArgumentException when {@code table} is null or has no capture id
+     * @throws IllegalArgumentException when the table, capture id or generation is missing
      */
     public static TriggerCdcTableResult success(TriggerCdcTable table) {
         if (table == null) {
@@ -58,6 +53,9 @@ public class TriggerCdcTableResult implements Serializable {
         if (table.getCaptureId() == null || table.getCaptureId().trim().isEmpty()) {
             throw new IllegalArgumentException("table " + table.getTableName()
                     + " is reported successful but has no captureId; the journal would be unreachable");
+        }
+        if (table.getGeneration() == null) {
+            throw new IllegalArgumentException("successful capture must include generation");
         }
         TriggerCdcTableResult result = new TriggerCdcTableResult();
         result.success = true;
@@ -109,14 +107,14 @@ public class TriggerCdcTableResult implements Serializable {
     }
 
     /**
-     * True only when this entry reports a success <b>and</b> carries a usable capture id.
+     * True only when this entry reports a success <b>and</b> carries a usable capture id and generation.
      *
      * <p>The raw flag is deliberately not enough: {@link #success(boolean)} can be set before
      * {@link #captureId(String)} in a builder chain, and a success that never receives an id must
      * be treated as a failure here rather than passed on as "installed".</p>
      */
     public boolean isSuccess() {
-        return success && hasCaptureId();
+        return success && hasCaptureId() && generation != null;
     }
 
     /** True when {@link #getCaptureId()} is present and not blank. */
@@ -135,7 +133,7 @@ public class TriggerCdcTableResult implements Serializable {
 
     /**
      * Sets the raw success flag. Pair {@code true} with {@link #captureId(String)}: a success
-     * without a capture id is reported as a failure by {@link #isSuccess()}.
+     * without a capture id or generation is reported as a failure by {@link #isSuccess()}.
      */
     public TriggerCdcTableResult success(boolean success) {
         this.success = success;

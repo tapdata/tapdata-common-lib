@@ -119,6 +119,13 @@ public class TriggerCdcCleanupResult implements Serializable {
                 violations.add("removed " + deletedUnacknowledgedCount
                         + " unacknowledged record(s) while forceCleanUnacknowledged is false");
             }
+            if (hasIntegrityBrokenConsumers()) {
+                for (String consumerId : integrityBrokenConsumers) {
+                    if (consumerId == null || consumerId.trim().isEmpty()) {
+                        violations.add("integrity broken consumer id must not be null or blank");
+                    }
+                }
+            }
             if (!hasIntegrityBrokenConsumers()) {
                 violations.add("removed " + deletedUnacknowledgedCount
                         + " unacknowledged record(s) but reported no integrity broken consumer");

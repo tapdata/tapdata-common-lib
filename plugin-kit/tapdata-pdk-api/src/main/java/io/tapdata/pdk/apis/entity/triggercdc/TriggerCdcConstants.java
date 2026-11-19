@@ -6,7 +6,7 @@ package io.tapdata.pdk.apis.entity.triggercdc;
  * <p>These values are the protocol, not a database specific detail: the framework uses them to
  * talk about the CDC storage layout, the connector uses them when it materialises the objects.
  * A connector may only deviate from the names when the database cannot represent them, and it
- * must then report the real names back through {@link TriggerCdcObject#getName()}.</p>
+ * must then report the real names back through {@link TriggerCdcTable#getChangeTableName()}.</p>
  */
 public final class TriggerCdcConstants {
     private TriggerCdcConstants() {
@@ -22,14 +22,9 @@ public final class TriggerCdcConstants {
      * Capability ids are derived from the {@link io.tapdata.pdk.apis.functions.ConnectorFunctions}
      * field names. They are listed here so callers do not hard code strings.
      */
-    public static final String CAPABILITY_TRIGGER_CDC_CAPABILITIES = "trigger_cdc_capabilities_function";
-    public static final String CAPABILITY_TRIGGER_CDC_PLAN = "trigger_cdc_plan_function";
     public static final String CAPABILITY_TRIGGER_CDC_ENSURE = "trigger_cdc_ensure_function";
-    public static final String CAPABILITY_TRIGGER_CDC_READ = "trigger_cdc_read_function";
     public static final String CAPABILITY_TRIGGER_CDC_ACKNOWLEDGE = "trigger_cdc_acknowledge_function";
-    public static final String CAPABILITY_TRIGGER_CDC_INSPECT = "trigger_cdc_inspect_function";
     public static final String CAPABILITY_TRIGGER_CDC_CLEANUP = "trigger_cdc_cleanup_function";
-    public static final String CAPABILITY_TRIGGER_CDC_RELEASE = "trigger_cdc_release_function";
 
     /** Default CDC storage namespace when the user did not pick one. */
     public static final String DEFAULT_STORAGE_SCHEMA = "cdc";
