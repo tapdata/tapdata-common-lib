@@ -28,8 +28,10 @@ DDL support or a safe snapshot boundary. Those must be verified by ensure.
    allocation order is not commit order. Track row membership rather than an event-id high
    watermark. In-memory delivery tracking can avoid continuous duplicates while a checkpoint
    is pending; loss of that tracking after restart safely replays unacknowledged events.
-5. Only after every destination's writes and the corresponding recoverable checkpoint are
-   durable, pass each checkpoint entry to acknowledge. Tokens are bound to consumer, capture
+5. Persist the complete checkpoint, including captures that have not delivered events.
+   Only after every destination's writes and that recoverable checkpoint are durable, pass
+   entries with a valid delivery token to acknowledge; entries without a token stay
+   in the checkpoint and must not be acknowledged. Tokens are bound to consumer, capture
    and generation. Duplicate or older acknowledgements are idempotent and cannot regress
    progress. A crash before acknowledgement may cause replay; targets need idempotent writes.
 6. Run bounded cleanup. Delete only rows acknowledged by every registered consumer and old

@@ -127,8 +127,8 @@ class TriggerCdcContractTest {
 
     @Test
     void cleanupRejectsImpossibleCounts() {
-        assertFalse(TriggerCdcCleanupResult.create().deletedCount(-1).validate(null).isEmpty());
-        assertFalse(TriggerCdcCleanupResult.create().remainingCount(-1).validate(null).isEmpty());
+        assertFalse(TriggerCdcCleanupResult.create().deletedUnacknowledgedCount(0).deletedCount(-1).validate(null).isEmpty());
+        assertFalse(TriggerCdcCleanupResult.create().deletedUnacknowledgedCount(0).remainingCount(-1).validate(null).isEmpty());
         assertFalse(TriggerCdcCleanupResult.create().deletedUnacknowledgedCount(-1)
                 .validate(null).isEmpty());
         assertFalse(TriggerCdcCleanupResult.create().deletedCount(0).deletedUnacknowledgedCount(1)
@@ -137,8 +137,82 @@ class TriggerCdcContractTest {
 
     @Test
     void acknowledgedOnlyCleanupDoesNotNeedForceOptIn() {
-        assertTrue(TriggerCdcCleanupResult.create().deletedCount(3).remainingCount(2)
+        assertTrue(TriggerCdcCleanupResult.create().deletedCount(3).remainingCount(2).deletedUnacknowledgedCount(0)
                 .validate(TriggerCdcConfig.create().withDefaults()).isEmpty());
+    }
+
+    @Test
+    void unusableSubscriptionStatusRejectsOtherwiseCompleteInstall() {
+        TriggerCdcTable a = table("a");
+        for (TriggerCdcStatus status : new TriggerCdcStatus[]{
+                TriggerCdcStatus.REPAIR_REQUIRED, TriggerCdcStatus.FAILED}) {
+            TriggerCdcInstallResult result = result(a).tableResult(TriggerCdcTableResult.success(a))
+                    .status(status);
+            assertFalse(result.isSuccess());
+            assertTrue(result.validate().stream().anyMatch(v -> v.contains(status.name())));
+            assertThrows(IllegalStateException.class, result::getCaptureIds);
+        }
+        assertTrue(result(a).tableResult(TriggerCdcTableResult.success(a))
+                .status(TriggerCdcStatus.CAPTURING).isSuccess());
+    }
+
+    @Test
+    void cleanupRequiresExplicitUnacknowledgedCountIncludingZero() {
+        TriggerCdcCleanupResult result = TriggerCdcCleanupResult.create().deletedCount(1);
+        assertNull(result.getDeletedUnacknowledgedCount());
+        assertTrue(result.validate(TriggerCdcConfig.create().withDefaults()).stream()
+                .anyMatch(v -> v.contains("must be explicitly reported")));
+        result.deletedUnacknowledgedCount(0);
+        assertTrue(result.validate(TriggerCdcConfig.create().withDefaults()).isEmpty());
+        result.setDeletedUnacknowledgedCount(null);
+        assertFalse(result.validate(null).isEmpty());
+        result.setDeletedUnacknowledgedCount(0L);
+        assertTrue(result.validate(null).isEmpty());
+    }
+
+    @Test
+    void captureIdsRetainWhitespaceAndRemainDistinct() {
+        TriggerCdcTable a = table("a").captureId("journal");
+        TriggerCdcTable b = table("b").captureId("journal ");
+        TriggerCdcInstallResult result = result(a, b).tableResult(TriggerCdcTableResult.success(a))
+                .tableResult(TriggerCdcTableResult.success(b));
+        assertTrue(result.isSuccess());
+        assertEquals(Arrays.asList("journal", "journal "), result.getCaptureIds());
+    }
+
+    @Test
+    void tableNamesWithoutStableIdsMustMatchExactly() {
+        TriggerCdcTable plain = table("orders").sourceTableId(null);
+        TriggerCdcTable spaced = table("orders ").sourceTableId(null);
+        TriggerCdcInstallResult mismatch = result(spaced)
+                .tableResult(TriggerCdcTableResult.success(plain));
+        assertFalse(mismatch.isValid());
+        assertEquals(Collections.singletonList(spaced), mismatch.getMissingTables());
+        assertThrows(IllegalStateException.class, mismatch::getCaptureIds);
+        assertTrue(result(plain, spaced).tableResult(TriggerCdcTableResult.success(plain))
+                .tableResult(TriggerCdcTableResult.success(spaced)).isSuccess());
+    }
+
+    @Test
+    void stableTableIdsMustMatchExactly() {
+        TriggerCdcTable a = table("orders");
+        TriggerCdcTable other = table("orders").sourceTableId("orders ");
+        assertFalse(result(other).tableResult(TriggerCdcTableResult.success(a)).isValid());
+    }
+
+    @Test
+    void truncateDeclarationsMustAgreeInBothDirections() {
+        TriggerCdcTable a = table("a");
+        TriggerCdcInstallResult result = result(a).tableResult(TriggerCdcTableResult.success(a));
+        assertTrue(result.isSuccess());
+        result.capabilities(TriggerCdcCapabilities.create().truncateCaptureSupported(true));
+        assertFalse(result.isValid());
+        assertThrows(IllegalStateException.class, result::getCaptureIds);
+        result.capabilities(TriggerCdcCapabilities.create().dmlOperation(TriggerCdcOperation.TRUNCATE));
+        assertFalse(result.isValid());
+        assertThrows(IllegalStateException.class, result::getCaptureIds);
+        result.getCapabilities().truncateCaptureSupported(true);
+        assertTrue(result.isSuccess());
     }
 
     private boolean advertised(ConnectorFunctions functions) {

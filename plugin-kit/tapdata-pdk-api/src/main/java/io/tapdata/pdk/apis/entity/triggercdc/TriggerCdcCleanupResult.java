@@ -40,13 +40,14 @@ public class TriggerCdcCleanupResult implements Serializable {
     protected long remainingCount;
     /**
      * How many of {@link #getDeletedCount()} were not acknowledged by every live consumer — the
-     * only records that can damage a consumer. Must be {@code 0} outside the force clean opt-in.
+     * only records that can damage a consumer. Must be explicitly reported, including {@code 0}
+     * outside the force clean opt-in. A null value means the connector omitted the count.
      *
      * <p>This field exists so the contract is checkable rather than aspirational: without it a
      * connector could delete unacknowledged rows, report a total {@code deletedCount}, and leave
      * {@link #getIntegrityBrokenConsumers()} empty with nothing able to tell.</p>
      */
-    protected long deletedUnacknowledgedCount;
+    protected Long deletedUnacknowledgedCount;
     /**
      * Consumers whose data is incomplete because this call removed records they had not
      * acknowledged. Must be empty when {@link #getDeletedUnacknowledgedCount()} is {@code 0}, and
@@ -107,6 +108,10 @@ public class TriggerCdcCleanupResult implements Serializable {
         if (remainingCount < 0) {
             violations.add("remainingCount must not be negative: " + remainingCount);
         }
+        if (deletedUnacknowledgedCount == null) {
+            violations.add("deletedUnacknowledgedCount must be explicitly reported, including 0");
+            return violations;
+        }
         if (deletedUnacknowledgedCount < 0) {
             violations.add("deletedUnacknowledgedCount must not be negative: " + deletedUnacknowledgedCount);
         }
@@ -163,11 +168,11 @@ public class TriggerCdcCleanupResult implements Serializable {
         return this;
     }
 
-    public long getDeletedUnacknowledgedCount() {
+    public Long getDeletedUnacknowledgedCount() {
         return deletedUnacknowledgedCount;
     }
 
-    public void setDeletedUnacknowledgedCount(long deletedUnacknowledgedCount) {
+    public void setDeletedUnacknowledgedCount(Long deletedUnacknowledgedCount) {
         this.deletedUnacknowledgedCount = deletedUnacknowledgedCount;
     }
 

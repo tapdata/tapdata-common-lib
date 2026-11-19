@@ -173,6 +173,12 @@ public class TriggerCdcInstallResult implements Serializable {
         List<String> violations = new ArrayList<>();
         if (capabilities == null) {
             violations.add("ensure must report the verified database capabilities");
+        } else if (capabilities.isTruncateCaptureSupported()
+                != capabilities.supports(TriggerCdcOperation.TRUNCATE)) {
+            violations.add("truncateCaptureSupported must agree with the TRUNCATE operation declaration");
+        }
+        if (status == TriggerCdcStatus.REPAIR_REQUIRED || status == TriggerCdcStatus.FAILED) {
+            violations.add("ensure is not usable in status " + status);
         }
         Map<String, String> requested = indexRequested(requestedTables, violations);
         if (tableResults == null || tableResults.isEmpty()) {
@@ -218,7 +224,7 @@ public class TriggerCdcInstallResult implements Serializable {
             if (tableResult.getGeneration() == null) {
                 violations.add(owner + " is reported successful but has no generation");
             }
-            String captureId = tableResult.getCaptureId().trim();
+            String captureId = tableResult.getCaptureId();
             String previousOwner = captureOwners.put(captureId, owner);
             if (previousOwner != null) {
                 violations.add("captureId " + captureId + " is claimed by both " + previousOwner
@@ -291,10 +297,10 @@ public class TriggerCdcInstallResult implements Serializable {
      */
     private static String tableKey(String sourceTableId, String tableName) {
         if (sourceTableId != null && !sourceTableId.trim().isEmpty()) {
-            return "id:" + sourceTableId.trim();
+            return "id:" + sourceTableId;
         }
         if (tableName != null && !tableName.trim().isEmpty()) {
-            return "name:" + tableName.trim();
+            return "name:" + tableName;
         }
         return null;
     }
@@ -431,7 +437,7 @@ public class TriggerCdcInstallResult implements Serializable {
         List<String> captureIds = new ArrayList<>(tableResults.size());
         for (TriggerCdcTableResult tableResult : tableResults) {
             if (tableResult.isSuccessReported()) {
-                captureIds.add(tableResult.getCaptureId().trim());
+                captureIds.add(tableResult.getCaptureId());
             }
         }
         return captureIds;
