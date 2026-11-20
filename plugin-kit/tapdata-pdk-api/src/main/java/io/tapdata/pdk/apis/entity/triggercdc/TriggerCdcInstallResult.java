@@ -177,7 +177,8 @@ public class TriggerCdcInstallResult implements Serializable {
                 != capabilities.supports(TriggerCdcOperation.TRUNCATE)) {
             violations.add("truncateCaptureSupported must agree with the TRUNCATE operation declaration");
         }
-        if (status == TriggerCdcStatus.REPAIR_REQUIRED || status == TriggerCdcStatus.FAILED) {
+        if (status == TriggerCdcStatus.INSTALLING || status == TriggerCdcStatus.REPAIR_REQUIRED
+                || status == TriggerCdcStatus.FAILED) {
             violations.add("ensure is not usable in status " + status);
         }
         Map<String, String> requested = indexRequested(requestedTables, violations);

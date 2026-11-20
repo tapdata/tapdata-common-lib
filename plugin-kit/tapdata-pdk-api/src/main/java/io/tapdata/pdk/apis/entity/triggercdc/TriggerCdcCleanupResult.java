@@ -41,13 +41,15 @@ public class TriggerCdcCleanupResult implements Serializable {
     /**
      * How many of {@link #getDeletedCount()} were not acknowledged by every live consumer — the
      * only records that can damage a consumer. Must be explicitly reported, including {@code 0}
-     * outside the force clean opt-in. A null value means the connector omitted the count.
+     * outside the force clean opt-in. A separate presence flag tracks whether the connector
+     * reported the count.
      *
      * <p>This field exists so the contract is checkable rather than aspirational: without it a
      * connector could delete unacknowledged rows, report a total {@code deletedCount}, and leave
      * {@link #getIntegrityBrokenConsumers()} empty with nothing able to tell.</p>
      */
-    protected Long deletedUnacknowledgedCount;
+    protected long deletedUnacknowledgedCount;
+    private boolean deletedUnacknowledgedCountReported;
     /**
      * Consumers whose data is incomplete because this call removed records they had not
      * acknowledged. Must be empty when {@link #getDeletedUnacknowledgedCount()} is {@code 0}, and
@@ -108,7 +110,7 @@ public class TriggerCdcCleanupResult implements Serializable {
         if (remainingCount < 0) {
             violations.add("remainingCount must not be negative: " + remainingCount);
         }
-        if (deletedUnacknowledgedCount == null) {
+        if (!deletedUnacknowledgedCountReported) {
             violations.add("deletedUnacknowledgedCount must be explicitly reported, including 0");
             return violations;
         }
@@ -168,16 +170,17 @@ public class TriggerCdcCleanupResult implements Serializable {
         return this;
     }
 
-    public Long getDeletedUnacknowledgedCount() {
+    public long getDeletedUnacknowledgedCount() {
         return deletedUnacknowledgedCount;
     }
 
-    public void setDeletedUnacknowledgedCount(Long deletedUnacknowledgedCount) {
+    public void setDeletedUnacknowledgedCount(long deletedUnacknowledgedCount) {
         this.deletedUnacknowledgedCount = deletedUnacknowledgedCount;
+        this.deletedUnacknowledgedCountReported = true;
     }
 
     public TriggerCdcCleanupResult deletedUnacknowledgedCount(long deletedUnacknowledgedCount) {
-        this.deletedUnacknowledgedCount = deletedUnacknowledgedCount;
+        setDeletedUnacknowledgedCount(deletedUnacknowledgedCount);
         return this;
     }
 

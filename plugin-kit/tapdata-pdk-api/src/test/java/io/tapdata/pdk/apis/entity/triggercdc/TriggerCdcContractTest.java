@@ -145,29 +145,47 @@ class TriggerCdcContractTest {
     void unusableSubscriptionStatusRejectsOtherwiseCompleteInstall() {
         TriggerCdcTable a = table("a");
         for (TriggerCdcStatus status : new TriggerCdcStatus[]{
-                TriggerCdcStatus.REPAIR_REQUIRED, TriggerCdcStatus.FAILED}) {
+                TriggerCdcStatus.INSTALLING, TriggerCdcStatus.REPAIR_REQUIRED, TriggerCdcStatus.FAILED}) {
             TriggerCdcInstallResult result = result(a).tableResult(TriggerCdcTableResult.success(a))
                     .status(status);
             assertFalse(result.isSuccess());
+            assertFalse(result.isValid());
             assertTrue(result.validate().stream().anyMatch(v -> v.contains(status.name())));
+            assertTrue(result.validate(Collections.singletonList(a)).stream()
+                    .anyMatch(v -> v.contains(status.name())));
             assertThrows(IllegalStateException.class, result::getCaptureIds);
+            assertThrows(IllegalStateException.class,
+                    () -> result.getCaptureIds(Collections.singletonList(a)));
         }
-        assertTrue(result(a).tableResult(TriggerCdcTableResult.success(a))
-                .status(TriggerCdcStatus.CAPTURING).isSuccess());
+        for (TriggerCdcStatus status : new TriggerCdcStatus[]{TriggerCdcStatus.CAPTURING,
+                TriggerCdcStatus.SNAPSHOTTING, TriggerCdcStatus.STREAMING, TriggerCdcStatus.DEGRADED}) {
+            TriggerCdcInstallResult result = result(a).tableResult(TriggerCdcTableResult.success(a))
+                    .status(status);
+            assertTrue(result.isSuccess());
+            assertEquals(Collections.singletonList("capture-a"), result.getCaptureIds());
+        }
     }
 
     @Test
     void cleanupRequiresExplicitUnacknowledgedCountIncludingZero() {
         TriggerCdcCleanupResult result = TriggerCdcCleanupResult.create().deletedCount(1);
-        assertNull(result.getDeletedUnacknowledgedCount());
+        assertEquals(0L, result.getDeletedUnacknowledgedCount());
         assertTrue(result.validate(TriggerCdcConfig.create().withDefaults()).stream()
                 .anyMatch(v -> v.contains("must be explicitly reported")));
         result.deletedUnacknowledgedCount(0);
         assertTrue(result.validate(TriggerCdcConfig.create().withDefaults()).isEmpty());
-        result.setDeletedUnacknowledgedCount(null);
+        result = TriggerCdcCleanupResult.create().deletedCount(1);
         assertFalse(result.validate(null).isEmpty());
         result.setDeletedUnacknowledgedCount(0L);
         assertTrue(result.validate(null).isEmpty());
+    }
+
+    @Test
+    void cleanupCountAccessorsRetainPrimitiveSignatures() throws NoSuchMethodException {
+        assertEquals(long.class, TriggerCdcCleanupResult.class
+                .getMethod("getDeletedUnacknowledgedCount").getReturnType());
+        assertEquals(void.class, TriggerCdcCleanupResult.class
+                .getMethod("setDeletedUnacknowledgedCount", long.class).getReturnType());
     }
 
     @Test
