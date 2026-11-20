@@ -11,6 +11,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class TapConnectionContext extends TapContext {
+    /** Saved datasource ID, provided by the Engine as a 24-character lowercase hex string. */
+    public static final String INFO_CONNECTION_ID = "connectionId";
+
+    private final DataMap info = new DataMap();
     protected DataMap connectionConfig;
     protected DataMap nodeConfig;
     protected Map<String, DataMap> tableNodeConfig;
@@ -29,6 +33,14 @@ public class TapConnectionContext extends TapContext {
         this.connectionConfig = connectionConfig;
         this.nodeConfig = nodeConfig;
         this.log = log;
+    }
+
+    /**
+     * Runtime metadata for this context, independent of the connector's configuration schema.
+     * A connection test run before the datasource is saved has no connectionId.
+     */
+    public DataMap getInfo() {
+        return info;
     }
 
     public DataMap getConnectionConfig() {
