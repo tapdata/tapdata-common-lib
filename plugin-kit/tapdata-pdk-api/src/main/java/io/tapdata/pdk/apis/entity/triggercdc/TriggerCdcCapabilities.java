@@ -50,7 +50,10 @@ public class TriggerCdcCapabilities implements Serializable {
      * The connector can prove a capture boundary across installation, so no change committed
      * while the trigger is being created is lost.
      *
-     * <p>Without it, the framework must not offer an automatic full-then-incremental handover.</p>
+     * <p>Necessary but insufficient for automatic full-then-incremental handover. The engine and
+     * connector must also verify snapshot/journal overlap handling and durable recovery of the
+     * snapshot and replay position. Until that protocol is implemented and verified, automatic
+     * handover must remain disabled even when this flag is true. See docs/trigger-cdc.md.</p>
      */
     protected boolean captureBoundarySupported;
     /**

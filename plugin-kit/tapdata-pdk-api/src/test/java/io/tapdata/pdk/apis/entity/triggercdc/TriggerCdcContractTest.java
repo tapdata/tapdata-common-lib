@@ -18,8 +18,13 @@ class TriggerCdcContractTest {
                 .captureId("capture-" + name).generation(1L);
     }
 
+    private TriggerCdcCapabilities capabilities() {
+        return TriggerCdcCapabilities.create().databaseType("PostgreSQL").databaseVersion("16")
+                .errorPolicy(TriggerCdcErrorPolicy.STRICT);
+    }
+
     private TriggerCdcInstallResult result(TriggerCdcTable... tables) {
-        return TriggerCdcInstallResult.create().capabilities(TriggerCdcCapabilities.create())
+        return TriggerCdcInstallResult.create().status(TriggerCdcStatus.CAPTURING).capabilities(capabilities())
                 .requestedTables(Arrays.asList(tables));
     }
 
@@ -93,6 +98,11 @@ class TriggerCdcContractTest {
         assertTrue(result.isValid());
         assertFalse(result.isSuccess());
         assertEquals(Collections.singletonList(failure), result.getFailedTables());
+        assertThrows(IllegalStateException.class, result::getCaptureIds);
+        assertThrows(IllegalStateException.class, () -> result.getCaptureIds(Arrays.asList(a, b)));
+        result.requestedTables(null);
+        assertTrue(result.validate(Arrays.asList(a, b)).isEmpty());
+        assertThrows(IllegalStateException.class, () -> result.getCaptureIds(Arrays.asList(a, b)));
     }
 
     @Test
@@ -101,6 +111,39 @@ class TriggerCdcContractTest {
         TriggerCdcInstallResult result = result(a).capabilities(null)
                 .tableResult(TriggerCdcTableResult.success(a));
         assertFalse(result.isValid());
+    }
+
+    @Test
+    void incompleteCapabilitiesRejectOtherwiseSuccessfulInstall() {
+        TriggerCdcTable a = table("a");
+        TriggerCdcCapabilities[] invalid = {
+                TriggerCdcCapabilities.create(),
+                capabilities().databaseType(null), capabilities().databaseType("  "),
+                capabilities().databaseVersion(null), capabilities().databaseVersion("  "),
+                TriggerCdcCapabilities.create().databaseType("PostgreSQL").databaseVersion("16")
+                        .errorPolicy(TriggerCdcErrorPolicy.BEST_EFFORT)
+        };
+        for (TriggerCdcCapabilities declaration : invalid) {
+            TriggerCdcInstallResult result = result(a).capabilities(declaration)
+                    .tableResult(TriggerCdcTableResult.success(a));
+            assertFalse(result.isSuccess());
+            assertFalse(result.validate(Collections.singletonList(a)).isEmpty());
+            assertThrows(IllegalStateException.class, result::getCaptureIds);
+            assertThrows(IllegalStateException.class,
+                    () -> result.getCaptureIds(Collections.singletonList(a)));
+        }
+    }
+
+    @Test
+    void missingStatusRejectsOtherwiseSuccessfulInstall() {
+        TriggerCdcTable a = table("a");
+        TriggerCdcInstallResult result = result(a).status(null)
+                .tableResult(TriggerCdcTableResult.success(a));
+        assertFalse(result.isSuccess());
+        assertFalse(result.isValid());
+        assertThrows(IllegalStateException.class, result::getCaptureIds);
+        assertThrows(IllegalStateException.class,
+                () -> result.getCaptureIds(Collections.singletonList(a)));
     }
 
     @Test
@@ -223,10 +266,10 @@ class TriggerCdcContractTest {
         TriggerCdcTable a = table("a");
         TriggerCdcInstallResult result = result(a).tableResult(TriggerCdcTableResult.success(a));
         assertTrue(result.isSuccess());
-        result.capabilities(TriggerCdcCapabilities.create().truncateCaptureSupported(true));
+        result.capabilities(capabilities().truncateCaptureSupported(true));
         assertFalse(result.isValid());
         assertThrows(IllegalStateException.class, result::getCaptureIds);
-        result.capabilities(TriggerCdcCapabilities.create().dmlOperation(TriggerCdcOperation.TRUNCATE));
+        result.capabilities(capabilities().dmlOperation(TriggerCdcOperation.TRUNCATE));
         assertFalse(result.isValid());
         assertThrows(IllegalStateException.class, result::getCaptureIds);
         result.getCapabilities().truncateCaptureSupported(true);

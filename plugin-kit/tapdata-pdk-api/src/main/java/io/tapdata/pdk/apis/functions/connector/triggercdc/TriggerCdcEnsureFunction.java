@@ -19,7 +19,9 @@ import java.util.List;
  * <p>Database/version-specific capabilities are returned in the install result rather than
  * obtained through a separate function. Validate requested options and unsupported types before
  * changing objects. A capture boundary must be verified, not inferred from CREATE TRIGGER
- * returning. Without a verified boundary, do not offer automatic full-to-incremental handover.</p>
+ * returning. A verified installation boundary alone does not prove safe snapshot/journal
+ * handover: overlap handling and durable snapshot/replay recovery must also be implemented and
+ * verified before automatic full-to-incremental handover is enabled. See docs/trigger-cdc.md.</p>
  *
  * <p>Call again before resume to verify triggers, journal and schema versions. The registered
  * {@link io.tapdata.pdk.apis.functions.connector.source.StreamReadFunction} polls those captures,

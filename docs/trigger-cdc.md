@@ -15,8 +15,11 @@ DDL support or a safe snapshot boundary. Those must be verified by ensure.
    across stop/crash and do not expire them by TTL.
 2. Check `validate(originalTables)` and require every table to succeed before starting the
    task. Persist every capture id and generation. A partial result describes retryable
-   failures, not permission to silently omit those tables. Reject full-to-incremental
-   handover if the connector cannot prove a capture boundary.
+   failures, not permission to silently omit those tables. `validate` checks report structure;
+   `getCaptureIds(originalTables)` additionally rejects any failed table. A usable result needs
+   an explicit readable status (CAPTURING, SNAPSHOTTING, STREAMING or DEGRADED), nonblank
+   database type/version and a STRICT error-policy declaration. DEGRADED still requires
+   operator attention. Apply the snapshot handover requirements below before starting a snapshot.
 3. Invoke streamRead on the same node context. The connector uses the consumer/config/capture
    mapping retained by ensure and polls committed journal records. The offset is a complete
    `Map<String, TriggerCdcOffset>` keyed by capture id, even for a single table. Validate keys,
@@ -44,6 +47,31 @@ enqueues events and updates an in-memory offset. Returning from it is not a dura
 notification. The engine integration must connect step 5 to durable progress covering every
 sink; until then, it must not acknowledge on callback return or enable journal reclamation
 based on delivery. This PR provides the PDK contracts, not that engine implementation.
+
+## Snapshot and journal handover
+
+`captureBoundarySupported` proves only that trigger installation leaves no capture gap.
+It is necessary but insufficient for automatic full-to-incremental handover. It does not
+identify which journal changes a snapshot already includes, nor authorize a replay position.
+
+Before enabling automatic handover, the engine and connector must implement and verify a
+snapshot/replay protocol for the specific database/version and destination write semantics.
+That protocol must either identify and suppress journal changes covered by the snapshot,
+or prove overlap replay safe, including updates, deletes, key changes and non-idempotent
+writes. For example, a snapshot containing v3 followed by journal v2 then v3 can temporarily
+regress the target; idempotent writes alone do not prevent old versions overwriting new ones.
+A replay protocol that allows such intermediate states must explicitly define when the target
+becomes usable and how it recovers safely after a crash at any intermediate point.
+
+The handover state must durably bind the snapshot progress/completion and journal replay
+position to the consumer, capture ids and generations. Recovery must restore a consistent
+pair, retain all journal records still needed for the snapshot/replay protocol, and never
+acknowledge overlap merely because the snapshot has finished. Normal acknowledgement still
+requires durable destination writes and a recoverable checkpoint as described above.
+Validate concurrent changes and crashes during snapshot, overlap replay and transition to
+streaming before enabling the protocol. Until this integration is implemented and verified,
+automatic full-to-incremental handover must remain disabled, even if captureBoundarySupported
+is true. This PDK contract does not itself implement that protocol or add a handover API.
 
 ## Scope
 

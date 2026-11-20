@@ -126,8 +126,9 @@ public class TriggerCdcInstallResult implements Serializable {
      * that claims success carries a non blank, unique capture id.
      *
      * <p>Equivalent to {@code validate().isEmpty()}. A partial install (some tables reported as
-     * {@code failure}) is still a valid result - those tables simply contribute no capture - but a
-     * result where <b>no</b> table succeeded is a violation, because its capture list would be
+     * {@code failure}) is still a valid result. Failed outcomes remain available through
+     * {@link #getFailedTables()}, while capture accessors reject the partial install. A result
+     * where <b>no</b> table succeeded is a violation, because its capture list would be
      * empty and a framework that iterates it would look healthy while reading nothing.</p>
      */
     public boolean isValid() {
@@ -137,7 +138,7 @@ public class TriggerCdcInstallResult implements Serializable {
     /**
      * Checks this result against the rules in this class, using the request recorded through
      * {@link #requestedTables(Collection)}, and returns one message per violation; an empty list
-     * means the result is usable.
+     * means the report is structurally valid, not necessarily that every table succeeded.
      *
      * <p>Equivalent to {@code validate(getRequestedTables())}.</p>
      */
@@ -147,7 +148,8 @@ public class TriggerCdcInstallResult implements Serializable {
 
     /**
      * Checks this result against the tables the caller actually asked {@code ensure} for, and
-     * returns one message per violation; an empty list means the result is usable.
+     * returns one message per violation; an empty list means the report is structurally valid,
+     * not necessarily ready to start.
      *
      * <p>Why the request is required: a report that only lists the tables the connector managed to
      * install is self consistent and still wrong. If {@code ensure} is called for A and B and only
@@ -173,12 +175,23 @@ public class TriggerCdcInstallResult implements Serializable {
         List<String> violations = new ArrayList<>();
         if (capabilities == null) {
             violations.add("ensure must report the verified database capabilities");
-        } else if (capabilities.isTruncateCaptureSupported()
-                != capabilities.supports(TriggerCdcOperation.TRUNCATE)) {
-            violations.add("truncateCaptureSupported must agree with the TRUNCATE operation declaration");
+        } else {
+            if (capabilities.getDatabaseType() == null || capabilities.getDatabaseType().trim().isEmpty()) {
+                violations.add("ensure must report a nonblank databaseType");
+            }
+            if (capabilities.getDatabaseVersion() == null || capabilities.getDatabaseVersion().trim().isEmpty()) {
+                violations.add("ensure must report a nonblank databaseVersion");
+            }
+            if (!capabilities.supports(TriggerCdcErrorPolicy.STRICT)) {
+                violations.add("ensure capabilities must declare STRICT error policy");
+            }
+            if (capabilities.isTruncateCaptureSupported()
+                    != capabilities.supports(TriggerCdcOperation.TRUNCATE)) {
+                violations.add("truncateCaptureSupported must agree with the TRUNCATE operation declaration");
+            }
         }
-        if (status == TriggerCdcStatus.INSTALLING || status == TriggerCdcStatus.REPAIR_REQUIRED
-                || status == TriggerCdcStatus.FAILED) {
+        if (status != TriggerCdcStatus.CAPTURING && status != TriggerCdcStatus.SNAPSHOTTING
+                && status != TriggerCdcStatus.STREAMING && status != TriggerCdcStatus.DEGRADED) {
             violations.add("ensure is not usable in status " + status);
         }
         Map<String, String> requested = indexRequested(requestedTables, violations);
@@ -395,28 +408,22 @@ public class TriggerCdcInstallResult implements Serializable {
     }
 
     /**
-     * Capture ids of the successfully installed tables, in request order.
+     * Capture ids for a fully successful installation.
      *
-     * <p>This is the authoritative capture list a multi table task iterates: {@code read} and
-     * {@code acknowledge} work on one capture at a time (one source table is one capture), so the
-     * framework keeps one {@code TriggerCdcOffset} per entry of this list and per consumer. Failed
-     * tables contribute no capture id, which is why a partial install must be read as "these
-     * captures exist", not "the requested set exists".</p>
+     * <p>This is the authoritative capture list used to start a multi table task. Every requested
+     * table must succeed; any failed outcome makes this accessor throw, even when the report is
+     * structurally valid. Use {@link #getFailedTables()} for diagnosis and retry information.</p>
      *
-     * <p>Fail closed: nothing is skipped and nothing is deduplicated. A successful table without a
-     * capture id, two tables sharing one capture id, an outcome for a table that was not requested,
-     * or a requested table with no outcome at all makes the whole list untrustworthy - returning the
-     * rest would silently leave a table unread - so this method throws instead of filtering. An
-     * empty list is never returned either: when every table failed there is nothing to read, and a
-     * silently empty capture list would look like "installed, nothing to do". Both conditions are
-     * reported by {@link #validate()}.</p>
+     * <p>Fail closed: missing or duplicate outcomes, missing or duplicate capture ids, unusable
+     * status and invalid capabilities also cause this accessor to throw. Nothing is filtered out
+     * and an empty capture list is never returned.</p>
      *
      * <p>Completeness is checked against the request recorded on this result. The framework normally
      * also has the request it just made, so it should call
      * {@link #getCaptureIds(Collection)} with that list: it is the authoritative answer to "what did
      * we ask for", and it cannot be forged by an incomplete report.</p>
      *
-     * @throws IllegalStateException when {@link #validate()} reports a violation
+     * @throws IllegalStateException when validation fails or any requested table failed
      */
     public List<String> getCaptureIds() {
         return getCaptureIds(requestedTables);
@@ -427,7 +434,7 @@ public class TriggerCdcInstallResult implements Serializable {
      * actually made rather than the one recorded on the result.
      *
      * @param requestedTables the tables handed to {@code ensure}; never {@code null} and never empty
-     * @throws IllegalStateException when {@link #validate(Collection)} reports a violation
+     * @throws IllegalStateException when validation fails or any requested table failed
      */
     public List<String> getCaptureIds(Collection<TriggerCdcTable> requestedTables) {
         List<String> violations = validate(requestedTables);
@@ -437,9 +444,11 @@ public class TriggerCdcInstallResult implements Serializable {
         }
         List<String> captureIds = new ArrayList<>(tableResults.size());
         for (TriggerCdcTableResult tableResult : tableResults) {
-            if (tableResult.isSuccessReported()) {
-                captureIds.add(tableResult.getCaptureId());
+            if (!tableResult.isSuccessReported()) {
+                throw new IllegalStateException("install result rejected: every requested table must "
+                        + "succeed before starting; see getFailedTables() for retry information");
             }
+            captureIds.add(tableResult.getCaptureId());
         }
         return captureIds;
     }
