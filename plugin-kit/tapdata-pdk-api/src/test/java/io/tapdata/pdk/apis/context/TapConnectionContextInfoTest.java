@@ -11,10 +11,10 @@ class TapConnectionContextInfoTest {
         DataMap config = new DataMap();
         TapConnectionContext test = new TapConnectionContext(null, config, null, null);
         TapConnectorContext task = new TapConnectorContext(null, config, null, null);
-        String id = "0123456789abcdef01234567";
+        String id = "warehouse-east";
 
-        task.getInfo().put(TapConnectionContext.INFO_CONNECTION_ID, id);
-        assertEquals(id, task.getInfo().getString("connectionId"));
+        task.getInfo().put(TapConnectionContext.INFO_RESOURCE_ID, id);
+        assertEquals(id, task.getInfo().getString("resourceId"));
         assertTrue(test.getInfo().isEmpty());
         assertTrue(config.isEmpty());
     }
