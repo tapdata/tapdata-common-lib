@@ -185,6 +185,9 @@ public class TriggerCdcInstallResult implements Serializable {
             if (!capabilities.supports(TriggerCdcErrorPolicy.STRICT)) {
                 violations.add("ensure capabilities must declare STRICT error policy");
             }
+            if (!capabilities.isDurableJournal()) {
+                violations.add("ensure capabilities must declare a durable journal");
+            }
             if (capabilities.isTruncateCaptureSupported()
                     != capabilities.supports(TriggerCdcOperation.TRUNCATE)) {
                 violations.add("truncateCaptureSupported must agree with the TRUNCATE operation declaration");

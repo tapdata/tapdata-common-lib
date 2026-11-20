@@ -18,8 +18,10 @@ DDL support or a safe snapshot boundary. Those must be verified by ensure.
    failures, not permission to silently omit those tables. `validate` checks report structure;
    `getCaptureIds(originalTables)` additionally rejects any failed table. A usable result needs
    an explicit readable status (CAPTURING, SNAPSHOTTING, STREAMING or DEGRADED), nonblank
-   database type/version and a STRICT error-policy declaration. DEGRADED still requires
-   operator attention. Apply the snapshot handover requirements below before starting a snapshot.
+   database type/version, a STRICT error-policy declaration and a durable journal declaration.
+   The journal must survive connector restarts without losing events, or unacknowledged changes
+   can disappear before recovery. DEGRADED still requires operator attention. Apply the snapshot
+   handover requirements below before starting a snapshot.
 3. Invoke streamRead on the same node context. The connector uses the consumer/config/capture
    mapping retained by ensure and polls committed journal records. The offset is a complete
    `Map<String, TriggerCdcOffset>` keyed by capture id, even for a single table. Validate keys,

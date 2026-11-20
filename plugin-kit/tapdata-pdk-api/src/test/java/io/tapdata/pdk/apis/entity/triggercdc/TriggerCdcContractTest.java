@@ -20,7 +20,7 @@ class TriggerCdcContractTest {
 
     private TriggerCdcCapabilities capabilities() {
         return TriggerCdcCapabilities.create().databaseType("PostgreSQL").databaseVersion("16")
-                .errorPolicy(TriggerCdcErrorPolicy.STRICT);
+                .errorPolicy(TriggerCdcErrorPolicy.STRICT).durableJournal(true);
     }
 
     private TriggerCdcInstallResult result(TriggerCdcTable... tables) {
@@ -132,6 +132,28 @@ class TriggerCdcContractTest {
             assertThrows(IllegalStateException.class,
                     () -> result.getCaptureIds(Collections.singletonList(a)));
         }
+    }
+
+    @Test
+    void durableJournalMustBeExplicitlySupportedForStartup() {
+        TriggerCdcTable a = table("a");
+        TriggerCdcCapabilities[] invalid = {
+                capabilities().durableJournal(false),
+                TriggerCdcCapabilities.create().databaseType("PostgreSQL").databaseVersion("16")
+                        .errorPolicy(TriggerCdcErrorPolicy.STRICT)
+        };
+        for (TriggerCdcCapabilities declaration : invalid) {
+            TriggerCdcInstallResult result = result(a).capabilities(declaration)
+                    .tableResult(TriggerCdcTableResult.success(a));
+            assertFalse(result.validate().isEmpty());
+            assertFalse(result.isSuccess());
+            assertThrows(IllegalStateException.class, result::getCaptureIds);
+            assertThrows(IllegalStateException.class,
+                    () -> result.getCaptureIds(Collections.singletonList(a)));
+        }
+        TriggerCdcInstallResult durable = result(a).tableResult(TriggerCdcTableResult.success(a));
+        assertTrue(durable.isSuccess());
+        assertEquals(Collections.singletonList("capture-a"), durable.getCaptureIds());
     }
 
     @Test
