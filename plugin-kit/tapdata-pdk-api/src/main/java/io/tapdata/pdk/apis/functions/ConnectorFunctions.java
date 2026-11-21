@@ -10,6 +10,7 @@ import io.tapdata.pdk.apis.functions.connection.GetTableNamesFunction;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.common.QueryHashByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
+import io.tapdata.pdk.apis.functions.connector.triggercdc.*;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.pdk.apis.partition.FieldMinMaxValue;
@@ -87,6 +88,10 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
     protected FlushOffsetFunction flushOffsetFunction;
     protected ProcessControlFunction processControlFunction;
 
+    protected TriggerCdcEnsureFunction triggerCdcEnsureFunction;
+    protected TriggerCdcAcknowledgeFunction triggerCdcAcknowledgeFunction;
+    protected TriggerCdcCleanupFunction triggerCdcCleanupFunction;
+
     public ConnectorFunctions supportFlushOffsetFunction(FlushOffsetFunction function) {
         flushOffsetFunction = function;
         return this;
@@ -94,6 +99,21 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ConnectorFunctions supportProcessControlFunction(ProcessControlFunction function) {
         processControlFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcEnsureFunction(TriggerCdcEnsureFunction function) {
+        triggerCdcEnsureFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcAcknowledgeFunction(TriggerCdcAcknowledgeFunction function) {
+        triggerCdcAcknowledgeFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportTriggerCdcCleanupFunction(TriggerCdcCleanupFunction function) {
+        triggerCdcCleanupFunction = function;
         return this;
     }
 
@@ -219,6 +239,11 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
                     fieldArray.add(Capability.create(fieldNameBuilder.toString()).type(Capability.TYPE_FUNCTION));
                 }
             } catch (Throwable ignored) {}
+        }
+        if (triggerCdcEnsureFunction != null && streamReadFunction != null
+                && triggerCdcAcknowledgeFunction != null && triggerCdcCleanupFunction != null) {
+            fieldArray.add(Capability.create(io.tapdata.pdk.apis.entity.triggercdc.TriggerCdcConstants.CAPABILITY_TRIGGER_CDC)
+                    .type(Capability.TYPE_OTHER));
         }
         return fieldArray;
     }
@@ -489,6 +514,18 @@ public class  ConnectorFunctions extends ConnectionFunctions<ConnectorFunctions>
 
     public ControlFunction getControlFunction() {
         return controlFunction;
+    }
+
+    public TriggerCdcEnsureFunction getTriggerCdcEnsureFunction() {
+        return triggerCdcEnsureFunction;
+    }
+
+    public TriggerCdcAcknowledgeFunction getTriggerCdcAcknowledgeFunction() {
+        return triggerCdcAcknowledgeFunction;
+    }
+
+    public TriggerCdcCleanupFunction getTriggerCdcCleanupFunction() {
+        return triggerCdcCleanupFunction;
     }
 
     public CreateIndexFunction getCreateIndexFunction() {

@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface StreamReadFunction extends TapConnectorFunction {
     /**
+     * For Trigger CDC, ensure first registers the node's consumer and captures. The offset is a
+     * complete map keyed by capture id as specified by
+     * {@link io.tapdata.pdk.apis.entity.triggercdc.TriggerCdcOffset}. Emit ordinary TapEvents and
+     * a fresh offset snapshot; callback return does not authorize acknowledgement or cleanup.
      *
      * @param nodeContext the node context in a DAG
      * @param offsetState if null, means start from very beginning, otherwise is the start point for batch reading.
