@@ -24,6 +24,7 @@ public class TapDefaultCodecs {
     public static final String TAP_DATE_VALUE = "TapDateValue";
     public static final String TAP_ARRAY_VALUE = "TapArrayValue";
     public static final String TAP_YEAR_VALUE = "TapYearValue";
+    public static final String TAP_DECIMAL_VALUE = "TapDecimalValue";
     public static final String TAP_NUMBER_VALUE = "TapNumberValue";
     public static final String TAP_FLOAT_VALUE = "TapFloatValue";
     public static final String TAP_DOUBLE_VALUE = "TapDoubleValue";
@@ -104,6 +105,7 @@ public class TapDefaultCodecs {
         classFromTapValueCodecMap.put(TapDateValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_DATE_VALUE));
         classFromTapValueCodecMap.put(TapDateTimeValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_DATE_TIME_VALUE));
         classFromTapValueCodecMap.put(TapMapValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_MAP_VALUE));
+        classFromTapValueCodecMap.put(TapDecimalValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_DECIMAL_VALUE));
         classFromTapValueCodecMap.put(TapNumberValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_NUMBER_VALUE));
         classFromTapValueCodecMap.put(TapFloatValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_FLOAT_VALUE));
         classFromTapValueCodecMap.put(TapDoubleValue.class.getName(), InstanceFactory.instance(FromTapValueCodec.class, TAP_DOUBLE_VALUE));
