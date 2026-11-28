@@ -21,6 +21,7 @@ import io.tapdata.entity.schema.type.TapFloat;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
+import io.tapdata.entity.schema.value.TapNumberValue;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JavaTypesToTapTypes;
@@ -204,7 +205,7 @@ public class TapCodecsFilterManager {
                         typeFromSchema = tapValue.createDefaultTapType();
                     //noinspection unchecked
                     tapValue.setTapType(typeFromSchema);
-                    if(!theValue.equals(tapValue.getValue())) {
+                    if(!theValue.equals(fullPayload(tapValue))) {
                         tapValue.setOriginValue(theValue);
                     }
                     tapValue.setOriginType(dataType);
@@ -216,7 +217,7 @@ public class TapCodecsFilterManager {
                         }
                     }
                     if(originTapValue != null) {
-                        if(originTapValue.getValue().equals(tapValue.getValue())) {
+                        if(fullPayload(originTapValue).equals(fullPayload(tapValue))) {
                             if(tapValue.getOriginValue() == null) {
                                 tapValue.setOriginValue(originTapValue.getOriginValue());
                                 tapValue.setOriginType(originTapValue.getOriginType());
@@ -226,7 +227,7 @@ public class TapCodecsFilterManager {
                     if(toTapValueCheckRef.get() == null)
                         return tapValue;
                     else
-                        if(!toTapValueCheckRef.get().check(name, tapValue.getValue()))
+                        if(!toTapValueCheckRef.get().check(name, fullPayload(tapValue)))
                             throw new StopFilterException();
                     return null;
                 }
@@ -235,11 +236,11 @@ public class TapCodecsFilterManager {
                     newFieldDetectorRef.get().detected(field(fieldName, typeFromSchema.getClass().getSimpleName()).tapType(typeFromSchema));
                 }
             }
-            if(originTapValue != null && originTapValue.getValue().equals(entry)) {
+            if(originTapValue != null && fullPayload(originTapValue).equals(entry)) {
                 if(toTapValueCheckRef.get() == null)
                     return originTapValue;
                 else
-                    if(!toTapValueCheckRef.get().check(name, originTapValue.getValue()))
+                    if(!toTapValueCheckRef.get().check(name, fullPayload(originTapValue)))
                         throw new StopFilterException();
                 return null;
             }
@@ -525,4 +526,10 @@ public class TapCodecsFilterManager {
         }
         return key;
     }
+    // Callbacks and origin tracking must see the exact payload, not its Double view.
+    protected static Object fullPayload(TapValue<?, ?> value) {
+        return value instanceof TapNumberValue
+                ? ((TapNumberValue) value).getNumberValue() : value.getValue();
+    }
+
 }

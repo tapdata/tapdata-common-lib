@@ -17,8 +17,15 @@ public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {
     public TapNumberValue toTapValue(Object value, TapType typeFromSchema) {
 
         TapNumberValue numberValue = null;
-        if(value instanceof Number) {
+        if(value instanceof BigDecimal || value instanceof java.math.BigInteger) {
             numberValue = TapNumberValue.ofNumber((Number) value);
+        } else if (value instanceof Long && java.math.BigInteger.valueOf((Long) value).bitLength() > 53) {
+            // A long is not generally representable as a Double (for example 2^53 + 1).
+            numberValue = TapNumberValue.ofNumber((Long) value);
+        } else if(value instanceof Number) {
+            // Keep the legacy path for small integral wrappers and floating point values.
+            // Unknown Number implementations are normalized here, never sent to the wire.
+            numberValue = new TapNumberValue(((Number) value).doubleValue());
         } else if(value instanceof String) {
             try {
                 String text = ((String) value).trim();

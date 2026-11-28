@@ -15,6 +15,9 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (tapValue == null || tapValue.getNumberValue() == null)
             return null;
         Number value = tapValue.getNumberValue();
+        // Keep historical target conversion for existing Double payloads. Strict
+        // decimal validation applies only to the new exact-number API.
+        if (value instanceof Double) return fromLegacyDouble(tapValue);
         TapNumber type = tapValue.getTapType();
         if (type == null)
             return value;
@@ -74,10 +77,60 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         return decimal;
     }
 
+    private Object fromLegacyDouble(TapNumberValue tapValue) {
+        if(tapValue == null)
+            return null;
+        io.tapdata.entity.schema.type.TapType tapType = tapValue.getTapType();
+        TapNumber tapNumber = null;
+        if(tapType instanceof TapNumber) {
+            tapNumber = (TapNumber) tapType;
+        }
+        if(tapNumber != null) {
+            Integer scale = tapNumber.getScale();
+            if(scale == null || scale == 0) {
+                if (tapNumber.getMaxValue() == null || tapNumber.getMinValue() == null)
+                    return tapValue.getValue();
+                if(tapNumber.getMaxValue().compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) <= 0 && tapNumber.getMinValue().compareTo(BigDecimal.valueOf(Long.MIN_VALUE)) >= 0) {
+                    long maxValue = tapNumber.getMaxValue().longValue();
+                    long minValue = tapNumber.getMinValue().longValue();
+                    if(Byte.MAX_VALUE >= maxValue && Byte.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().byteValue();
+                    } else if(Short.MAX_VALUE >= maxValue && Short.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().shortValue();
+                    } else if(Integer.MAX_VALUE >= maxValue && Integer.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().intValue();
+                    } else {
+                        return tapValue.getValue().longValue();
+                    }
+                } else {
+                    return BigDecimal.valueOf(tapValue.getValue());
+                }
+            } else {
+                if((tapNumber.getBit() != null && tapNumber.getBit() == 32) && (tapNumber.getFixed() == null || !tapNumber.getFixed())) {
+                    BigDecimal minValue = tapNumber.getMinValue();
+                    BigDecimal maxValue = tapNumber.getMaxValue();
+                    if(minValue != null && maxValue != null &&
+                            minValue.compareTo(BigDecimal.valueOf(-Float.MAX_VALUE)) >= 0 &&
+                            BigDecimal.valueOf(Float.MAX_VALUE).compareTo(maxValue) >= 0) {
+                        Double d = tapValue.getValue();
+                        if(d != null)
+                            return d.floatValue();
+                    }
+
+                }
+                return tapValue.getValue();
+            }
+        }
+
+        return tapValue.getValue();
+    }
+
+
     private BigDecimal toDecimal(Number value) {
         if (value instanceof BigDecimal) return (BigDecimal) value;
         if (value instanceof java.math.BigInteger) return new BigDecimal((java.math.BigInteger) value);
-        // String conversion avoids passing integral values through doubleValue().
+        // Preserve integral precision; Float uses its shortest decimal representation,
+        // rather than expanding its binary approximation via doubleValue().
         return new BigDecimal(value.toString());
     }
 }

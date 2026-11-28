@@ -111,4 +111,48 @@ class TapNumberSerializationTest {
         ObjectSerializableImplV2 serializer = new ObjectSerializableImplV2();
         assertNull(((TapNumberValue) serializer.toObject(serializer.fromObject(new TapNumberValue()))).getNumberValue());
     }
+    @Test void jsonPreservesNumericSchemaSubtypes() {
+        JsonParser parser = new JsonParserImpl();
+        for (TapNumber type : new TapNumber[]{new io.tapdata.entity.schema.type.TapFloat(),
+                new io.tapdata.entity.schema.type.TapDouble(), new io.tapdata.entity.schema.type.TapCoefficientFloat()}) {
+            TapNumberValue value = TapNumberValue.ofNumber(new BigDecimal("1.25"));
+            value.setTapType(type);
+            for (String json : new String[]{parser.toJson(value), parser.toJsonWithClass(value)}) {
+                TapNumberValue restored = parser.fromJson(json, TapNumberValue.class);
+                assertEquals(type.getClass(), restored.getTapType().getClass());
+                assertEquals(new BigDecimal("1.25"), restored.getNumberValue());
+            }
+        }
+    }
+
+    @Test void parserConstructionDoesNotInstallGlobalNumericAdapters() {
+        Object writer = com.alibaba.fastjson.serializer.SerializeConfig.globalInstance.getObjectWriter(TapNumberValue.class);
+        Object reader = com.alibaba.fastjson.parser.ParserConfig.global.getDeserializer(TapNumberValue.class);
+        new JsonParserImpl();
+        assertSame(writer, com.alibaba.fastjson.serializer.SerializeConfig.globalInstance.getObjectWriter(TapNumberValue.class));
+        assertSame(reader, com.alibaba.fastjson.parser.ParserConfig.global.getDeserializer(TapNumberValue.class));
+        // Direct Fastjson remains the legacy Double view; it must work without the runner adapter.
+        assertDoesNotThrow(() -> com.alibaba.fastjson.JSON.toJSONString(TapNumberValue.ofNumber(BigDecimal.TEN)));
+    }
+
+    @Test void malformedTypedNumberHasExplicitError() {
+        JsonParser parser = new JsonParserImpl();
+        assertThrows(com.alibaba.fastjson.JSONException.class,
+                () -> parser.fromJson("{\"numberType\":\"BigDecimal\"}", TapNumberValue.class));
+    }
+
+    @Test void localJsonAdaptersWorkForNestedGenericsAndBytes() {
+        JsonParser parser = new JsonParserImpl();
+        BigDecimal number = new BigDecimal("9007199254740993.00100");
+        check(number, parser.fromJsonBytes(parser.toJsonBytes(value(number)), TapNumberValue.class));
+        java.util.List<TapNumberValue> restored = parser.fromJson(parser.toJson(Collections.singletonList(value(number))),
+                new io.tapdata.entity.utils.TypeHolder<java.util.List<TapNumberValue>>() {});
+        check(number, restored.get(0));
+        TapNumberValue normalized = new ToTapNumberCodec().toTapValue(new java.util.concurrent.atomic.AtomicLong(42), null);
+        assertEquals(42d, normalized.getNumberValue());
+        assertEquals(42d, parser.fromJson(parser.toJson(normalized), TapNumberValue.class).getNumberValue());
+        ObjectSerializableImplV2 serializer = new ObjectSerializableImplV2();
+        assertEquals(42d, ((TapNumberValue) serializer.toObject(serializer.fromObject(normalized))).getNumberValue());
+    }
+
 }

@@ -39,7 +39,6 @@ final class TapNumberValueJsonCodec implements ObjectSerializer, ObjectDeseriali
             }
         } else {
             String type = number.getClass().getSimpleName();
-            parse(type, number.toString()); // Reject unsupported Number implementations.
             fields.put("value", java.util.Collections.singletonMap("number", number.toString()));
             fields.put("numberType", type);
         }
@@ -76,12 +75,31 @@ final class TapNumberValueJsonCodec implements ObjectSerializer, ObjectDeseriali
         }
         if (fields == null) return null;
         String numberType = fields.getString("numberType");
+        JSONObject encoded = numberType == null ? null : fields.getJSONObject("value");
+        if (numberType != null && (encoded == null || encoded.getString("number") == null))
+            throw new com.alibaba.fastjson.JSONException("Missing value.number for numeric representation " + numberType);
         Number number = numberType == null ? fields.getDouble("value")
-                : parse(numberType, fields.getJSONObject("value").getString("number"));
+                : parse(numberType, encoded.getString("number"));
         TapNumberValue value = TapNumberValue.ofNumber(number);
         value.setOriginValue(fields.get("originValue"));
         value.setOriginType(fields.getString("originType"));
-        value.setTapType(fields.getObject("tapType", TapNumber.class));
+        JSONObject tapType = fields.getJSONObject("tapType");
+        if (tapType != null) {
+            // Use a fixed allowlist; never instantiate arbitrary @type values.
+            Class<? extends TapNumber> tapClass = TapNumber.class;
+            String className = tapType.getString("@type");
+            if (io.tapdata.entity.schema.type.TapFloat.class.getName().equals(className)
+                    || "TapFloat".equals(tapType.getString("typeName")))
+                tapClass = io.tapdata.entity.schema.type.TapFloat.class;
+            else if (io.tapdata.entity.schema.type.TapDouble.class.getName().equals(className)
+                    || "TapDouble".equals(tapType.getString("typeName")))
+                tapClass = io.tapdata.entity.schema.type.TapDouble.class;
+            else if (io.tapdata.entity.schema.type.TapCoefficientFloat.class.getName().equals(className)
+                    || "TapCoefficientFloat".equals(tapType.getString("typeName")))
+                tapClass = io.tapdata.entity.schema.type.TapCoefficientFloat.class;
+            tapType.remove("@type");
+            value.setTapType(tapType.toJavaObject(tapClass));
+        }
         return (T) value;
     }
 

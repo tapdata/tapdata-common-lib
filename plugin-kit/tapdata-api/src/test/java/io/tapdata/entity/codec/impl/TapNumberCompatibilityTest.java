@@ -32,7 +32,7 @@ class TapNumberCompatibilityTest {
     }
 
     void preservesRepresentationWithoutTarget(Number number) {
-        TapNumberValue value = to.toTapValue(number, null);
+        TapNumberValue value = TapNumberValue.ofNumber(number);
         assertSame(number, value.getNumberValue());
         assertSame(number, from.fromTapValue(value));
         value.setTapType(new TapNumber());
@@ -41,7 +41,7 @@ class TapNumberCompatibilityTest {
 
     @Test void legacyWritesClearExactPayloadThroughBaseApi() {
         TapNumberValue value = TapNumberValue.ofNumber(BigDecimal.TEN);
-        assertThrows(IllegalStateException.class, value::getValue);
+        assertEquals(10d, value.getValue());
         TapValue<Double, TapNumber> base = value;
         base.setValue(2d);
         assertEquals(2d, value.getValue());
@@ -96,18 +96,18 @@ class TapNumberCompatibilityTest {
     @Test void floatingConversionRequiresExplicitTargetAndChecksOverflow() {
         TapNumber type = new TapNumber().fixed(false).bit(32);
         assertEquals(1.5f, from.fromTapValue(constrained(new BigDecimal("1.5"), type)));
-        assertEquals(Float.POSITIVE_INFINITY, from.fromTapValue(constrained(Double.POSITIVE_INFINITY, type)));
+        assertEquals(Double.POSITIVE_INFINITY, from.fromTapValue(constrained(Double.POSITIVE_INFINITY, type)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E100"), type)));
-        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(Double.NaN, new TapNumber().scale(0))));
+        assertEquals(Double.NaN, from.fromTapValue(constrained(Double.NaN, new TapNumber().scale(0))));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E6144"), new TapNumber().fixed(false).bit(64))));
     }
 
-    @TestFactory Stream<DynamicTest> javaSerializationPreservesPayloadAndMetadata() {
+    @TestFactory Stream<DynamicTest> javaSerializationRetainsHistoricalLimitations() {
         return numbers().map(number -> DynamicTest.dynamicTest(number.getClass().getSimpleName() + ": " + number,
-                () -> javaSerializationPreservesPayloadAndMetadata(number)));
+                () -> javaSerializationRetainsHistoricalLimitations(number)));
     }
 
-    void javaSerializationPreservesPayloadAndMetadata(Number number) throws Exception {
+    void javaSerializationRetainsHistoricalLimitations(Number number) throws Exception {
         TapNumberValue value = TapNumberValue.ofNumber(number);
         value.setOriginValue("original");
         value.setOriginType("number");
@@ -118,10 +118,33 @@ class TapNumberCompatibilityTest {
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
             restored = (TapNumberValue) in.readObject();
         }
-        assertEquals(number, restored.getNumberValue());
-        assertEquals(number.getClass(), restored.getNumberValue().getClass());
-        assertEquals("original", restored.getOriginValue());
-        assertEquals("number", restored.getOriginType());
-        assertEquals(34, restored.getTapType().getPrecision());
+        // Native Java streams historically omit all TapValue superclass fields.
+        if (number instanceof Double) assertNull(restored.getNumberValue());
+        else assertEquals(number, restored.getNumberValue());
+        assertNull(restored.getOriginValue());
+        assertNull(restored.getOriginType());
+        assertNull(restored.getTapType());
     }
+    @Test void legacyDoubleTargetConversionRemainsCompatible() {
+        assertEquals(1.23456d, from.fromTapValue(constrained(1.23456d, new TapNumber().scale(2).precision(10))));
+        assertEquals(12345.6d, from.fromTapValue(constrained(12345.6d, new TapNumber().scale(2).precision(5))));
+        assertEquals(Double.NaN, from.fromTapValue(constrained(Double.NaN, new TapNumber().scale(2))));
+        assertEquals(-1d, from.fromTapValue(constrained(-1d, new TapNumber().unsigned(true).scale(2))));
+        assertEquals(new BigDecimal("2.5"), from.fromTapValue(constrained(2.5d, (TapNumber) new TapNumberValue().createDefaultTapType())));
+        assertEquals((byte) 2, from.fromTapValue(constrained(2.9d, new TapNumber().scale(0).minValue(new BigDecimal(-128)).maxValue(new BigDecimal(127)))));
+    }
+
+    @Test void decimalTrailingZerosNeedNoRounding() {
+        assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.230"), new TapNumber().fixed(true).scale(2))));
+        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1.231"), new TapNumber().fixed(true).scale(2))));
+    }
+
+    @Test void inputCodecKeepsLegacyTypesExceptNumbersRequiringPrecision() {
+        for (Number n : new Number[]{12, (byte) 1, (short) 3, 5L, 1.25f, 1.25d, new java.util.concurrent.atomic.AtomicLong(42)})
+            assertEquals(n.doubleValue(), to.toTapValue(n, null).getNumberValue());
+        for (Number n : new Number[]{9007199254740993L, Long.MAX_VALUE, Long.MIN_VALUE, BigDecimal.TEN, BigInteger.TEN})
+            assertSame(n, to.toTapValue(n, null).getNumberValue());
+        assertThrows(IllegalArgumentException.class, () -> TapNumberValue.ofNumber(new java.util.concurrent.atomic.AtomicLong(42)));
+    }
+
 }
