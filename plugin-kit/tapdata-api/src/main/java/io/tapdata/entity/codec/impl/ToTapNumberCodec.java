@@ -18,12 +18,16 @@ public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {
 
         TapNumberValue numberValue = null;
         if(value instanceof Number) {
-            //TODO whether should use Number better than Double? 
-            numberValue = new TapNumberValue(Double.valueOf(String.valueOf(value)));
+            numberValue = TapNumberValue.ofNumber((Number) value);
         } else if(value instanceof String) {
             try {
-                numberValue = new TapNumberValue(Double.parseDouble((String)value));
-            } catch(Throwable throwable) {
+                String text = ((String) value).trim();
+                if ("NaN".equals(text) || "Infinity".equals(text) || "+Infinity".equals(text) || "-Infinity".equals(text)) {
+                    numberValue = new TapNumberValue(Double.parseDouble(text));
+                } else {
+                    numberValue = TapNumberValue.ofNumber(new BigDecimal(text));
+                }
+            } catch(NumberFormatException throwable) {
                 TapLogger.error(TAG, "Parse string {} to number failed, {}, will mapping other codecs", value, throwable.getMessage());
             }
         } else if(value instanceof Boolean) {

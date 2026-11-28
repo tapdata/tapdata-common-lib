@@ -5,6 +5,8 @@ import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.serializer.SerializeConfig;
+import io.tapdata.entity.schema.value.TapNumberValue;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
@@ -33,6 +35,9 @@ public class JsonParserImpl implements JsonParser {
     public JsonParserImpl() {
         configGlobalAbstractClassDetectors(TapType.class, TapConstants.abstractClassDetectors);
         ParserConfig.global.putDeserializer(Instant.class, new InstantDeserialize());
+        TapNumberValueJsonCodec numberCodec = new TapNumberValueJsonCodec();
+        SerializeConfig.globalInstance.put(TapNumberValue.class, numberCodec);
+        ParserConfig.global.putDeserializer(TapNumberValue.class, numberCodec);
     }
 
     @Override
