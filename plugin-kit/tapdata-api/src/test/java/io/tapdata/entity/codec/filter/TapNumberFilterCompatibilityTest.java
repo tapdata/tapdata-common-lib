@@ -46,7 +46,7 @@ class TapNumberFilterCompatibilityTest {
 
     private void bothFiltersRoundDecimalsAndTruncateIntegers(boolean enforced) {
         TapNumber decimal = new TapNumber().fixed(true).scale(2).precision(10);
-        TapNumber integer = new TapNumber().scale(0).precision(10)
+        TapNumber integer = new TapNumber().bit(32).scale(0).precision(10)
                 .minValue(BigDecimal.valueOf(Integer.MIN_VALUE)).maxValue(BigDecimal.valueOf(Integer.MAX_VALUE));
         for (String text : new String[]{"123.456", "123.455", "-123.455", "123.450"}) {
             for (Object input : new Object[]{text, new BigDecimal(text)}) {
@@ -70,7 +70,7 @@ class TapNumberFilterCompatibilityTest {
     }
 
     private void bothFiltersRejectOverflowAfterConversion(boolean enforced) {
-        TapNumber integer = new TapNumber().scale(0)
+        TapNumber integer = new TapNumber().bit(32).scale(0)
                 .minValue(BigDecimal.valueOf(Integer.MIN_VALUE)).maxValue(BigDecimal.valueOf(Integer.MAX_VALUE));
         for (String text : new String[]{"2147483648.1", "-2147483649.1"})
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, new BigDecimal(text), integer));
@@ -81,7 +81,7 @@ class TapNumberFilterCompatibilityTest {
                 .maxValue(new BigDecimal("999.99"));
         for (String text : new String[]{"999.995", "-999.995"})
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, text, bounds));
-        TapNumber unsigned = new TapNumber().unsigned(true).scale(0).minValue(BigDecimal.ZERO)
+        TapNumber unsigned = new TapNumber().unsigned(true).bit(8).scale(0).minValue(BigDecimal.ZERO)
                 .maxValue(new BigDecimal("255"));
         assertEquals((short) 0, throughFilters(enforced, "-0.9", unsigned));
         assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "-1.1", unsigned));
@@ -191,6 +191,58 @@ class TapNumberFilterCompatibilityTest {
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.2345",
                     new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> mysqlSpecTargetsThroughBothFilters() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "mysqlSpec schemaEnforced=" + enforced, () -> {
+            Map<String, String> params = new HashMap<>();
+            params.put("precision", "18");
+            params.put("scale", "0");
+            TapNumber decimal = mysqlTarget("decimal[($precision,$scale)][unsigned]", "decimal(18,0)", params);
+            assertNotNull(decimal.getMinValue()); // precision-derived bounds must not imply an integer
+            assertNull(decimal.getBit());
+            for (String text : new String[]{"2.9", "-2.9", "2.5", "-2.5", "123.456"})
+                assertEquals(new BigDecimal(text).setScale(0, java.math.RoundingMode.HALF_UP),
+                        throughFilters(enforced, new BigDecimal(text), decimal));
+            assertThrows(ArithmeticException.class,
+                    () -> throughFilters(enforced, "999999999999999999.5", decimal));
+            for (String name : new String[]{"float", "double"}) {
+                TapNumber floating = mysqlTarget(name, name, Collections.emptyMap());
+                assertNull(floating.getBit());
+                for (String text : new String[]{"1", "2.9", "-7", "123456"}) {
+                    assertEquals(Double.valueOf(text), throughFilters(enforced, new BigDecimal(text), floating));
+                    assertEquals(Double.valueOf(text), throughFilters(enforced, Double.valueOf(text), floating));
+                }
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1e309", floating));
+            }
+            // Use the actual explicit-bound DSL entries, including the shortened IEEE limits.
+            for (String name : new String[]{"float($precision,$scale)[unsigned]", "double[($precision,$scale)][unsigned]"}) {
+                TapNumber floating = mysqlTarget(name, name.startsWith("float") ? "float" : "double", Collections.emptyMap());
+                assertEquals(2.9d, throughFilters(enforced, new BigDecimal("2.9"), floating));
+                Map<String, String> floatingParams = new HashMap<>();
+                floatingParams.put("precision", "6");
+                floatingParams.put("scale", "2");
+                TapNumber parameterized = mysqlTarget(name, name.startsWith("float") ? "float(6,2)" : "double(6,2)", floatingParams);
+                assertEquals(2.912345d, throughFilters(enforced, new BigDecimal("2.912345"), parameterized));
+                assertEquals(floating.getMaxValue().doubleValue(),
+                        throughFilters(enforced, floating.getMaxValue(), floating));
+                assertThrows(ArithmeticException.class,
+                        () -> throughFilters(enforced, floating.getMaxValue().multiply(BigDecimal.TEN), floating));
+            }
+            TapNumber integer = mysqlTarget("int[($zerofill)]", "int", Collections.emptyMap());
+            assertEquals(2, throughFilters(enforced, new BigDecimal("2.9"), integer));
+            assertEquals(-2, throughFilters(enforced, new BigDecimal("-2.9"), integer));
+            TapNumber bigint = mysqlTarget("bigint[($zerofill)]", "bigint", Collections.emptyMap());
+            assertEquals(9007199254740993L, throughFilters(enforced, 9007199254740993L, bigint));
+        }));
+    }
+
+    private TapNumber mysqlTarget(String expression, String dataType, Map<String, String> params) {
+        io.tapdata.entity.mapping.type.TapNumberMapping mapping = new io.tapdata.entity.mapping.type.TapNumberMapping();
+        mapping.from(MysqlNumberSpecFixture.entry(expression));
+        return (TapNumber) mapping.toTapType(dataType, params);
     }
 
     private Object throughFilters(boolean enforced, Object input, TapNumber targetType) {

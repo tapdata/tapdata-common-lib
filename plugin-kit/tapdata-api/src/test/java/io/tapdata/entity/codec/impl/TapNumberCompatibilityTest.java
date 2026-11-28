@@ -74,16 +74,16 @@ class TapNumberCompatibilityTest {
     }
 
     @Test void truncatesIntegerFractionsAndChecksConvertedBounds() {
-        TapNumber byteType = new TapNumber().scale(0).minValue(BigDecimal.valueOf(-128)).maxValue(BigDecimal.valueOf(127));
+        TapNumber byteType = new TapNumber().bit(8).scale(0).minValue(BigDecimal.valueOf(-128)).maxValue(BigDecimal.valueOf(127));
         assertEquals((byte) 127, from.fromTapValue(constrained(new BigDecimal("127.0"), byteType)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(128L, byteType)));
         assertEquals((byte) 1, from.fromTapValue(constrained(new BigDecimal("1.9"), byteType)));
         assertEquals((byte) -1, from.fromTapValue(constrained(new BigDecimal("-1.9"), byteType)));
         assertEquals((byte) 127, from.fromTapValue(constrained(new BigDecimal("127.9"), byteType)));
-        TapNumber longType = new TapNumber().scale(0).minValue(BigDecimal.valueOf(Long.MIN_VALUE)).maxValue(BigDecimal.valueOf(Long.MAX_VALUE));
+        TapNumber longType = new TapNumber().bit(64).scale(0).minValue(BigDecimal.valueOf(Long.MIN_VALUE)).maxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         assertEquals(Long.MAX_VALUE, from.fromTapValue(constrained(Long.MAX_VALUE, longType)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE), longType)));
-        TapNumber unsigned = new TapNumber().scale(0).minValue(BigDecimal.ZERO).maxValue(new BigDecimal("18446744073709551615"));
+        TapNumber unsigned = new TapNumber().bit(64).scale(0).minValue(BigDecimal.ZERO).maxValue(new BigDecimal("18446744073709551615"));
         assertEquals(new BigDecimal("18446744073709551615"), from.fromTapValue(constrained(new BigInteger("18446744073709551615"), unsigned)));
     }
 

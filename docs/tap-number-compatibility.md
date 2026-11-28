@@ -32,15 +32,19 @@ The output codec preserves historical conversion for Double payloads, including
 truncation/narrowing and permissive decimal handling. Missing integer bounds now
 allow Double passthrough rather than a null-pointer failure. New non-Double
 payloads use compatible target conversion: reducing a nonzero scale uses HALF_UP (`123.455` to scale 2 is `123.46`, `-123.455` is `-123.46`);
-scale 0 truncates toward zero only for targets declaring both min/max bounds or
-an explicit bit width (`123.9` to INT is `123`, `-123.9` is `-123`).
-Scale-zero decimal targets without that integer metadata use HALF_UP
+scale 0 truncates toward zero only for targets declaring a bit width
+and no floating marker (`123.9` to INT is `123`, `-123.9` is `-123`).
+Scale-zero decimal targets without a bit width, including real DSL mappings
+with precision-derived min/max, use HALF_UP
 (`2.9` to DECIMAL(18,0) is `3`, `-2.9` is `-3`) and return BigDecimal.
 Unsigned, min/max bounds and precision checks apply after conversion, so rounding
 carry that exceeds the target capacity is rejected. Unsigned validation uses the
 converted value, so `-0.4` rounded to zero is accepted. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
-floating targets (`fixed=false`, bit 32/64) permit IEEE rounding but reject finite overflow.
+floating targets (`fixed=false`, including DSL mappings without bit) permit IEEE
+rounding but reject finite overflow. Bit 32 returns Float; other widths and absent
+bit return Double. Floating conversion ignores decimal scale and precision; declared
+min/max bounds (including bounds supplied by the mapping) remain enforced.
 Their unsigned and min/max checks apply to the converted IEEE value, including finite
 Float/Double extremes. A bit width with absent `fixed` identifies an integer, not a float;
 when its scale is absent it uses integer truncation too. Other null-scale targets

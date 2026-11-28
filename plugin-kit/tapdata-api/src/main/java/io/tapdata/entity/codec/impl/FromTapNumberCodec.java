@@ -22,13 +22,12 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (type == null)
             return value;
 
-        boolean floating = Boolean.FALSE.equals(type.getFixed()) && type.getBit() != null
-                && (type.getBit() == 32 || type.getBit() == 64);
+        boolean floating = Boolean.FALSE.equals(type.getFixed());
         boolean nonFinite = (value instanceof Double || value instanceof Float)
                 && !Double.isFinite(value.doubleValue());
         if (nonFinite) {
             if (floating) {
-                if (type.getBit() == 32) return value.floatValue();
+                if (Integer.valueOf(32).equals(type.getBit())) return value.floatValue();
                 return value.doubleValue();
             }
             if (type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
@@ -42,7 +41,7 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 && type.getPrecision() == null && type.getBit() == null && !Boolean.TRUE.equals(type.getUnsigned()))
             return value;
         if (floating) {
-            if (type.getBit() == 32) {
+            if (Integer.valueOf(32).equals(type.getBit())) {
                 float result = value.floatValue();
                 if (!Float.isFinite(result)) throw new ArithmeticException("Float overflow: " + value);
                 checkBounds(BigDecimal.valueOf(result), type, value);
@@ -59,10 +58,10 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         // no explicit floating marker still identifies an integer target.
         if (scale == null && type.getBit() != null && !Boolean.FALSE.equals(type.getFixed()))
             scale = 0;
-        // Scale zero also describes DECIMAL(p,0). Only an explicit integer range or
-        // storage width identifies integer conversion; scale alone must not truncate.
+        // Decimal mappings also derive min/max from precision. Only a storage width
+        // without a floating marker identifies an integer; bounds alone do not.
         boolean integerTarget = scale != null && scale == 0
-                && (type.getMinValue() != null && type.getMaxValue() != null || type.getBit() != null);
+                && type.getBit() != null && !Boolean.FALSE.equals(type.getFixed());
         // Validate the converted value: rounding can carry into an overflowing digit.
         if (scale != null) decimal = decimal.setScale(scale, integerTarget
                 ? java.math.RoundingMode.DOWN : java.math.RoundingMode.HALF_UP);
@@ -76,7 +75,7 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             java.math.BigInteger integer = decimal.toBigIntegerExact();
             return integer.bitLength() <= 63 ? (Number) integer.longValueExact() : integer;
         }
-        if (scale != null && scale == 0 && type.getMinValue() != null && type.getMaxValue() != null) {
+        if (integerTarget && type.getMinValue() != null && type.getMaxValue() != null) {
             BigDecimal min = type.getMinValue();
             BigDecimal max = type.getMaxValue();
             if (min.compareTo(BigDecimal.valueOf(Byte.MIN_VALUE)) >= 0 && max.compareTo(BigDecimal.valueOf(Byte.MAX_VALUE)) <= 0)
