@@ -54,17 +54,20 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             return result;
         }
         Integer scale = type.getScale();
-        // Match historical integer truncation; decimal scale reductions use HALF_UP.
+        // Scale zero also describes DECIMAL(p,0). Only an explicit integer range or
+        // storage width identifies integer conversion; scale alone must not truncate.
+        boolean integerTarget = scale != null && scale == 0
+                && (type.getMinValue() != null && type.getMaxValue() != null || type.getBit() != null);
         // Validate the converted value: rounding can carry into an overflowing digit.
-        if (scale != null) decimal = decimal.setScale(scale, scale == 0
+        if (scale != null) decimal = decimal.setScale(scale, integerTarget
                 ? java.math.RoundingMode.DOWN : java.math.RoundingMode.HALF_UP);
         checkBounds(decimal, type, value);
         if (type.getPrecision() != null && decimal.precision() > type.getPrecision())
             throw new ArithmeticException("Number exceeds target precision: " + value);
         if (scale == null && !Boolean.TRUE.equals(type.getFixed()))
             return value;
-        // A scale alone specifies integral conversion, not a target storage width.
-        if (scale != null && scale == 0 && type.getMinValue() == null && type.getMaxValue() == null) {
+        // An integer width without bounds does not impose an inferred 64-bit limit.
+        if (integerTarget && type.getMinValue() == null && type.getMaxValue() == null) {
             java.math.BigInteger integer = decimal.toBigIntegerExact();
             return integer.bitLength() <= 63 ? (Number) integer.longValueExact() : integer;
         }

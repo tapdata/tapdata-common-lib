@@ -138,7 +138,7 @@ class TapNumberCompatibilityTest {
         assertEquals((byte) 2, from.fromTapValue(constrained(2.9d, new TapNumber().scale(0).minValue(new BigDecimal(-128)).maxValue(new BigDecimal(127)))));
     }
 
-    @Test void decimalTrailingZerosNeedNoRounding() {
+    @Test void decimalScaleReductionHandlesTrailingZerosAndRounding() {
         assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.230"), new TapNumber().fixed(true).scale(2))));
         assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.231"), new TapNumber().fixed(true).scale(2))));
     }

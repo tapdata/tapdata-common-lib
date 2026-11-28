@@ -32,14 +32,18 @@ The output codec preserves historical conversion for Double payloads, including
 truncation/narrowing and permissive decimal handling. Missing integer bounds now
 allow Double passthrough rather than a null-pointer failure. New non-Double
 payloads use compatible target conversion: reducing a nonzero scale uses HALF_UP (`123.455` to scale 2 is `123.46`, `-123.455` is `-123.46`);
-scale 0 truncates toward zero (`123.9` to INT is `123`, `-123.9` is `-123`).
+scale 0 truncates toward zero only for targets declaring both min/max bounds or
+an explicit bit width (`123.9` to INT is `123`, `-123.9` is `-123`).
+Scale-zero decimal targets without that integer metadata use HALF_UP
+(`2.9` to DECIMAL(18,0) is `3`, `-2.9` is `-3`) and return BigDecimal.
 Unsigned, min/max bounds and precision checks apply after conversion, so rounding
-carry that exceeds the target capacity is rejected. Trailing zeros require no rounding.
+carry that exceeds the target capacity is rejected. Unsigned validation uses the
+converted value, so `-0.4` rounded to zero is accepted. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
 floating targets permit IEEE rounding but reject finite overflow. A null scale does not imply integer conversion for exact values.
 Precision-only targets validate precision even when scale and fixed are absent.
-Explicit scale=0 targets without either bound return Long when it fits, otherwise
-BigInteger; scale alone does not impose a 64-bit limit. Bounded integer targets
+Explicit scale=0 integer targets with bit width but without either bound return
+Long when it fits, otherwise BigInteger; no implicit 64-bit capacity is imposed. Bounded integer targets
 continue to choose their representation from the declared range.
 Unconstrained targets preserve the original Number representation. Float-to-decimal
 conversion uses the shortest decimal string, not a binary expansion.

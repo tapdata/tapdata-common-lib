@@ -119,6 +119,19 @@ class TapNumberSerializationTest {
         assertEquals(1.25d, parser.fromJson(parser.toJson(new TapNumberValue(1.25d)), LegacyDoubleValue.class).getValue());
     }
 
+    @Test void readsPreviousExactJsonWithCollectionClassMetadata() throws Exception {
+        // Wire shape emitted by 89b9793 before collection metadata was removed.
+        String json;
+        try (java.io.InputStream input = getClass().getResourceAsStream("/compat/tap-number-89b9793.json")) {
+            assertNotNull(input);
+            json = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        JsonParser parser = new JsonParserImpl();
+        BigDecimal expected = new BigDecimal("9007199254740993.00100");
+        check(expected, parser.fromJson(json, TapNumberValue.class));
+        check(expected, (TapNumberValue) parser.fromJsonWithClass(json));
+    }
+
     @Test void readsLegacyJsonAndNulls() {
         JsonParser parser = new JsonParserImpl();
         assertEquals(1.5d, parser.fromJson("{\"value\":1.5}", TapNumberValue.class).getValue());

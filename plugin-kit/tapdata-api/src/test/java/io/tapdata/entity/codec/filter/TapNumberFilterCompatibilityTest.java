@@ -102,10 +102,10 @@ class TapNumberFilterCompatibilityTest {
     }
 
     @org.junit.jupiter.api.TestFactory
-    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> scaleOnlyIntegersPreserveCapacity() {
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> integerWidthWithoutBoundsPreservesCapacity() {
         return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
-                "scaleOnly schemaEnforced=" + enforced, () -> {
-            TapNumber target = new TapNumber().scale(0);
+                "integerWidth schemaEnforced=" + enforced, () -> {
+            TapNumber target = new TapNumber().fixed(true).bit(64).scale(0);
             assertEquals(123L, throughFilters(enforced, "123.9", target));
             assertEquals(-123L, throughFilters(enforced, new BigDecimal("-123.9"), target));
             for (String text : new String[]{"9223372036854775807", "-9223372036854775808"})
@@ -117,6 +117,33 @@ class TapNumberFilterCompatibilityTest {
             BigDecimal decimal = new BigDecimal("123.900");
             TapNumber unconstrained = (TapNumber) TapNumberValue.ofNumber(decimal).createDefaultTapType();
             assertEquals(decimal, throughFilters(enforced, decimal, unconstrained));
+        }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> zeroScaleDecimalsRoundHalfUp() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "zeroScaleDecimal schemaEnforced=" + enforced, () -> {
+            for (TapNumber target : new TapNumber[]{
+                    new TapNumber().fixed(true).precision(18).scale(0),
+                    new TapNumber().scale(0),
+                    new TapNumber().fixed(true).precision(18).scale(0).unsigned(true),
+                    new TapNumber().scale(0).minValue(new BigDecimal("-100"))}) {
+                for (String text : new String[]{"2.9", "-2.9", "2.5", "-2.5", "2.4", "-2.4"}) {
+                    if (Boolean.TRUE.equals(target.getUnsigned()) && text.startsWith("-")) continue;
+                    for (Object input : new Object[]{text, new BigDecimal(text)})
+                        assertEquals(new BigDecimal(text).setScale(0, java.math.RoundingMode.HALF_UP),
+                                throughFilters(enforced, input, target));
+                }
+            }
+            TapNumber decimal = new TapNumber().fixed(true).precision(3).scale(0);
+            assertEquals(new BigDecimal("999"), throughFilters(enforced, "999.4", decimal));
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "999.5", decimal));
+            TapNumber unsigned = new TapNumber().fixed(true).precision(18).scale(0).unsigned(true);
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "-0.5", unsigned));
+            assertEquals(BigDecimal.ZERO, throughFilters(enforced, "-0.4", unsigned));
+            for (String text : new String[]{"9223372036854775808", "-9223372036854775809"})
+                assertEquals(new BigDecimal(text), throughFilters(enforced, text, new TapNumber().scale(0)));
         }));
     }
 
