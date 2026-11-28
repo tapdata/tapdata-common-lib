@@ -84,4 +84,45 @@ class TapNumberBinaryCompatibilityTest {
         }
     }
 
+    @Test void numberSchemaStreamsKeepTheirIdentity() throws Exception {
+        Path sourceFile = temp.resolve("TapNumber.java");
+        try (java.io.InputStream source = getClass().getResourceAsStream("/compat/TapNumber.java.txt")) {
+            Files.copy(source, sourceFile);
+        }
+        assertEquals(0, ToolProvider.getSystemJavaCompiler().run(null, null, null,
+                "-encoding", "UTF-8", "-classpath", System.getProperty("java.class.path"), "-d", temp.toString(), sourceFile.toString()));
+        String name = io.tapdata.entity.schema.type.TapNumber.class.getName();
+        try (URLClassLoader loader = new URLClassLoader(new URL[]{temp.toUri().toURL()}, getClass().getClassLoader()) {
+            @Override protected Class<?> loadClass(String n, boolean resolve) throws ClassNotFoundException {
+                if (!n.equals(name)) return super.loadClass(n, resolve);
+                Class<?> c = findLoadedClass(n);
+                if (c == null) c = findClass(n);
+                if (resolve) resolveClass(c);
+                return c;
+            }
+        }) {
+            Class<?> old = loader.loadClass(name);
+            Class<?> current = io.tapdata.entity.schema.type.TapNumber.class;
+            assertEquals(java.io.ObjectStreamClass.lookup(old).getSerialVersionUID(),
+                    java.io.ObjectStreamClass.lookup(current).getSerialVersionUID());
+            Object oldSchema = old.getConstructor().newInstance();
+            old.getMethod("setFixed", Boolean.class).invoke(oldSchema, false);
+            Object newSchema = new io.tapdata.entity.schema.type.TapNumber().fixed(false).binaryFloat(true);
+            for (Object input : new Object[]{oldSchema, newSchema}) {
+                java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                try (java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(bytes)) { out.writeObject(input); }
+                Class<?> destination = input == oldSchema ? current : old;
+                try (java.io.ObjectInputStream in = new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(bytes.toByteArray())) {
+                    @Override protected Class<?> resolveClass(java.io.ObjectStreamClass desc) throws java.io.IOException, ClassNotFoundException {
+                        return desc.getName().equals(name) ? destination : super.resolveClass(desc);
+                    }
+                }) {
+                    Object result = in.readObject();
+                    assertEquals(false, destination.getMethod("getFixed").invoke(result));
+                    if (destination == current) assertNull(destination.getMethod("getBinaryFloat").invoke(result));
+                }
+            }
+        }
+    }
+
 }

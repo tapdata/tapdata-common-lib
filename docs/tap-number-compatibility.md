@@ -41,15 +41,22 @@ For decimal/integer targets, unsigned, min/max bounds and precision checks apply
 after conversion, so rounding carry that exceeds the target capacity is rejected. Unsigned validation uses the
 converted value, so `-0.4` rounded to zero is accepted. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
-floating targets (`fixed=false`, including DSL mappings without bit) permit IEEE
-rounding but reject finite overflow. Bit 32 returns Float; other widths and absent
-bit return Double. Floating conversion ignores decimal scale, precision and all
+binary floating targets (`binaryFloat=true`, or the dedicated TapFloat/TapDouble
+classes) permit IEEE
+rounding but reject finite overflow. TapFloat always returns Float and TapDouble always returns Double, including
+legacy specs whose bit denotes bytes. For plain TapNumber, bit 32 returns Float;
+other widths and absent bit return Double. Floating conversion ignores decimal scale, precision and all
 min/max mapping bounds, including explicit bounds: these describe type matching,
 and may contain decimal precision or integer-width limits rather than IEEE capacity.
-Finite conversion overflow is rejected; unsigned checks apply to the converted IEEE
-value (negative values that underflow to zero are accepted). Existing non-finite
+Finite conversion overflow is rejected; unsigned checks apply to the original
+value, including negative values that would underflow to zero. Existing non-finite
 Float payload passthrough is unchanged. These rules apply only to non-Double payloads;
-legacy Double conversion remains unchanged. Scale-zero decimal BigDecimal results
+legacy Double conversion remains unchanged. `fixed=false` alone never selects
+binary conversion: BigQuery NUMERIC/BIGNUMERIC, DB2/Snowflake DECFLOAT and
+Oracle/OceanBase-Oracle FLOAT keep decimal precision, scale and bounds validation.
+An absent declaration on a plain TapNumber conservatively retains the decimal
+path; it does not guess from the connector name, precision or bit width.
+Scale-zero decimal BigDecimal results
 above likewise describe exact payloads, not a change to legacy Double result types.
 A bit width with absent `fixed` identifies an integer, not a float;
 when its scale is absent it uses integer truncation too. Other null-scale targets
@@ -98,7 +105,16 @@ origin metadata were never serialized. An old reader ignores the new numberValue
 field. Do not use native Java serialization for event transport or exact-number
 rollout; a framework-wide TapValue serialization design is separate work.
 
-Upgrade API and runner together before enabling exact producers. Do not route new
+Upgrade API and runner together, and deploy the companion community/enterprise
+spec declarations before enabling exact producers for binary floating targets.
+Old specs containing only fixed=false do not provide a binary declaration and
+may still apply decimal rounding/bounds; mixed versions are not an accepted
+exact-number rollout. Dedicated TapFloat/TapDouble specs remain supported.
+The new nullable Boolean is preserved by schema cloning and JSON; native
+TapNumber streams retain UID 4662236301878730205 (old readers ignore the field,
+new readers default it to null).
+
+Do not route new
 exact wire representations to older runners/engines. Old plugins continue to work
 through the Double view; exact consumption requires the new API. This change does
 not update engine-side consumers in other repositories.
@@ -120,3 +136,16 @@ TZ=Asia/Shanghai mvn -B -pl plugin-kit/tapdata-api,plugin-kit/tapdata-pdk-runner
 ```
 
 The existing CommonUtils date-string test assumes Asia/Shanghai.
+
+
+The spec matrix snapshots every numeric entry from both connector repositories,
+including query-only and template entries, and exercises ten value magnitudes in
+both filters with exact and legacy payloads. Legacy results are compared with a
+frozen origin/main codec. Regenerate the snapshot with:
+
+```sh
+python3 scripts/snapshot-number-specs.py /path/to/community /path/to/enterprise
+```
+
+This matrix validates mapping/codec contracts. It does not replace database sink
+acceptance for a coordinated build, or the original nightly MongoDB scenarios.

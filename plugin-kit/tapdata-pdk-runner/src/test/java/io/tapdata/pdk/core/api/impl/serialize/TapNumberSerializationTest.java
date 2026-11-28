@@ -70,6 +70,33 @@ class TapNumberSerializationTest {
         }
     }
 
+    @Test void binaryDeclarationSurvivesCloneJsonAndV2() {
+        JsonParser parser = new JsonParserImpl();
+        for (TapNumber schema : new TapNumber[]{new TapNumber(),
+                new io.tapdata.entity.schema.type.TapFloat(), new io.tapdata.entity.schema.type.TapDouble()}) {
+            for (Boolean flag : new Boolean[]{null, false, true}) {
+                schema.binaryFloat(flag).fixed(false);
+                TapNumber clone = (TapNumber) schema.cloneTapType();
+                assertEquals(flag, clone.getBinaryFloat());
+                assertEquals(false, clone.getFixed());
+                TapNumberValue input = TapNumberValue.ofNumber(new BigDecimal("12345678901234567890.123456789"));
+                input.setTapType(clone);
+                TapNumberValue restored = parser.fromJson(parser.toJson(input), TapNumberValue.class);
+                assertEquals(flag, restored.getTapType().getBinaryFloat());
+                assertEquals(false, restored.getTapType().getFixed());
+                assertEquals(schema.getClass(), restored.getTapType().getClass());
+                ObjectSerializableImplV2 serializer = new ObjectSerializableImplV2();
+                TapNumberValue recovered = (TapNumberValue) serializer.toObject(serializer.fromObject(input));
+                assertEquals(flag, recovered.getTapType().getBinaryFloat());
+                assertEquals(schema.getClass(), recovered.getTapType().getClass());
+                assertEquals(new FromTapNumberCodec().fromTapValue(input),
+                        new FromTapNumberCodec().fromTapValue(restored));
+            }
+        }
+        TapNumber old = parser.fromJson("{\"fixed\":false}", TapNumber.class);
+        assertNull(old.getBinaryFloat());
+    }
+
     static Stream<Number> numbers() {
         return Stream.of(new BigDecimal("123456789012345678901234567890.123400"),
                 new BigDecimal("1E+6144"), new BigDecimal("1E-6176"),

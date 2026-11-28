@@ -2,8 +2,8 @@ package io.tapdata.entity.codec.filter;
 
 import java.util.*;
 
-// Numeric entries copied verbatim from tapdata-connectors mysql-spec.json.
-// Snapshot commit: 16aafdf01eb75dfd9b1d115b2e1ea92595091d62
+// Numeric entries with explicit binaryFloat declarations, copied from tapdata-connectors mysql-spec.json.
+// Original snapshot commit: 16aafdf01eb75dfd9b1d115b2e1ea92595091d62
 final class MysqlNumberSpecFixture {
     static Map<String, Object> entry(String expression) {
         Map<String, Object> entry = new LinkedHashMap<>();
@@ -22,6 +22,7 @@ final class MysqlNumberSpecFixture {
                 entry.put("precision", Arrays.asList(1, 6));
                 entry.put("scale", Arrays.asList(0, 6));
                 entry.put("fixed", false);
+                entry.put("binaryFloat", true);
                 break;
             case "double":
                 entry.put("to", "TapNumber");
@@ -30,6 +31,7 @@ final class MysqlNumberSpecFixture {
                 entry.put("preferScale", 4);
                 entry.put("scale", Arrays.asList(0, 17));
                 entry.put("fixed", false);
+                entry.put("binaryFloat", true);
                 break;
             case "float($precision,$scale)[unsigned]":
                 entry.put("to", "TapNumber");
@@ -39,6 +41,7 @@ final class MysqlNumberSpecFixture {
                 entry.put("value", Arrays.asList("-3.402823466E+38", "3.402823466E+38"));
                 entry.put("unsigned", "unsigned");
                 entry.put("fixed", false);
+                entry.put("binaryFloat", true);
                 break;
             case "double[($precision,$scale)][unsigned]":
                 entry.put("to", "TapNumber");
@@ -47,6 +50,7 @@ final class MysqlNumberSpecFixture {
                 entry.put("value", Arrays.asList("-1.7976931348623157E+308", "1.7976931348623157E+308"));
                 entry.put("unsigned", "unsigned");
                 entry.put("fixed", false);
+                entry.put("binaryFloat", true);
                 break;
             case "int[($zerofill)]":
                 entry.put("to", "TapNumber");

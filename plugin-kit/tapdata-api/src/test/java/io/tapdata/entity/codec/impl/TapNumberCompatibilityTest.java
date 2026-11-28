@@ -98,12 +98,12 @@ class TapNumberCompatibilityTest {
     }
 
     @Test void floatingConversionRequiresExplicitTargetAndChecksOverflow() {
-        TapNumber type = new TapNumber().fixed(false).bit(32);
+        TapNumber type = new TapNumber().binaryFloat(true).fixed(false).bit(32);
         assertEquals(1.5f, from.fromTapValue(constrained(new BigDecimal("1.5"), type)));
         assertEquals(Double.POSITIVE_INFINITY, from.fromTapValue(constrained(Double.POSITIVE_INFINITY, type)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E100"), type)));
         assertEquals(Double.NaN, from.fromTapValue(constrained(Double.NaN, new TapNumber().scale(0))));
-        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E6144"), new TapNumber().fixed(false).bit(64))));
+        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E6144"), new TapNumber().binaryFloat(true).fixed(false).bit(64))));
     }
 
     @Test void floatPayloadAtFiniteBoundaryIsAccepted() {

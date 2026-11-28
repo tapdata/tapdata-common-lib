@@ -12,6 +12,13 @@
         <guava.version>33.4.0-jre</guava.version>
     </properties>
     <dependencies>
+        <!-- Parse the connector specification snapshot in the numeric contract matrix. -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.83</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

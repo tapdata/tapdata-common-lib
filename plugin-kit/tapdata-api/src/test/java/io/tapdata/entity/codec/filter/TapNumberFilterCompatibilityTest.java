@@ -161,7 +161,7 @@ class TapNumberFilterCompatibilityTest {
             assertThrows(ArithmeticException.class,
                     () -> throughFilters(enforced, new BigDecimal("1e309"), doubleType));
             assertEquals(value.floatValue(),
-                    throughFilters(enforced, value, new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
+                    throughFilters(enforced, value, new TapNumber().binaryFloat(true).fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
     }
 
@@ -189,7 +189,7 @@ class TapNumberFilterCompatibilityTest {
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "3.402824E38", floatType));
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.7976931348623159E308", doubleType));
             assertEquals(1.2345f, throughFilters(enforced, "1.2345",
-                    new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
+                    new TapNumber().binaryFloat(true).fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
     }
 
@@ -257,6 +257,7 @@ class TapNumberFilterCompatibilityTest {
             entry.put("defaultPrecision", 24);
             entry.put("defaultScale", 8);
             entry.put("fixed", false);
+            entry.put("binaryFloat", true);
             io.tapdata.entity.mapping.type.TapNumberMapping mapping = new io.tapdata.entity.mapping.type.TapNumberMapping();
             mapping.from(entry);
             for (Map<String, String> params : Arrays.asList(Collections.<String, String>emptyMap(),
@@ -273,7 +274,7 @@ class TapNumberFilterCompatibilityTest {
                 assertThrows(ArithmeticException.class, () -> throughFilters(enforced, float32 ? "1e39" : "1e309", real));
             }
             for (int bit : new int[]{32, 64}) {
-                TapNumber unsigned = new TapNumber().fixed(false).bit(bit).unsigned(true)
+                TapNumber unsigned = new TapNumber().binaryFloat(true).fixed(false).bit(bit).unsigned(true)
                         .minValue(BigDecimal.ZERO).maxValue(BigDecimal.ONE);
                 assertEquals(bit == 32 ? (Object) Float.valueOf(1e10f) : Double.valueOf(1e10),
                         throughFilters(enforced, new BigDecimal("1e10"), unsigned));
@@ -289,7 +290,7 @@ class TapNumberFilterCompatibilityTest {
         return (TapNumber) mapping.toTapType(dataType, params);
     }
 
-    private Object throughFilters(boolean enforced, Object input, TapNumber targetType) {
+    static Object throughFilters(boolean enforced, Object input, TapNumber targetType) {
         TapCodecsRegistry registry = new TapCodecsRegistry();
         registry.registerToTapValue(input.getClass(), new ToTapNumberCodec());
         // API module tests have no runner ClassFactory; install the same output codec explicitly.

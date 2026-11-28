@@ -122,6 +122,12 @@ public class TapDouble extends TapNumber {
     }
 
     @Override
+    public TapDouble binaryFloat(Boolean binaryFloat) {
+        super.binaryFloat(binaryFloat);
+        return this;
+    }
+
+    @Override
     public TapDouble fixed(Boolean fixed) {
         if (null != fixed) {
             setFixed(fixed);
@@ -178,6 +184,7 @@ public class TapDouble extends TapNumber {
                 .minValue(getMinValue())
                 .maxValue(getMaxValue())
                 .fixed(getFixed())
+                .binaryFloat(getBinaryFloat())
                 .cannotWrite(getCannotWrite())
                 .storageBytes(storageBytes)
                 .effectivePrecision(effectivePrecision)

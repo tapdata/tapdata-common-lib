@@ -22,12 +22,19 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (type == null)
             return value;
 
-        boolean floating = Boolean.FALSE.equals(type.getFixed());
+        // fixed=false also describes decimal floating types (NUMERIC/DECFLOAT/Oracle FLOAT).
+        // Only an explicit declaration or dedicated schema class permits binary conversion.
+        boolean floating = Boolean.TRUE.equals(type.getBinaryFloat())
+                || type instanceof io.tapdata.entity.schema.type.TapFloat
+                || type instanceof io.tapdata.entity.schema.type.TapDouble;
+        boolean float32 = type instanceof io.tapdata.entity.schema.type.TapFloat
+                || (!(type instanceof io.tapdata.entity.schema.type.TapDouble)
+                    && Integer.valueOf(32).equals(type.getBit()));
         boolean nonFinite = (value instanceof Double || value instanceof Float)
                 && !Double.isFinite(value.doubleValue());
         if (nonFinite) {
             if (floating) {
-                if (Integer.valueOf(32).equals(type.getBit())) return value.floatValue();
+                if (float32) return value.floatValue();
                 return value.doubleValue();
             }
             if (type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
@@ -44,15 +51,15 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             // Mapping min/max serve type matching and may be derived from decimal precision
             // or integer widths. Floating conversion uses IEEE capacity, not those bounds
             // (including explicit mapping bounds), and does not apply decimal scale.
-            if (Integer.valueOf(32).equals(type.getBit())) {
+            if (float32) {
                 float result = value.floatValue();
                 if (!Float.isFinite(result)) throw new ArithmeticException("Float overflow: " + value);
-                checkFloatingUnsigned(result, type, value);
+                checkFloatingUnsigned(type, value);
                 return result;
             }
             double result = value.doubleValue();
             if (!Double.isFinite(result)) throw new ArithmeticException("Double overflow: " + value);
-            checkFloatingUnsigned(result, type, value);
+            checkFloatingUnsigned(type, value);
             return result;
         }
         BigDecimal decimal = toDecimal(value);
@@ -93,8 +100,8 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         return decimal;
     }
 
-    private void checkFloatingUnsigned(double result, TapNumber type, Number value) {
-        if (Boolean.TRUE.equals(type.getUnsigned()) && result < 0)
+    private void checkFloatingUnsigned(TapNumber type, Number value) {
+        if (Boolean.TRUE.equals(type.getUnsigned()) && toDecimal(value).signum() < 0)
             throw new ArithmeticException("Negative number for unsigned target: " + value);
     }
 
