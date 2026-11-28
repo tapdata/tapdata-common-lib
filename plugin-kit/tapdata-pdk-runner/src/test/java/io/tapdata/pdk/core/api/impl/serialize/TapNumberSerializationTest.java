@@ -68,6 +68,13 @@ class TapNumberSerializationTest {
         String withClass = parser.toJsonWithClass(value(number));
         assertTrue(withClass.contains(TapNumberValue.class.getName()));
         check(number, parser.fromJson(withClass, TapNumberValue.class));
+        assertFalse(withClass.contains("java.util.Collections$"));
+        assertFalse(withClass.contains("java.util.LinkedHashMap"));
+        check(number, (TapNumberValue) parser.fromJsonWithClass(withClass));
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("n", value(number));
+        Map<?, ?> restored = (Map<?, ?>) parser.fromJsonWithClass(parser.toJsonWithClass(event));
+        check(number, (TapNumberValue) restored.get("n"));
     }
 
     @Test void defaultTargetRegistryUnwrapsExactNumbers() {

@@ -34,12 +34,12 @@ final class TapNumberValueJsonCodec implements ObjectSerializer, ObjectDeseriali
             // JSON cannot represent non-finite values as numeric literals.
             if (number != null && (!Double.isFinite(number.doubleValue())
                     || Double.doubleToRawLongBits(number.doubleValue()) == Double.doubleToRawLongBits(-0.0d))) {
-                fields.put("value", java.util.Collections.singletonMap("number", number.toString()));
+                fields.put("value", numberObject(number));
                 fields.put("numberType", "Double");
             }
         } else {
             String type = number.getClass().getSimpleName();
-            fields.put("value", java.util.Collections.singletonMap("number", number.toString()));
+            fields.put("value", numberObject(number));
             fields.put("numberType", type);
         }
         serializer.out.write('{');
@@ -54,10 +54,24 @@ final class TapNumberValueJsonCodec implements ObjectSerializer, ObjectDeseriali
                 continue;
             if (comma) serializer.out.write(',');
             serializer.out.writeFieldName(entry.getKey());
-            serializer.write(entry.getValue());
+            if ("value".equals(entry.getKey()) && entry.getValue() instanceof Map) {
+                // Keep the numeric envelope independent of Java collection implementation names.
+                serializer.out.write('{');
+                serializer.out.writeFieldName("number");
+                serializer.write(((Map<?, ?>) entry.getValue()).get("number"));
+                serializer.out.write('}');
+            } else {
+                serializer.write(entry.getValue());
+            }
             comma = true;
         }
         serializer.out.write('}');
+    }
+
+    private static Map<String, Object> numberObject(Number number) {
+        Map<String, Object> encoded = new LinkedHashMap<>();
+        encoded.put("number", number.toString());
+        return encoded;
     }
 
     @Override

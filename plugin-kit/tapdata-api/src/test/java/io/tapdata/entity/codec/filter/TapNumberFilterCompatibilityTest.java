@@ -38,4 +38,81 @@ class TapNumberFilterCompatibilityTest {
             }
         }
     }
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> bothFiltersRoundDecimalsAndTruncateIntegers() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "schemaEnforced=" + enforced, () -> bothFiltersRoundDecimalsAndTruncateIntegers(enforced)));
+    }
+
+    private void bothFiltersRoundDecimalsAndTruncateIntegers(boolean enforced) {
+        TapNumber decimal = new TapNumber().fixed(true).scale(2).precision(10);
+        TapNumber integer = new TapNumber().scale(0).precision(10)
+                .minValue(BigDecimal.valueOf(Integer.MIN_VALUE)).maxValue(BigDecimal.valueOf(Integer.MAX_VALUE));
+        for (String text : new String[]{"123.456", "123.455", "-123.455", "123.450"}) {
+            for (Object input : new Object[]{text, new BigDecimal(text)}) {
+                assertEquals(new BigDecimal(text).setScale(2, java.math.RoundingMode.HALF_UP),
+                        throughFilters(enforced, input, decimal));
+                assertEquals(new BigDecimal(text).intValue(), throughFilters(enforced, input, integer));
+            }
+        }
+        assertEquals(Integer.MAX_VALUE, throughFilters(enforced, new BigDecimal("2147483647.9"), integer));
+        assertEquals(Integer.MIN_VALUE, throughFilters(enforced, new BigDecimal("-2147483648.9"), integer));
+        BigDecimal exact = new BigDecimal("9007199254740993.00100");
+        assertEquals(exact, throughFilters(enforced, exact, new TapNumber()));
+        assertEquals(5d, throughFilters(enforced, 5L, new TapNumber()));
+        assertEquals(9007199254740993L, throughFilters(enforced, 9007199254740993L, new TapNumber()));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> bothFiltersRejectOverflowAfterConversion() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "schemaEnforced=" + enforced, () -> bothFiltersRejectOverflowAfterConversion(enforced)));
+    }
+
+    private void bothFiltersRejectOverflowAfterConversion(boolean enforced) {
+        TapNumber integer = new TapNumber().scale(0)
+                .minValue(BigDecimal.valueOf(Integer.MIN_VALUE)).maxValue(BigDecimal.valueOf(Integer.MAX_VALUE));
+        for (String text : new String[]{"2147483648.1", "-2147483649.1"})
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, new BigDecimal(text), integer));
+        TapNumber precision = new TapNumber().fixed(true).scale(2).precision(5);
+        assertEquals(new BigDecimal("999.99"), throughFilters(enforced, "999.994", precision));
+        assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "999.995", precision));
+        TapNumber bounds = new TapNumber().fixed(true).scale(2).minValue(new BigDecimal("-999.99"))
+                .maxValue(new BigDecimal("999.99"));
+        for (String text : new String[]{"999.995", "-999.995"})
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, text, bounds));
+        TapNumber unsigned = new TapNumber().unsigned(true).scale(0).minValue(BigDecimal.ZERO)
+                .maxValue(new BigDecimal("255"));
+        assertEquals((short) 0, throughFilters(enforced, "-0.9", unsigned));
+        assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "-1.1", unsigned));
+        assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "256.1", unsigned));
+    }
+
+    private Object throughFilters(boolean enforced, Object input, TapNumber targetType) {
+        TapCodecsRegistry registry = new TapCodecsRegistry();
+        registry.registerToTapValue(input.getClass(), new ToTapNumberCodec());
+        // API module tests have no runner ClassFactory; install the same output codec explicitly.
+        registry.registerFromTapValue(TapNumberValue.class, new io.tapdata.entity.codec.impl.FromTapNumberCodec());
+        TapCodecsFilterManager manager = enforced ? new TapCodecsFilterManagerSchemaEnforced(registry)
+                : TapCodecsFilterManager.create(registry);
+        Map<String, TapField> source = Collections.singletonMap("n", new TapField("n", "NUMBER").tapType(new TapNumber()));
+        Map<String, TapField> target = Collections.singletonMap("n", new TapField("n", "NUMBER").tapType(targetType));
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("n", input);
+        Set<String> transformed = null;
+        if (enforced) {
+            TapTable table = new TapTable("numbers");
+            table.setNameFieldMap(new LinkedHashMap<>(source));
+            transformed = ((TapCodecsFilterManagerSchemaEnforced) manager).transformToTapValueMap(record, table);
+        } else {
+            manager.transformToTapValueMap(record, source);
+        }
+        // Target schema attachment is performed by the engine between the two filters.
+        ((TapNumberValue) record.get("n")).setTapType(targetType);
+        if (enforced)
+            ((TapCodecsFilterManagerSchemaEnforced) manager).transformFromTapValueMap(record, source, target, transformed);
+        else
+            manager.transformFromTapValueMap(record, source, target);
+        return record.get("n");
+    }
 }

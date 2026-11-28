@@ -73,11 +73,13 @@ class TapNumberCompatibilityTest {
         return result;
     }
 
-    @Test void checksIntegerFractionAndBoundsInsteadOfTruncating() {
+    @Test void truncatesIntegerFractionsAndChecksConvertedBounds() {
         TapNumber byteType = new TapNumber().scale(0).minValue(BigDecimal.valueOf(-128)).maxValue(BigDecimal.valueOf(127));
         assertEquals((byte) 127, from.fromTapValue(constrained(new BigDecimal("127.0"), byteType)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(128L, byteType)));
-        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1.1"), byteType)));
+        assertEquals((byte) 1, from.fromTapValue(constrained(new BigDecimal("1.9"), byteType)));
+        assertEquals((byte) -1, from.fromTapValue(constrained(new BigDecimal("-1.9"), byteType)));
+        assertEquals((byte) 127, from.fromTapValue(constrained(new BigDecimal("127.9"), byteType)));
         TapNumber longType = new TapNumber().scale(0).minValue(BigDecimal.valueOf(Long.MIN_VALUE)).maxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         assertEquals(Long.MAX_VALUE, from.fromTapValue(constrained(Long.MAX_VALUE, longType)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE), longType)));
@@ -85,10 +87,12 @@ class TapNumberCompatibilityTest {
         assertEquals(new BigDecimal("18446744073709551615"), from.fromTapValue(constrained(new BigInteger("18446744073709551615"), unsigned)));
     }
 
-    @Test void decimalUsesExplicitScaleAndPrecisionWithoutRounding() {
+    @Test void decimalRoundsHalfUpBeforeCheckingPrecision() {
         TapNumber type = new TapNumber().fixed(true).scale(2).precision(5);
         assertEquals(new BigDecimal("123.40"), from.fromTapValue(constrained(new BigDecimal("123.4"), type)));
-        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1.234"), type)));
+        assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.234"), type)));
+        assertEquals(new BigDecimal("-1.24"), from.fromTapValue(constrained(new BigDecimal("-1.235"), type)));
+        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("999.995"), type)));
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1234.56"), type)));
         assertEquals(new BigDecimal("12.3"), from.fromTapValue(constrained(new BigDecimal("12.3"), new TapNumber().minValue(BigDecimal.ZERO))));
     }
@@ -136,7 +140,7 @@ class TapNumberCompatibilityTest {
 
     @Test void decimalTrailingZerosNeedNoRounding() {
         assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.230"), new TapNumber().fixed(true).scale(2))));
-        assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1.231"), new TapNumber().fixed(true).scale(2))));
+        assertEquals(new BigDecimal("1.23"), from.fromTapValue(constrained(new BigDecimal("1.231"), new TapNumber().fixed(true).scale(2))));
     }
 
     @Test void inputCodecKeepsLegacyTypesExceptNumbersRequiringPrecision() {

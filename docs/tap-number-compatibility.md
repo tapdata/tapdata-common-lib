@@ -30,12 +30,13 @@ The previously disabled global Number-to-TapValue registration remains disabled.
 
 The output codec preserves historical conversion for Double payloads, including
 truncation/narrowing and permissive decimal handling. Missing integer bounds now
-allow Double passthrough rather than a null-pointer failure. Strict validation is
-restricted to the new non-Double payloads: explicit integer/decimal targets check
-bounds, fractional digits and precision without implicit rounding. Reducing scale
-across trailing zeros is legal (`1.230` to scale 2 is `1.23`); nonzero discarded
-digits are rejected. Explicit floating targets permit IEEE rounding but reject
-finite overflow. A null scale does not imply integer conversion for exact values.
+allow Double passthrough rather than a null-pointer failure. New non-Double
+payloads use compatible target conversion: reducing a nonzero scale uses HALF_UP (`123.455` to scale 2 is `123.46`, `-123.455` is `-123.46`);
+scale 0 truncates toward zero (`123.9` to INT is `123`, `-123.9` is `-123`).
+Unsigned, min/max bounds and precision checks apply after conversion, so rounding
+carry that exceeds the target capacity is rejected. Trailing zeros require no rounding.
+These rules also apply to decimal strings parsed by the input codec. Explicit
+floating targets permit IEEE rounding but reject finite overflow. A null scale does not imply integer conversion for exact values.
 Unconstrained targets preserve the original Number representation. Float-to-decimal
 conversion uses the shortest decimal string, not a binary expansion.
 
@@ -55,12 +56,14 @@ Fastjson's global numeric adapters. Finite legacy Double payloads retain a numer
 `value`; exact representations use a `numberType` and textual number in a `value`
 object. Non-finite floats and signed zero also use this explicit form. Numeric
 schema subtypes are restored using a fixed allowlist and `typeName`. Malformed
-explicit representations fail clearly. The codec removes redundant numeric parsing
-from the serialization path.
+explicit representations fail clearly. Numeric envelopes carry no Java collection
+class metadata, including in toJsonWithClass/fromJsonWithClass round trips. The
+codec removes redundant numeric parsing from the serialization path.
 
 Direct Fastjson calls and other JSON libraries continue using their own adapters;
-the default getter exposes only the legacy Double view. Use the runner's JsonParser
-for exact-number transport. JsonParser retains its existing convention of disabling
+the legacy value getter exposes a Double view; bean introspection may also expose
+the new numberValue property. Their JSON shape is not the runner transport format.
+Use the runner's JsonParser for exact-number transport. JsonParser retains its existing convention of disabling
 circular-reference detection; it is not an object-identity/cyclic-graph transport.
 
 Native Java serialization retains the original computed serialVersionUID

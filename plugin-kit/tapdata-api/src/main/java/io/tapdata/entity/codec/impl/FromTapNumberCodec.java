@@ -15,8 +15,8 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (tapValue == null || tapValue.getNumberValue() == null)
             return null;
         Number value = tapValue.getNumberValue();
-        // Keep historical target conversion for existing Double payloads. Strict
-        // decimal validation applies only to the new exact-number API.
+        // Keep historical target conversion for existing Double payloads. Compatible rounding and
+        // target validation apply only to the new exact-number API.
         if (value instanceof Double) return fromLegacyDouble(tapValue);
         TapNumber type = tapValue.getTapType();
         if (type == null)
@@ -40,12 +40,8 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 && type.getMinValue() == null && type.getMaxValue() == null && !Boolean.TRUE.equals(type.getUnsigned()))
             return value;
         BigDecimal decimal = toDecimal(value);
-        if (Boolean.TRUE.equals(type.getUnsigned()) && decimal.signum() < 0)
-            throw new ArithmeticException("Negative number for unsigned target: " + value);
-        if (type.getMinValue() != null && decimal.compareTo(type.getMinValue()) < 0
-                || type.getMaxValue() != null && decimal.compareTo(type.getMaxValue()) > 0)
-            throw new ArithmeticException("Number outside target bounds: " + value);
         if (floating) {
+            checkBounds(decimal, type, value);
             if (type.getBit() == 32) {
                 float result = value.floatValue();
                 if (!Float.isFinite(result)) throw new ArithmeticException("Float overflow: " + value);
@@ -56,10 +52,13 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             return result;
         }
         Integer scale = type.getScale();
+        // Match historical integer truncation; decimal scale reductions use HALF_UP.
+        // Validate the converted value: rounding can carry into an overflowing digit.
+        if (scale != null) decimal = decimal.setScale(scale, scale == 0
+                ? java.math.RoundingMode.DOWN : java.math.RoundingMode.HALF_UP);
+        checkBounds(decimal, type, value);
         if (scale == null && !Boolean.TRUE.equals(type.getFixed()))
             return value;
-        // No implicit rounding: callers must supply an explicit rounding policy upstream.
-        if (scale != null) decimal = decimal.setScale(scale, java.math.RoundingMode.UNNECESSARY);
         if (type.getPrecision() != null && decimal.precision() > type.getPrecision())
             throw new ArithmeticException("Number exceeds target precision: " + value);
         if (scale != null && scale == 0 && type.getMinValue() != null && type.getMaxValue() != null) {
@@ -75,6 +74,14 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 return decimal.longValueExact();
         }
         return decimal;
+    }
+
+    private void checkBounds(BigDecimal decimal, TapNumber type, Number value) {
+        if (Boolean.TRUE.equals(type.getUnsigned()) && decimal.signum() < 0)
+            throw new ArithmeticException("Negative number for unsigned target: " + value);
+        if (type.getMinValue() != null && decimal.compareTo(type.getMinValue()) < 0
+                || type.getMaxValue() != null && decimal.compareTo(type.getMaxValue()) > 0)
+            throw new ArithmeticException("Number outside target bounds: " + value);
     }
 
     private Object fromLegacyDouble(TapNumberValue tapValue) {
