@@ -37,16 +37,21 @@ and no floating marker (`123.9` to INT is `123`, `-123.9` is `-123`).
 Scale-zero decimal targets without a bit width, including real DSL mappings
 with precision-derived min/max, use HALF_UP
 (`2.9` to DECIMAL(18,0) is `3`, `-2.9` is `-3`) and return BigDecimal.
-Unsigned, min/max bounds and precision checks apply after conversion, so rounding
-carry that exceeds the target capacity is rejected. Unsigned validation uses the
+For decimal/integer targets, unsigned, min/max bounds and precision checks apply
+after conversion, so rounding carry that exceeds the target capacity is rejected. Unsigned validation uses the
 converted value, so `-0.4` rounded to zero is accepted. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
 floating targets (`fixed=false`, including DSL mappings without bit) permit IEEE
 rounding but reject finite overflow. Bit 32 returns Float; other widths and absent
-bit return Double. Floating conversion ignores decimal scale and precision; declared
-min/max bounds (including bounds supplied by the mapping) remain enforced.
-Their unsigned and min/max checks apply to the converted IEEE value, including finite
-Float/Double extremes. A bit width with absent `fixed` identifies an integer, not a float;
+bit return Double. Floating conversion ignores decimal scale, precision and all
+min/max mapping bounds, including explicit bounds: these describe type matching,
+and may contain decimal precision or integer-width limits rather than IEEE capacity.
+Finite conversion overflow is rejected; unsigned checks apply to the converted IEEE
+value (negative values that underflow to zero are accepted). Existing non-finite
+Float payload passthrough is unchanged. These rules apply only to non-Double payloads;
+legacy Double conversion remains unchanged. Scale-zero decimal BigDecimal results
+above likewise describe exact payloads, not a change to legacy Double result types.
+A bit width with absent `fixed` identifies an integer, not a float;
 when its scale is absent it uses integer truncation too. Other null-scale targets
 do not imply integer conversion for exact values.
 Precision-only targets validate precision even when scale and fixed are absent.

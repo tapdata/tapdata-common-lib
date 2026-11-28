@@ -160,8 +160,8 @@ class TapNumberFilterCompatibilityTest {
                     () -> throughFilters(enforced, new BigDecimal("1e39"), floatType));
             assertThrows(ArithmeticException.class,
                     () -> throughFilters(enforced, new BigDecimal("1e309"), doubleType));
-            assertThrows(ArithmeticException.class,
-                    () -> throughFilters(enforced, value, new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
+            assertEquals(value.floatValue(),
+                    throughFilters(enforced, value, new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
     }
 
@@ -188,7 +188,7 @@ class TapNumberFilterCompatibilityTest {
                 assertEquals(Double.valueOf(text), throughFilters(enforced, new BigDecimal(text), doubleType));
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "3.402824E38", floatType));
             assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.7976931348623159E308", doubleType));
-            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.2345",
+            assertEquals(1.2345f, throughFilters(enforced, "1.2345",
                     new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
     }
@@ -211,7 +211,7 @@ class TapNumberFilterCompatibilityTest {
             for (String name : new String[]{"float", "double"}) {
                 TapNumber floating = mysqlTarget(name, name, Collections.emptyMap());
                 assertNull(floating.getBit());
-                for (String text : new String[]{"1", "2.9", "-7", "123456"}) {
+                for (String text : new String[]{"1", "2.9", "-7", "123456", "1e7", "-1e7", "1e12", "-1e12"}) {
                     assertEquals(Double.valueOf(text), throughFilters(enforced, new BigDecimal(text), floating));
                     assertEquals(Double.valueOf(text), throughFilters(enforced, Double.valueOf(text), floating));
                 }
@@ -228,14 +228,58 @@ class TapNumberFilterCompatibilityTest {
                 assertEquals(2.912345d, throughFilters(enforced, new BigDecimal("2.912345"), parameterized));
                 assertEquals(floating.getMaxValue().doubleValue(),
                         throughFilters(enforced, floating.getMaxValue(), floating));
-                assertThrows(ArithmeticException.class,
-                        () -> throughFilters(enforced, floating.getMaxValue().multiply(BigDecimal.TEN), floating));
+                // Absent bit selects Double even for the FLOAT mapping; min/max do not
+                // impose a Float range on that existing representation contract.
+                for (String text : new String[]{"1234567", "-1234567", "1e12", "-1e12"}) {
+                    assertEquals(Double.valueOf(text), throughFilters(enforced, new BigDecimal(text), parameterized));
+                    assertEquals(Double.valueOf(text), throughFilters(enforced, Double.valueOf(text), parameterized));
+                }
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1e309", floating));
             }
             TapNumber integer = mysqlTarget("int[($zerofill)]", "int", Collections.emptyMap());
             assertEquals(2, throughFilters(enforced, new BigDecimal("2.9"), integer));
             assertEquals(-2, throughFilters(enforced, new BigDecimal("-2.9"), integer));
             TapNumber bigint = mysqlTarget("bigint[($zerofill)]", "bigint", Collections.emptyMap());
             assertEquals(9007199254740993L, throughFilters(enforced, 9007199254740993L, bigint));
+        }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> postgresRealLargeNumbersAndFloatingUnsigned() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "postgresReal schemaEnforced=" + enforced, () -> {
+            // Verbatim real entry from connectors/postgres-connector/spec_postgres.json,
+            // snapshot 16aafdf01eb75dfd9b1d115b2e1ea92595091d62. The entry declares bit=4;
+            // also cover explicit bit=32 metadata supplied to the mapping.
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("to", "TapNumber");
+            entry.put("bit", 4);
+            entry.put("defaultPrecision", 24);
+            entry.put("defaultScale", 8);
+            entry.put("fixed", false);
+            io.tapdata.entity.mapping.type.TapNumberMapping mapping = new io.tapdata.entity.mapping.type.TapNumberMapping();
+            mapping.from(entry);
+            for (Map<String, String> params : Arrays.asList(Collections.<String, String>emptyMap(),
+                    Collections.singletonMap("bit", "32"))) {
+                TapNumber real = (TapNumber) mapping.toTapType("real", params);
+                boolean float32 = Integer.valueOf(32).equals(real.getBit());
+                assertEquals(params.isEmpty() ? Integer.valueOf(4) : Integer.valueOf(32), real.getBit());
+                assertEquals(new BigDecimal(params.isEmpty() ? "7" : "2147483647"), real.getMaxValue());
+                for (String text : new String[]{"1e10", "-1e10", Float.toString(Float.MAX_VALUE), Float.toString(-Float.MAX_VALUE)}) {
+                    Object expected = float32 ? (Object) Float.valueOf(text) : Double.valueOf(text);
+                    assertEquals(expected, throughFilters(enforced, new BigDecimal(text), real));
+                    assertEquals(expected, throughFilters(enforced, Double.valueOf(text), real));
+                }
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, float32 ? "1e39" : "1e309", real));
+            }
+            for (int bit : new int[]{32, 64}) {
+                TapNumber unsigned = new TapNumber().fixed(false).bit(bit).unsigned(true)
+                        .minValue(BigDecimal.ZERO).maxValue(BigDecimal.ONE);
+                assertEquals(bit == 32 ? (Object) Float.valueOf(1e10f) : Double.valueOf(1e10),
+                        throughFilters(enforced, new BigDecimal("1e10"), unsigned));
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "-1e10", unsigned));
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, bit == 32 ? "1e39" : "1e309", unsigned));
+            }
         }));
     }
 

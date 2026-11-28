@@ -41,15 +41,18 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 && type.getPrecision() == null && type.getBit() == null && !Boolean.TRUE.equals(type.getUnsigned()))
             return value;
         if (floating) {
+            // Mapping min/max serve type matching and may be derived from decimal precision
+            // or integer widths. Floating conversion uses IEEE capacity, not those bounds
+            // (including explicit mapping bounds), and does not apply decimal scale.
             if (Integer.valueOf(32).equals(type.getBit())) {
                 float result = value.floatValue();
                 if (!Float.isFinite(result)) throw new ArithmeticException("Float overflow: " + value);
-                checkBounds(BigDecimal.valueOf(result), type, value);
+                checkFloatingUnsigned(result, type, value);
                 return result;
             }
             double result = value.doubleValue();
             if (!Double.isFinite(result)) throw new ArithmeticException("Double overflow: " + value);
-            checkBounds(BigDecimal.valueOf(result), type, value);
+            checkFloatingUnsigned(result, type, value);
             return result;
         }
         BigDecimal decimal = toDecimal(value);
@@ -88,6 +91,11 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 return decimal.longValueExact();
         }
         return decimal;
+    }
+
+    private void checkFloatingUnsigned(double result, TapNumber type, Number value) {
+        if (Boolean.TRUE.equals(type.getUnsigned()) && result < 0)
+            throw new ArithmeticException("Negative number for unsigned target: " + value);
     }
 
     private void checkBounds(BigDecimal decimal, TapNumber type, Number value) {
