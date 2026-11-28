@@ -28,8 +28,44 @@ public class JsonParserImpl implements JsonParser {
     // Exact-number adapters are scoped to this service, never installed in global
     // Fastjson configuration shared by unrelated connectors.
     private final SerializeConfig numberSerializeConfig = new SerializeConfig();
-    private final ParserConfig numberParserConfig = new ParserConfig();
+    private final ParserConfig numberParserConfig = newNumberParserConfig();
     private static final String TAG = JsonParserImpl.class.getSimpleName();
+
+    private static ParserConfig newNumberParserConfig() {
+        // Keep the numeric adapter local, but consult live host registrations before
+        // local bean caches. Hosts can register/replace adapters after service creation.
+        ParserConfig config = new ParserConfig() {
+            @Override
+            public Class<?> checkAutoType(String typeName, Class<?> expectClass, int features) {
+                // Fastjson also consults its local registry when resolving @type.
+                // Mirror only the requested host registration, then retain the normal
+                // auto-type checks (including safe mode and deny lists).
+                ParserConfig global = ParserConfig.getGlobalInstance();
+                Class<?> registered = global.getDeserializers().findClass(typeName);
+                if (registered != null && registered != TapNumberValue.class)
+                    putDeserializer(registered, global.getDeserializers().get(registered));
+                return super.checkAutoType(typeName, expectClass, features);
+            }
+
+            @Override
+            public ObjectDeserializer getDeserializer(Type type) {
+                if (type == TapNumberValue.class) return super.getDeserializer(type);
+                ObjectDeserializer registered = ParserConfig.getGlobalInstance().getDeserializers().get(type);
+                return registered != null ? registered : super.getDeserializer(type);
+            }
+
+            @Override
+            public ObjectDeserializer getDeserializer(Class<?> clazz, Type type) {
+                if (clazz == TapNumberValue.class) return super.getDeserializer(clazz, type);
+                ObjectDeserializer registered = ParserConfig.getGlobalInstance().getDeserializers().get(type);
+                if (registered == null)
+                    registered = ParserConfig.getGlobalInstance().getDeserializers().get(clazz);
+                return registered != null ? registered : super.getDeserializer(clazz, type);
+            }
+        };
+        config.putDeserializer(TapNumberValue.class, new TapNumberValueJsonCodec());
+        return config;
+    }
 
     public JsonParser configGlobalAbstractClassDetectors(Class<?> type, List<AbstractClassDetector> abstractClassDetectors) {
         ParserConfig.global.putDeserializer(type, new AbstractResultDeserializer(abstractClassDetectors));
@@ -59,8 +95,7 @@ public class JsonParserImpl implements JsonParser {
 
     @Override
     public Object fromJsonWithClass(String json, ClassLoader classLoader) {
-        ParserConfig parserConfig = new ParserConfig();
-        parserConfig.putDeserializer(TapNumberValue.class, new TapNumberValueJsonCodec());
+        ParserConfig parserConfig = newNumberParserConfig();
         if (classLoader != null)
             parserConfig.setDefaultClassLoader(classLoader);
         return JSON.parseObject(json, DataMap.class, parserConfig, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);

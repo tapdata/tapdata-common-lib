@@ -106,6 +106,11 @@ class TapNumberCompatibilityTest {
         assertThrows(ArithmeticException.class, () -> from.fromTapValue(constrained(new BigDecimal("1E6144"), new TapNumber().fixed(false).bit(64))));
     }
 
+    @Test void floatPayloadAtFiniteBoundaryIsAccepted() {
+        for (float input : new float[]{Float.MAX_VALUE, -Float.MAX_VALUE})
+            assertEquals(input, from.fromTapValue(constrained(input, new io.tapdata.entity.schema.type.TapFloat())));
+    }
+
     @TestFactory Stream<DynamicTest> javaSerializationRetainsHistoricalLimitations() {
         return numbers().map(number -> DynamicTest.dynamicTest(number.getClass().getSimpleName() + ": " + number,
                 () -> javaSerializationRetainsHistoricalLimitations(number)));

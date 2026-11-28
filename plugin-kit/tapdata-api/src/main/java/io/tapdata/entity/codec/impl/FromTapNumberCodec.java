@@ -22,7 +22,7 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (type == null)
             return value;
 
-        boolean floating = !Boolean.TRUE.equals(type.getFixed()) && type.getBit() != null
+        boolean floating = Boolean.FALSE.equals(type.getFixed()) && type.getBit() != null
                 && (type.getBit() == 32 || type.getBit() == 64);
         boolean nonFinite = (value instanceof Double || value instanceof Float)
                 && !Double.isFinite(value.doubleValue());
@@ -33,27 +33,32 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             }
             if (type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
                     && type.getMinValue() == null && type.getMaxValue() == null
-                    && type.getPrecision() == null && !Boolean.TRUE.equals(type.getUnsigned()))
+                    && type.getPrecision() == null && type.getBit() == null && !Boolean.TRUE.equals(type.getUnsigned()))
                 return value;
             throw new ArithmeticException("Non-finite number cannot be converted to a constrained decimal or integer");
         }
         if (!floating && type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
                 && type.getMinValue() == null && type.getMaxValue() == null
-                && type.getPrecision() == null && !Boolean.TRUE.equals(type.getUnsigned()))
+                && type.getPrecision() == null && type.getBit() == null && !Boolean.TRUE.equals(type.getUnsigned()))
             return value;
-        BigDecimal decimal = toDecimal(value);
         if (floating) {
-            checkBounds(decimal, type, value);
             if (type.getBit() == 32) {
                 float result = value.floatValue();
                 if (!Float.isFinite(result)) throw new ArithmeticException("Float overflow: " + value);
+                checkBounds(BigDecimal.valueOf(result), type, value);
                 return result;
             }
             double result = value.doubleValue();
             if (!Double.isFinite(result)) throw new ArithmeticException("Double overflow: " + value);
+            checkBounds(BigDecimal.valueOf(result), type, value);
             return result;
         }
+        BigDecimal decimal = toDecimal(value);
         Integer scale = type.getScale();
+        // Integral mappings may omit scale as well as fixed. A declared width with
+        // no explicit floating marker still identifies an integer target.
+        if (scale == null && type.getBit() != null && !Boolean.FALSE.equals(type.getFixed()))
+            scale = 0;
         // Scale zero also describes DECIMAL(p,0). Only an explicit integer range or
         // storage width identifies integer conversion; scale alone must not truncate.
         boolean integerTarget = scale != null && scale == 0

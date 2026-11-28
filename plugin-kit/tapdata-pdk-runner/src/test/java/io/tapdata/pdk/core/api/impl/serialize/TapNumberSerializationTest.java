@@ -20,6 +20,56 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TapNumberSerializationTest {
+    public abstract static class HostValue {
+        public String text;
+    }
+    public static class ConcreteHostValue extends HostValue {}
+    public static class HostEnvelope {
+        public HostValue host;
+        public TapNumberValue number;
+    }
+
+    private com.alibaba.fastjson.parser.deserializer.ObjectDeserializer hostReader(String marker) {
+        return new com.alibaba.fastjson.parser.deserializer.ObjectDeserializer() {
+            @Override public <T> T deserialze(com.alibaba.fastjson.parser.DefaultJSONParser parser,
+                                              java.lang.reflect.Type type, Object fieldName) {
+                parser.parseObject();
+                ConcreteHostValue result = new ConcreteHostValue();
+                result.text = marker;
+                return (T) result;
+            }
+            @Override public int getFastMatchToken() { return com.alibaba.fastjson.parser.JSONToken.LBRACE; }
+        };
+    }
+
+    @Test void jsonReadsLiveHostRegistrationsAlongsideExactNumbers() {
+        com.alibaba.fastjson.parser.ParserConfig global = com.alibaba.fastjson.parser.ParserConfig.getGlobalInstance();
+        com.alibaba.fastjson.parser.deserializer.ObjectDeserializer previous = global.getDeserializers().get(HostValue.class);
+        try {
+            global.putDeserializer(HostValue.class, hostReader("beforeConstruction"));
+            JsonParser parser = new JsonParserImpl();
+            String marker = "afterConstruction";
+            global.putDeserializer(HostValue.class, hostReader(marker));
+            String json = "{\"host\":{},\"number\":{" +
+                    "\"numberType\":\"BigDecimal\",\"value\":{\"number\":\"9007199254740993.00100\"}}}";
+            for (HostEnvelope result : new HostEnvelope[]{parser.fromJson(json, HostEnvelope.class),
+                    parser.fromJsonBytes(json.getBytes(java.nio.charset.StandardCharsets.UTF_8), HostEnvelope.class),
+                    parser.fromJson(json, new io.tapdata.entity.utils.TypeHolder<HostEnvelope>() {})}) {
+                assertEquals(marker, result.host.text);
+                assertEquals(new BigDecimal("9007199254740993.00100"), result.number.getNumberValue());
+            }
+            assertEquals(marker, parser.fromJson("{}", HostValue.class).text);
+            String typed = "{\"@type\":\"" + HostValue.class.getName() + "\",\"text\":\"input\"}";
+            assertEquals(marker, ((HostValue) parser.fromJsonWithClass(typed)).text);
+            assertEquals(marker, ((HostValue) parser.fromJsonWithClass(typed, getClass().getClassLoader())).text);
+            global.putDeserializer(HostValue.class, hostReader("replacement"));
+            assertEquals("replacement", parser.fromJson("{}", HostValue.class).text);
+            assertEquals("replacement", ((HostValue) parser.fromJsonWithClass(typed)).text);
+        } finally {
+            global.putDeserializer(HostValue.class, previous);
+        }
+    }
+
     static Stream<Number> numbers() {
         return Stream.of(new BigDecimal("123456789012345678901234567890.123400"),
                 new BigDecimal("1E+6144"), new BigDecimal("1E-6176"),

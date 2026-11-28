@@ -161,7 +161,35 @@ class TapNumberFilterCompatibilityTest {
             assertThrows(ArithmeticException.class,
                     () -> throughFilters(enforced, new BigDecimal("1e309"), doubleType));
             assertThrows(ArithmeticException.class,
-                    () -> throughFilters(enforced, value, new TapNumber().bit(32).maxValue(BigDecimal.ONE)));
+                    () -> throughFilters(enforced, value, new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
+        }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> implicitFixedIntegersAndFloatingExtremes() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "integerAndFloatBounds schemaEnforced=" + enforced, () -> {
+            for (Integer scale : new Integer[]{null, 0}) {
+                TapNumber integer = new TapNumber().bit(32).scale(scale)
+                        .minValue(BigDecimal.valueOf(Integer.MIN_VALUE)).maxValue(BigDecimal.valueOf(Integer.MAX_VALUE));
+                TapNumber bigint = new TapNumber().bit(64).scale(scale)
+                        .minValue(BigDecimal.valueOf(Long.MIN_VALUE)).maxValue(BigDecimal.valueOf(Long.MAX_VALUE));
+                assertEquals(Integer.MAX_VALUE, throughFilters(enforced, new BigDecimal("2147483647"), integer));
+                assertEquals(-2, throughFilters(enforced, "-2.9", integer));
+                assertEquals(9007199254740993L, throughFilters(enforced, 9007199254740993L, bigint));
+                assertEquals(Long.MAX_VALUE, throughFilters(enforced, new BigDecimal(Long.MAX_VALUE), bigint));
+                assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "2147483648", integer));
+            }
+            TapNumber floatType = new io.tapdata.entity.schema.type.TapFloat();
+            TapNumber doubleType = new io.tapdata.entity.schema.type.TapDouble();
+            for (String text : new String[]{Float.toString(Float.MAX_VALUE), Float.toString(-Float.MAX_VALUE)})
+                assertEquals(Float.valueOf(text), throughFilters(enforced, new BigDecimal(text), floatType));
+            for (String text : new String[]{"1.7976931348623158E308", "-1.7976931348623158E308"})
+                assertEquals(Double.valueOf(text), throughFilters(enforced, new BigDecimal(text), doubleType));
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "3.402824E38", floatType));
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.7976931348623159E308", doubleType));
+            assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "1.2345",
+                    new TapNumber().fixed(false).bit(32).maxValue(BigDecimal.ONE)));
         }));
     }
 

@@ -40,7 +40,11 @@ Unsigned, min/max bounds and precision checks apply after conversion, so roundin
 carry that exceeds the target capacity is rejected. Unsigned validation uses the
 converted value, so `-0.4` rounded to zero is accepted. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
-floating targets permit IEEE rounding but reject finite overflow. A null scale does not imply integer conversion for exact values.
+floating targets (`fixed=false`, bit 32/64) permit IEEE rounding but reject finite overflow.
+Their unsigned and min/max checks apply to the converted IEEE value, including finite
+Float/Double extremes. A bit width with absent `fixed` identifies an integer, not a float;
+when its scale is absent it uses integer truncation too. Other null-scale targets
+do not imply integer conversion for exact values.
 Precision-only targets validate precision even when scale and fixed are absent.
 Explicit scale=0 integer targets with bit width but without either bound return
 Long when it fits, otherwise BigInteger; no implicit 64-bit capacity is imposed. Bounded integer targets
@@ -60,7 +64,10 @@ bytes are unchanged. New readers accept old Double bytes. Exact numbers preserve
 value, representation and metadata through nested events and repeated recovery.
 
 The runner's JsonParser uses instance-local numeric adapters, without replacing
-Fastjson's global numeric adapters. Finite legacy Double payloads retain a numeric
+Fastjson's global numeric adapters. Read paths consult live host/global deserializer
+registrations, including registrations added or replaced after parser construction
+and class-aware reads; the exact TapNumberValue adapter remains local. Fastjson
+retains its existing bean/field adapter caching behavior after first use. Finite legacy Double payloads retain a numeric
 `value`; exact representations use a `numberType` and textual number in a `value`
 object. Non-finite floats and signed zero also use this explicit form. Numeric
 schema subtypes are restored using a fixed allowlist and `typeName`. Malformed
