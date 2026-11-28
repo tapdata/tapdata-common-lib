@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
 
 public class TapNumber extends TapType {
+    // Preserve the pre-binaryFloat Java stream identity.
+    private static final long serialVersionUID = 4662236301878730205L;
     public TapNumber() {
         type = TYPE_NUMBER;
     }
@@ -28,6 +30,15 @@ public class TapNumber extends TapType {
         this.bit = bit;
         return this;
     }
+
+    /** Explicit binary floating-point declaration; null never implies binary floating point. */
+    private Boolean binaryFloat;
+    public TapNumber binaryFloat(Boolean binaryFloat) {
+        this.binaryFloat = binaryFloat;
+        return this;
+    }
+    public Boolean getBinaryFloat() { return binaryFloat; }
+    public void setBinaryFloat(Boolean binaryFloat) { this.binaryFloat = binaryFloat; }
 
     private Boolean fixed;
     public TapNumber fixed(Boolean fixed) {
@@ -148,6 +159,8 @@ public class TapNumber extends TapType {
     @Override
     public TapType cloneTapType() {
         return tapNumber()
+                .fixed(fixed)
+                .binaryFloat(binaryFloat)
                 .bit(bit)
                 .precision(precision)
                 .scale(scale)

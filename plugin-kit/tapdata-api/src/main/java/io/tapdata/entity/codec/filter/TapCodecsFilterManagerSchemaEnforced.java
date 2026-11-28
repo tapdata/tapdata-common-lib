@@ -209,13 +209,13 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 						typeFromSchema = tapValue.createDefaultTapType();
 					//noinspection unchecked
 					tapValue.setTapType(typeFromSchema);
-					if (!value.equals(tapValue.getValue())) {
+					if (!value.equals(fullPayload(tapValue))) {
 						tapValue.setOriginValue(value);
 					}
 					tapValue.setOriginType(dataType);
 
 					if (originTapValue != null) {
-						if (originTapValue.getValue().equals(tapValue.getValue())) {
+						if (fullPayload(originTapValue).equals(fullPayload(tapValue))) {
 							if (tapValue.getOriginValue() == null) {
 								tapValue.setOriginValue(originTapValue.getOriginValue());
 								tapValue.setOriginType(originTapValue.getOriginType());
@@ -225,16 +225,16 @@ public class TapCodecsFilterManagerSchemaEnforced extends TapCodecsFilterManager
 					if (toTapValueCheckRef.get() == null) {
 						transformedToTapValueFieldNames.add(fieldName);
 						return tapValue;
-					} else if (!toTapValueCheckRef.get().check(fieldName, tapValue.getValue())) {
+					} else if (!toTapValueCheckRef.get().check(fieldName, fullPayload(tapValue))) {
 						throw new StopFilterException();
 					}
 					return null;
 				}
 			}
-			if (originTapValue != null && originTapValue.getValue().equals(value)) {
+			if (originTapValue != null && fullPayload(originTapValue).equals(value)) {
 				if (toTapValueCheckRef.get() == null)
 					return originTapValue;
-				else if (!toTapValueCheckRef.get().check(fieldName, originTapValue.getValue()))
+				else if (!toTapValueCheckRef.get().check(fieldName, fullPayload(originTapValue)))
 					throw new StopFilterException();
 				return null;
 			}

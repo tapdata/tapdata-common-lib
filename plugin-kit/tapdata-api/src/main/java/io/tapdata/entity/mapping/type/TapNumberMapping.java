@@ -39,6 +39,9 @@ public class TapNumberMapping extends TapMapping {
     public static final String KEY_UNSIGNED_VALUE = "unsignedValue";
     public static final String KEY_FIXED = "fixed";
 
+    public static final String KEY_BINARY_FLOAT = "binaryFloat";
+    private Boolean binaryFloat;
+
     private Boolean fixed;
 
     private Integer bit;
@@ -74,6 +77,8 @@ public class TapNumberMapping extends TapMapping {
 
     @Override
     public void from(Map<String, Object> info) {
+        Object binaryFloatObj = getObject(info, KEY_BINARY_FLOAT);
+        binaryFloat = binaryFloatObj instanceof Boolean ? (Boolean) binaryFloatObj : null;
         Object fixedObj = getObject(info, KEY_FIXED);
         if (fixedObj instanceof Boolean) {
             fixed = (Boolean) fixedObj;
@@ -349,6 +354,7 @@ public class TapNumberMapping extends TapMapping {
         }
 
         return tapNumber()
+                .binaryFloat(binaryFloat)
                 .fixed(fixed)
                 .precision(precision)
                 .scale(scale)

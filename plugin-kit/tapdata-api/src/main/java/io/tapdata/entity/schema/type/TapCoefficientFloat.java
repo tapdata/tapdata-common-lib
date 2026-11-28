@@ -25,6 +25,7 @@ public class TapCoefficientFloat extends TapNumber {
                 .minValue(getMinValue())
                 .maxValue(getMaxValue())
                 .fixed(getFixed())
+                .binaryFloat(getBinaryFloat())
                 .cannotWrite(getCannotWrite());
     }
 

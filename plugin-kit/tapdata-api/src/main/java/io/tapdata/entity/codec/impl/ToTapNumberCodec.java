@@ -17,13 +17,24 @@ public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {
     public TapNumberValue toTapValue(Object value, TapType typeFromSchema) {
 
         TapNumberValue numberValue = null;
-        if(value instanceof Number) {
-            //TODO whether should use Number better than Double? 
-            numberValue = new TapNumberValue(Double.valueOf(String.valueOf(value)));
+        if(value instanceof BigDecimal || value instanceof java.math.BigInteger) {
+            numberValue = TapNumberValue.ofNumber((Number) value);
+        } else if (value instanceof Long && java.math.BigInteger.valueOf((Long) value).bitLength() > 53) {
+            // A long is not generally representable as a Double (for example 2^53 + 1).
+            numberValue = TapNumberValue.ofNumber((Long) value);
+        } else if(value instanceof Number) {
+            // Keep the legacy path for small integral wrappers and floating point values.
+            // Unknown Number implementations are normalized here, never sent to the wire.
+            numberValue = new TapNumberValue(((Number) value).doubleValue());
         } else if(value instanceof String) {
             try {
-                numberValue = new TapNumberValue(Double.parseDouble((String)value));
-            } catch(Throwable throwable) {
+                String text = ((String) value).trim();
+                if ("NaN".equals(text) || "Infinity".equals(text) || "+Infinity".equals(text) || "-Infinity".equals(text)) {
+                    numberValue = new TapNumberValue(Double.parseDouble(text));
+                } else {
+                    numberValue = TapNumberValue.ofNumber(new BigDecimal(text));
+                }
+            } catch(NumberFormatException throwable) {
                 TapLogger.error(TAG, "Parse string {} to number failed, {}, will mapping other codecs", value, throwable.getMessage());
             }
         } else if(value instanceof Boolean) {

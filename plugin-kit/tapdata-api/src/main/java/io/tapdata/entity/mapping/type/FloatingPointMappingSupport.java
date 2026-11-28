@@ -89,6 +89,7 @@ final class FloatingPointMappingSupport {
 
     private static void applyNumberProperties(Map<String, Object> info, String dataType,
                                               Map<String, String> params, TapNumber type) {
+        type.binaryFloat(booleanValue(info.get(TapNumberMapping.KEY_BINARY_FLOAT)));
         Integer precision = integer(info.get("precision"));
         Integer scale = integer(info.get("scale"));
         if (params != null) {
@@ -138,6 +139,7 @@ final class FloatingPointMappingSupport {
         if (legacyType.getBit() != null) {
             type.bit(legacyType.getBit());
         }
+        type.binaryFloat(legacyType.getBinaryFloat());
         type.precision(legacyType.getPrecision());
         type.scale(legacyType.getScale());
         type.minValue(legacyType.getMinValue());

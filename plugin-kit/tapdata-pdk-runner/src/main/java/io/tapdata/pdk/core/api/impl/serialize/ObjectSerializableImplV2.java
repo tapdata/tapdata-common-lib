@@ -9,6 +9,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.AbsIOTapValue;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.schema.value.TapNumberValue;
 import io.tapdata.entity.serializer.JavaCustomSerializer;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
@@ -269,9 +270,11 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
                 fromObjectPrivate(tapValue.getOriginType(), dos, fromObjectOptions);
             }
 
-            if (fromObjectOptions.isWriteNullValue() || null != tapValue.getValue()) {
+            Object payload = tapValue instanceof TapNumberValue numberValue
+                    ? numberValue.getNumberValue() : tapValue.getValue();
+            if (fromObjectOptions.isWriteNullValue() || null != payload) {
                 fromObjectPrivate("value", dos, fromObjectOptions);
-                fromObjectPrivate(tapValue.getValue(), dos, fromObjectOptions);
+                fromObjectPrivate(payload, dos, fromObjectOptions);
             }
 
             if (fromObjectOptions.isWriteNullValue() || null != tapValue.getTapType()) {
@@ -383,7 +386,13 @@ public class ObjectSerializableImplV2 implements ObjectSerializable {
                             switch (keyStr) {
                                 case "originValue" -> tapValue.setOriginValue(value);
                                 case "originType" -> tapValue.setOriginType((String) value);
-                                case "value" -> tapValue.setValue(value);
+                                case "value" -> {
+                                    if ((Object) tapValue instanceof TapNumberValue numberValue) {
+                                        numberValue.setNumberValue((Number) value);
+                                    } else {
+                                        tapValue.setValue(value);
+                                    }
+                                }
                                 case "tapType" -> tapValue.setTapType((TapType) value);
                             }
                         }

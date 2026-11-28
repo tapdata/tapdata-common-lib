@@ -1,0 +1,1 @@
+{"@type":"io.tapdata.entity.schema.value.TapNumberValue","originType":"decimal128","originValue":"original","tapType":{"@type":"io.tapdata.entity.schema.type.TapNumber","precision":34},"value":{"@type":"java.util.Collections$SingletonMap","number":"9007199254740993.00100"},"numberType":"BigDecimal"}
