@@ -37,6 +37,10 @@ Unsigned, min/max bounds and precision checks apply after conversion, so roundin
 carry that exceeds the target capacity is rejected. Trailing zeros require no rounding.
 These rules also apply to decimal strings parsed by the input codec. Explicit
 floating targets permit IEEE rounding but reject finite overflow. A null scale does not imply integer conversion for exact values.
+Precision-only targets validate precision even when scale and fixed are absent.
+Explicit scale=0 targets without either bound return Long when it fits, otherwise
+BigInteger; scale alone does not impose a 64-bit limit. Bounded integer targets
+continue to choose their representation from the declared range.
 Unconstrained targets preserve the original Number representation. Float-to-decimal
 conversion uses the shortest decimal string, not a binary expansion.
 

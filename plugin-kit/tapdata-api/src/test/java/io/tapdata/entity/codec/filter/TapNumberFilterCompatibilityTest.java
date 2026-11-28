@@ -88,6 +88,56 @@ class TapNumberFilterCompatibilityTest {
         assertThrows(ArithmeticException.class, () -> throughFilters(enforced, "256.1", unsigned));
     }
 
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> precisionOnlyTargetsAreChecked() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "precisionOnly schemaEnforced=" + enforced, () -> {
+            for (TapNumber target : new TapNumber[]{new TapNumber().precision(3),
+                    new TapNumber().precision(3).minValue(BigDecimal.ZERO)}) {
+                for (Object input : new Object[]{"1234", new BigDecimal("1234")})
+                    assertThrows(ArithmeticException.class, () -> throughFilters(enforced, input, target));
+                assertEquals(new BigDecimal("1.23"), throughFilters(enforced, "1.23", target));
+            }
+        }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> scaleOnlyIntegersPreserveCapacity() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "scaleOnly schemaEnforced=" + enforced, () -> {
+            TapNumber target = new TapNumber().scale(0);
+            assertEquals(123L, throughFilters(enforced, "123.9", target));
+            assertEquals(-123L, throughFilters(enforced, new BigDecimal("-123.9"), target));
+            for (String text : new String[]{"9223372036854775807", "-9223372036854775808"})
+                assertEquals(Long.valueOf(text), throughFilters(enforced, text, target));
+            for (String text : new String[]{"9223372036854775808", "-9223372036854775809"})
+                assertEquals(new java.math.BigInteger(text), throughFilters(enforced, text, target));
+            assertThrows(ArithmeticException.class,
+                    () -> throughFilters(enforced, "1000", new TapNumber().scale(0).precision(3)));
+            BigDecimal decimal = new BigDecimal("123.900");
+            TapNumber unconstrained = (TapNumber) TapNumberValue.ofNumber(decimal).createDefaultTapType();
+            assertEquals(decimal, throughFilters(enforced, decimal, unconstrained));
+        }));
+    }
+
+    @org.junit.jupiter.api.TestFactory
+    java.util.stream.Stream<org.junit.jupiter.api.DynamicTest> floatingTargetsRoundAndRejectOverflow() {
+        return java.util.stream.Stream.of(false, true).map(enforced -> org.junit.jupiter.api.DynamicTest.dynamicTest(
+                "floating schemaEnforced=" + enforced, () -> {
+            TapNumber floatType = new io.tapdata.entity.schema.type.TapFloat();
+            TapNumber doubleType = new io.tapdata.entity.schema.type.TapDouble();
+            BigDecimal value = new BigDecimal("1.234567890123456789");
+            assertEquals(value.floatValue(), throughFilters(enforced, value, floatType));
+            assertEquals(value.doubleValue(), throughFilters(enforced, value, doubleType));
+            assertThrows(ArithmeticException.class,
+                    () -> throughFilters(enforced, new BigDecimal("1e39"), floatType));
+            assertThrows(ArithmeticException.class,
+                    () -> throughFilters(enforced, new BigDecimal("1e309"), doubleType));
+            assertThrows(ArithmeticException.class,
+                    () -> throughFilters(enforced, value, new TapNumber().bit(32).maxValue(BigDecimal.ONE)));
+        }));
+    }
+
     private Object throughFilters(boolean enforced, Object input, TapNumber targetType) {
         TapCodecsRegistry registry = new TapCodecsRegistry();
         registry.registerToTapValue(input.getClass(), new ToTapNumberCodec());

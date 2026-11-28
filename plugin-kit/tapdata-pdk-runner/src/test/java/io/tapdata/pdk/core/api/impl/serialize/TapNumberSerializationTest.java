@@ -42,7 +42,15 @@ class TapNumberSerializationTest {
         assertEquals("original", restored.getOriginValue());
         assertEquals("decimal128", restored.getOriginType());
         assertEquals(34, restored.getTapType().getPrecision());
-        assertEquals(number, new FromTapNumberCodec().fromTapValue(restored));
+        FromTapNumberCodec codec = new FromTapNumberCodec();
+        // Serialization preserves metadata even when a payload exceeds its target constraints.
+        if (number instanceof Float && !Float.isFinite(number.floatValue())
+                || number instanceof BigDecimal && ((BigDecimal) number).precision() > 34) {
+            assertThrows(ArithmeticException.class, () -> codec.fromTapValue(restored));
+        } else {
+            assertEquals(number, codec.fromTapValue(restored));
+        }
+        assertEquals(number, codec.fromTapValue(TapNumberValue.ofNumber(restored.getNumberValue())));
     }
 
     @ParameterizedTest @MethodSource("numbers")

@@ -32,12 +32,14 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
                 return value.doubleValue();
             }
             if (type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
-                    && type.getMinValue() == null && type.getMaxValue() == null)
+                    && type.getMinValue() == null && type.getMaxValue() == null
+                    && type.getPrecision() == null && !Boolean.TRUE.equals(type.getUnsigned()))
                 return value;
             throw new ArithmeticException("Non-finite number cannot be converted to a constrained decimal or integer");
         }
         if (!floating && type.getScale() == null && !Boolean.TRUE.equals(type.getFixed())
-                && type.getMinValue() == null && type.getMaxValue() == null && !Boolean.TRUE.equals(type.getUnsigned()))
+                && type.getMinValue() == null && type.getMaxValue() == null
+                && type.getPrecision() == null && !Boolean.TRUE.equals(type.getUnsigned()))
             return value;
         BigDecimal decimal = toDecimal(value);
         if (floating) {
@@ -57,10 +59,15 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if (scale != null) decimal = decimal.setScale(scale, scale == 0
                 ? java.math.RoundingMode.DOWN : java.math.RoundingMode.HALF_UP);
         checkBounds(decimal, type, value);
-        if (scale == null && !Boolean.TRUE.equals(type.getFixed()))
-            return value;
         if (type.getPrecision() != null && decimal.precision() > type.getPrecision())
             throw new ArithmeticException("Number exceeds target precision: " + value);
+        if (scale == null && !Boolean.TRUE.equals(type.getFixed()))
+            return value;
+        // A scale alone specifies integral conversion, not a target storage width.
+        if (scale != null && scale == 0 && type.getMinValue() == null && type.getMaxValue() == null) {
+            java.math.BigInteger integer = decimal.toBigIntegerExact();
+            return integer.bitLength() <= 63 ? (Number) integer.longValueExact() : integer;
+        }
         if (scale != null && scale == 0 && type.getMinValue() != null && type.getMaxValue() != null) {
             BigDecimal min = type.getMinValue();
             BigDecimal max = type.getMaxValue();
@@ -84,6 +91,8 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
             throw new ArithmeticException("Number outside target bounds: " + value);
     }
 
+    // Preserve historical Java narrowing/saturation for old Double payloads, including overflow.
+    // Only exact payloads use the checked conversion above.
     private Object fromLegacyDouble(TapNumberValue tapValue) {
         if(tapValue == null)
             return null;
